@@ -1,0 +1,219 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <title>JSDoc: Source: flux/coordinators.js</title>
+
+    <script src="scripts/prettify/prettify.js"> </script>
+    <script src="scripts/prettify/lang-css.js"> </script>
+    <!--[if lt IE 9]>
+      <script src="//html5shiv.googlecode.com/svn/trunk/html5.js"></script>
+    <![endif]-->
+    <link type="text/css" rel="stylesheet" href="styles/prettify-tomorrow.css">
+    <link type="text/css" rel="stylesheet" href="styles/jsdoc-default.css">
+</head>
+
+<body>
+
+<div id="main">
+
+    <h1 class="page-title">Source: flux/coordinators.js</h1>
+
+    
+
+
+
+    
+    <section>
+        <article>
+            <pre class="prettyprint source linenums"><code>'use strict';
+
+var argsCreate = require('../utils/create_with_args');
+var arrayUtils = require('../utils/array_utils');
+var compare    = require('../utils/compare');
+
+var recipes  = require('../core/provider_recipes');
+var injector = require('../core/injector');
+var stores   = require('./stores');
+var Event    = require('./event');
+var ActionDispatcher = require('./action_dispatcher');
+
+var _coordinators = {};
+
+/**
+ * Provide a context for defining Coordinators
+ * @param {coordinatorDefCallback} callback - callback function that handles the coordinator definition logic
+ * @example
+ * defineCoordinators(function($coordinators, $Event, $actionDispatcher, $stores) {
+ *   var Alarm = function(speaker) {
+ *     var interval_secs = 0;
+ *     var interval = null;
+ *
+ *     // starting up
+ *     this.$start = function() {
+ *       interval = setInterval(function() { speaker.buzz(); }, interval_secs * 1000);
+ *     };
+ *
+ *     // stopping
+ *     this.$stop  = function() {
+ *       clearInterval(interval);
+ *     };
+ *
+ *     // configuration
+ *     this.setInterval = function(seconds) {
+ *       interval_secs = seconds;
+ *     };
+ *   };
+ *
+ *   $coordinators.registerCoordinator('Alarm', ['speaker', Alarm]);
+ * });
+ *
+ * @example To configure a coordinator
+ * dyna.start(["Alarm"], function(Alarm) {
+ *   Alarm.setInterval(60);
+ * });
+ */
+function defineCoordinators(callback) {
+  callback(
+    { registerCoordinator: registerCoordinator },
+    Event,
+    { addListener: ActionDispatcher.addListener, removeListener: ActionDispatcher.removeListener },
+    stores
+  );
+}
+
+/**
+ * Coordinator definition context callback
+ * @callback coordinatorDefCallback
+ * @param {{}} $coordinators     - with registerCoordinator() method
+ * @param {*}  $Event            - Event constructor
+ * @param {*}  $actionDispatcher - Action Dispatcher with addListener() and removeListener() methods
+ * @param {{}} $stores           - with getStore(), requireStores() and releaseStores() methods
+ * @see {@link defineCoordinators}
+ */
+
+/**
+ * Register a coordinator
+ * @param {string}   name - name of the coordinator
+ * @param {function} fn   - a constructor function in the &lt;tt>Dependency Injection&lt;/tt> format
+ * @throws {Error} if coordinator with the same name has already been defined
+ */
+function registerCoordinator(name, fn) {
+  if (compare.isUndefined(_coordinators[name])) {
+    _coordinators[name] = { started: false, def: fn, instance: null };
+  } else throw new Error('conflicting coordinator name: "' + name+ '"');
+}
+
+/**
+ * Start coordinators
+ * @param {string|string[]}           coordinators - list of coordinator names
+ * @param {coordinatorConfigCallback} config_cb    - coordinator configuration callback
+ * @throws {Error} if coordinator is not registered or is not valid
+ */
+function startCoordinators(coordinator_names, config_cb) {
+  var names     = arrayUtils.arrayWrap(coordinator_names);
+  var instances = names.map(function(n) { return _instantiateCoordinator.call(this, n); });
+
+  // invoke the config callback function
+  if (compare.isFunction(config_cb)) config_cb.apply(this, instances);
+
+  names.forEach(function(n) {
+    var state = _coordinators[n];
+    state.instance.$start.call(this);
+    state.started = true;
+  });
+}
+
+/**
+ * Coordinator configuration callback
+ * @callback coordinatorConfigCallback
+ * @param {...*} coordinators - coordinator instances in the same order as the coordinator names specified in {@link startCoordinators}
+ * @see {@link startCoordinators}
+ */
+
+/**
+ * Stop coordinators
+ * @param {string|string[]} coordinators - list of coordinator names
+ * @throws {Error} if coordinator is not registered or is not running
+ */
+function stopCoordinators(coordinator_names) {
+  var names = arrayUtils.arrayWrap(coordinator_names);
+  for (var i = 0; i &lt; names.length; i++) {
+    var state = _coordinators[names[i]];
+
+    if (!state) {
+      throw new Error('Coordinator "' + names[i] + '" is not found. Please use registerCoordinator() to define one first.');
+    } else if (!state.started) {
+      throw new Error('Coordinator "' + names[i] + '" is not running.');
+    } else {
+      if (compare.isFunction(state.instance.$stop)) {
+        state.instance.$stop.call(this);
+      }
+
+      state.started = true;
+    }
+  }
+}
+
+//
+// Private Methods
+//
+
+/**
+ * Instantiate (without starting) a coordinator
+ * @param {string} name - name of coordinator
+ * @returns {*} coordinator instance
+ * @throws {Error} if coordinator is not registered or has already been initiated before
+ * @private
+ */
+function _instantiateCoordinator(name) {
+  var state = _coordinators[name];
+  if (compare.isUndefined(state)) {
+    throw new Error('Coordinator "' + name + '" is not found. Please use registerCoordinator() to define one first.');
+  } else if (state.instance) {
+    throw new Error('Coordinator "' + name + '" has already been initiated.')
+  } else {
+    var fn = arrayUtils.arrayWrap(state.def);
+    var c = fn[fn.length - 1];
+    var deps = fn.slice(0, -1);
+
+    deps.push(function(){
+      return argsCreate(c, arguments);
+    });
+
+    state.instance = injector.invoke(this, deps);
+    return state.instance;
+  }
+}
+
+//
+// Exports
+//
+
+module.exports = {
+  defineCoordinators: defineCoordinators,
+  startCoordinators : startCoordinators,
+  stopCoordinators  : stopCoordinators
+};</code></pre>
+        </article>
+    </section>
+
+
+
+
+</div>
+
+<nav>
+    <h2><a href="index.html">Home</a></h2><h3>Modules</h3><ul><li><a href="module-core_core.html">core/core</a></li><li><a href="module-core_injector.html">core/injector</a></li><li><a href="module-core_provider_manager.html">core/provider_manager</a></li><li><a href="module-core_provider_recipes.html">core/provider_recipes</a></li><li><a href="module-flux_flux.html">flux/flux</a></li><li><a href="module-utils_array_utils.html">utils/array_utils</a></li><li><a href="module-utils_compare.html">utils/compare</a></li></ul><h3>Global</h3><ul><li><a href="global.html#_context_store_instances">_context_store_instances</a></li><li><a href="global.html#_contextStoreKey">_contextStoreKey</a></li><li><a href="global.html#_instantiateCoordinator">_instantiateCoordinator</a></li><li><a href="global.html#_instantiateStore">_instantiateStore</a></li><li><a href="global.html#_provider_fns">_provider_fns</a></li><li><a href="global.html#_provider_instances">_provider_instances</a></li><li><a href="global.html#_store_constructors">_store_constructors</a></li><li><a href="global.html#addListener">addListener</a></li><li><a href="global.html#config">config</a></li><li><a href="global.html#defineComponents">defineComponents</a></li><li><a href="global.html#defineCoordinators">defineCoordinators</a></li><li><a href="global.html#defineStores">defineStores</a></li><li><a href="global.html#emit">emit</a></li><li><a href="global.html#getAllContext">getAllContext</a></li><li><a href="global.html#getComponent">getComponent</a></li><li><a href="global.html#getContext">getContext</a></li><li><a href="global.html#getStore">getStore</a></li><li><a href="global.html#mountComponents">mountComponents</a></li><li><a href="global.html#registerComponent">registerComponent</a></li><li><a href="global.html#registerCoordinator">registerCoordinator</a></li><li><a href="global.html#registerStore">registerStore</a></li><li><a href="global.html#releaseStores">releaseStores</a></li><li><a href="global.html#removeListener">removeListener</a></li><li><a href="global.html#requireStores">requireStores</a></li><li><a href="global.html#setContext">setContext</a></li><li><a href="global.html#start">start</a></li><li><a href="global.html#startCoordinators">startCoordinators</a></li><li><a href="global.html#stopCoordinators">stopCoordinators</a></li><li><a href="global.html#unmountComponents">unmountComponents</a></li><li><a href="global.html#useJQuery">useJQuery</a></li><li><a href="global.html#useReact">useReact</a></li></ul>
+</nav>
+
+<br class="clear">
+
+<footer>
+    Documentation generated by <a href="https://github.com/jsdoc3/jsdoc">JSDoc 3.3.0</a> on Thu May 28 2015 01:45:47 GMT+0800 (HKT)
+</footer>
+
+<script> prettyPrint(); </script>
+<script src="scripts/linenumber.js"> </script>
+</body>
+</html>

@@ -1,0 +1,669 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <title>JSDoc: Module: core/provider_recipes</title>
+
+    <script src="scripts/prettify/prettify.js"> </script>
+    <script src="scripts/prettify/lang-css.js"> </script>
+    <!--[if lt IE 9]>
+      <script src="//html5shiv.googlecode.com/svn/trunk/html5.js"></script>
+    <![endif]-->
+    <link type="text/css" rel="stylesheet" href="styles/prettify-tomorrow.css">
+    <link type="text/css" rel="stylesheet" href="styles/jsdoc-default.css">
+</head>
+
+<body>
+
+<div id="main">
+
+    <h1 class="page-title">Module: core/provider_recipes</h1>
+
+    
+
+
+
+
+<section>
+
+<header>
+    
+        
+            
+        
+    
+</header>
+
+<article>
+    <div class="container-overview">
+    
+        
+            <div class="description">Provider Recipes</div>
+        
+
+        
+            
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<dl class="details">
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+    <dt class="tag-source">Source:</dt>
+    <dd class="tag-source"><ul class="dummy"><li>
+        <a href="core_provider_recipes.js.html">core/provider_recipes.js</a>, <a href="core_provider_recipes.js.html#line3">line 3</a>
+    </li></ul></dd>
+    
+
+    
+
+    
+
+    
+</dl>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+        
+    
+    </div>
+
+    
+
+    
+        <h3 class="subsection-title">Requires</h3>
+
+        <ul>
+            <li><a href="module-core_provider_manager.html">module:core/provider_manager</a></li>
+        </ul>
+    
+
+    
+
+     
+
+    
+
+    
+
+    
+        <h3 class="subsection-title">Methods</h3>
+
+        
+            
+
+    
+
+    <h4 class="name" id="~factory"><span class="type-signature">(inner) </span>factory<span class="signature">(name, fn)</span><span class="type-signature"></span></h4>
+
+    
+
+
+
+<div class="description">
+    Define a +Factory+ provider
+</div>
+
+
+
+
+
+
+
+
+
+    <h5>Parameters:</h5>
+    
+
+<table class="params">
+    <thead>
+    <tr>
+        
+        <th>Name</th>
+        
+
+        <th>Type</th>
+
+        
+
+        
+
+        <th class="last">Description</th>
+    </tr>
+    </thead>
+
+    <tbody>
+    
+
+        <tr>
+            
+                <td class="name"><code>name</code></td>
+            
+
+            <td class="type">
+            
+                
+<span class="param-type">string</span>
+
+
+            
+            </td>
+
+            
+
+            
+
+            <td class="description last">provider name</td>
+        </tr>
+
+    
+
+        <tr>
+            
+                <td class="name"><code>fn</code></td>
+            
+
+            <td class="type">
+            
+                
+<span class="param-type">*</span>
+
+
+            
+            </td>
+
+            
+
+            
+
+            <td class="description last">service/value constructor in the <tt>Dependency Injection</tt> format</td>
+        </tr>
+
+    
+    </tbody>
+</table>
+
+
+
+
+
+
+<dl class="details">
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+    <dt class="tag-source">Source:</dt>
+    <dd class="tag-source"><ul class="dummy"><li>
+        <a href="core_provider_recipes.js.html">core/provider_recipes.js</a>, <a href="core_provider_recipes.js.html#line40">line 40</a>
+    </li></ul></dd>
+    
+
+    
+
+    
+    <dt class="tag-see">See:</dt>
+    <dd class="tag-see">
+        <ul>
+            <li><a href="module-core_injector.html">module:core/injector</a></li>
+        </ul>
+    </dd>
+    
+
+    
+</dl>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+    <h5>Example</h5>
+    
+        <p class="code-caption">Define a factory named "factory_1" that provides an instance of Service</p>
+    
+    <pre class="prettyprint"><code>factory("factory_1", ["dep_1", function(dep_1) {
+  // Function implementation
+  return new Service(dep_1);
+}]);</code></pre>
+
+
+
+        
+            
+
+    
+
+    <h4 class="name" id="~service"><span class="type-signature">(inner) </span>service<span class="signature">(name, constructor)</span><span class="type-signature"></span></h4>
+
+    
+
+
+
+<div class="description">
+    Define a +Service+ provider
+</div>
+
+
+
+
+
+
+
+
+
+    <h5>Parameters:</h5>
+    
+
+<table class="params">
+    <thead>
+    <tr>
+        
+        <th>Name</th>
+        
+
+        <th>Type</th>
+
+        
+
+        
+
+        <th class="last">Description</th>
+    </tr>
+    </thead>
+
+    <tbody>
+    
+
+        <tr>
+            
+                <td class="name"><code>name</code></td>
+            
+
+            <td class="type">
+            
+                
+<span class="param-type">string</span>
+
+
+            
+            </td>
+
+            
+
+            
+
+            <td class="description last">provider name</td>
+        </tr>
+
+    
+
+        <tr>
+            
+                <td class="name"><code>constructor</code></td>
+            
+
+            <td class="type">
+            
+                
+<span class="param-type">function</span>
+
+
+            
+            </td>
+
+            
+
+            
+
+            <td class="description last">a constructor function in the <tt>Dependency Injection</tt> format</td>
+        </tr>
+
+    
+    </tbody>
+</table>
+
+
+
+
+
+
+<dl class="details">
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+    <dt class="tag-source">Source:</dt>
+    <dd class="tag-source"><ul class="dummy"><li>
+        <a href="core_provider_recipes.js.html">core/provider_recipes.js</a>, <a href="core_provider_recipes.js.html#line56">line 56</a>
+    </li></ul></dd>
+    
+
+    
+
+    
+    <dt class="tag-see">See:</dt>
+    <dd class="tag-see">
+        <ul>
+            <li><a href="module-core_injector.html">module:core/injector</a></li>
+        </ul>
+    </dd>
+    
+
+    
+</dl>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+    <h5>Example</h5>
+    
+        <p class="code-caption">Define a service provider named "service_1" that provides an instance of Service</p>
+    
+    <pre class="prettyprint"><code>service('service_1', ['dep_1', Service]);</code></pre>
+
+
+
+        
+            
+
+    
+
+    <h4 class="name" id="~value"><span class="type-signature">(inner) </span>value<span class="signature">(name, val)</span><span class="type-signature"></span></h4>
+
+    
+
+
+
+<div class="description">
+    Define a +Value+ provider
+</div>
+
+
+
+
+
+
+
+
+
+    <h5>Parameters:</h5>
+    
+
+<table class="params">
+    <thead>
+    <tr>
+        
+        <th>Name</th>
+        
+
+        <th>Type</th>
+
+        
+
+        
+
+        <th class="last">Description</th>
+    </tr>
+    </thead>
+
+    <tbody>
+    
+
+        <tr>
+            
+                <td class="name"><code>name</code></td>
+            
+
+            <td class="type">
+            
+                
+<span class="param-type">string</span>
+
+
+            
+            </td>
+
+            
+
+            
+
+            <td class="description last">provider name</td>
+        </tr>
+
+    
+
+        <tr>
+            
+                <td class="name"><code>val</code></td>
+            
+
+            <td class="type">
+            
+                
+<span class="param-type">*</span>
+
+
+            
+            </td>
+
+            
+
+            
+
+            <td class="description last">value</td>
+        </tr>
+
+    
+    </tbody>
+</table>
+
+
+
+
+
+
+<dl class="details">
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+    <dt class="tag-source">Source:</dt>
+    <dd class="tag-source"><ul class="dummy"><li>
+        <a href="core_provider_recipes.js.html">core/provider_recipes.js</a>, <a href="core_provider_recipes.js.html#line21">line 21</a>
+    </li></ul></dd>
+    
+
+    
+
+    
+
+    
+</dl>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+    <h5>Example</h5>
+    
+        <p class="code-caption">Define a value provider named "value_1" that provides the string "string_1"</p>
+    
+    <pre class="prettyprint"><code>value('value_1', 'string_1');</code></pre>
+
+
+
+        
+    
+
+    
+
+    
+</article>
+
+</section>
+
+
+
+
+</div>
+
+<nav>
+    <h2><a href="index.html">Home</a></h2><h3>Modules</h3><ul><li><a href="module-core_core.html">core/core</a></li><li><a href="module-core_injector.html">core/injector</a></li><li><a href="module-core_provider_manager.html">core/provider_manager</a></li><li><a href="module-core_provider_recipes.html">core/provider_recipes</a></li><li><a href="module-flux_flux.html">flux/flux</a></li><li><a href="module-utils_array_utils.html">utils/array_utils</a></li><li><a href="module-utils_compare.html">utils/compare</a></li></ul><h3>Global</h3><ul><li><a href="global.html#_context_store_instances">_context_store_instances</a></li><li><a href="global.html#_contextStoreKey">_contextStoreKey</a></li><li><a href="global.html#_instantiateCoordinator">_instantiateCoordinator</a></li><li><a href="global.html#_instantiateStore">_instantiateStore</a></li><li><a href="global.html#_provider_fns">_provider_fns</a></li><li><a href="global.html#_provider_instances">_provider_instances</a></li><li><a href="global.html#_store_constructors">_store_constructors</a></li><li><a href="global.html#addListener">addListener</a></li><li><a href="global.html#config">config</a></li><li><a href="global.html#defineComponents">defineComponents</a></li><li><a href="global.html#defineCoordinators">defineCoordinators</a></li><li><a href="global.html#defineStores">defineStores</a></li><li><a href="global.html#emit">emit</a></li><li><a href="global.html#getAllContext">getAllContext</a></li><li><a href="global.html#getComponent">getComponent</a></li><li><a href="global.html#getContext">getContext</a></li><li><a href="global.html#getStore">getStore</a></li><li><a href="global.html#mountComponents">mountComponents</a></li><li><a href="global.html#registerComponent">registerComponent</a></li><li><a href="global.html#registerCoordinator">registerCoordinator</a></li><li><a href="global.html#registerStore">registerStore</a></li><li><a href="global.html#releaseStores">releaseStores</a></li><li><a href="global.html#removeListener">removeListener</a></li><li><a href="global.html#requireStores">requireStores</a></li><li><a href="global.html#setContext">setContext</a></li><li><a href="global.html#start">start</a></li><li><a href="global.html#startCoordinators">startCoordinators</a></li><li><a href="global.html#stopCoordinators">stopCoordinators</a></li><li><a href="global.html#unmountComponents">unmountComponents</a></li><li><a href="global.html#useJQuery">useJQuery</a></li><li><a href="global.html#useReact">useReact</a></li></ul>
+</nav>
+
+<br class="clear">
+
+<footer>
+    Documentation generated by <a href="https://github.com/jsdoc3/jsdoc">JSDoc 3.3.0</a> on Thu May 28 2015 01:45:47 GMT+0800 (HKT)
+</footer>
+
+<script> prettyPrint(); </script>
+<script src="scripts/linenumber.js"> </script>
+</body>
+</html>

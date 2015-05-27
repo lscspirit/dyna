@@ -1,0 +1,137 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <title>JSDoc: Source: flux/components.js</title>
+
+    <script src="scripts/prettify/prettify.js"> </script>
+    <script src="scripts/prettify/lang-css.js"> </script>
+    <!--[if lt IE 9]>
+      <script src="//html5shiv.googlecode.com/svn/trunk/html5.js"></script>
+    <![endif]-->
+    <link type="text/css" rel="stylesheet" href="styles/prettify-tomorrow.css">
+    <link type="text/css" rel="stylesheet" href="styles/jsdoc-default.css">
+</head>
+
+<body>
+
+<div id="main">
+
+    <h1 class="page-title">Source: flux/components.js</h1>
+
+    
+
+
+
+    
+    <section>
+        <article>
+            <pre class="prettyprint source linenums"><code>'use strict';
+
+var compare      = require('../utils/compare');
+var recipes      = require('../core/provider_recipes');
+var assign       = require('object-assign');
+
+var Action = require('./action');
+var stores = require('./stores');
+
+var _components = {};
+
+/**
+ * Provide a context for defining Components
+ * @param {componentDefCallback} callback - callback function that handles the component definition logic
+ * @example
+ * defineComponents(function($components, $stores, $Action, React, $) {
+ *   var SomeComponent = React.createClass({
+ *     //...
+ *   });
+ *
+ *   $components.registerComponent('SomeComponent', SomeComponent);
+ * });
+ */
+function defineComponents(callback) {
+  var external_lib = require('../core/external_lib').libs;
+  var React  = external_lib.React;
+  var jQuery = external_lib.$;
+
+  callback(
+    { registerComponent: registerComponent, getComponent: getComponent },
+    { getStore: stores.getStore, requireStores: stores.requireStores, releaseStores: stores.releaseStores },
+    Action,
+    React,
+    jQuery
+  );
+}
+
+/**
+ * Component definition context callback
+ * @callback componentDefCallback
+ * @param {{}}      $components - with registerComponent() and getComponent() methods
+ * @param {{}}      $stores     - with getStore(), requireStores() and releaseStores() methods
+ * @param {*}       $Action     - Action constructor
+ * @param {Object}  React       - React JS library
+ * @param {Object}  $           - jQuery Library
+ */
+
+/**
+ * Register a React Component
+ * @param {string}     name            - name of the component
+ * @param {ReactClass} react_component - react component class
+ */
+function registerComponent(name, react_component) {
+  if(_components[name]) {
+    throw new Error('conflicting component name: "' + name+ '"');
+  } else if(!compare.isString(name)) {
+    throw new Error('component name must be a string');
+  }
+
+  _components[name] = react_component;
+}
+
+/**
+ * Get the registered React Component
+ * @param {string}     name            - name of the component
+ * @returns {ReactClass} the matching react component class
+ */
+function getComponent(name) {
+  var cache = _components[name];
+
+  if (cache) return cache;
+  else throw new Error('There is no registered Component with the name "' + name + "'");
+}
+
+//
+// Exports
+//
+
+// make getComponent() available under the $components provider
+recipes.value('$components', { getComponent: getComponent });
+
+module.exports = {
+  defineComponents: defineComponents,
+  getComponent    : getComponent
+};
+
+</code></pre>
+        </article>
+    </section>
+
+
+
+
+</div>
+
+<nav>
+    <h2><a href="index.html">Home</a></h2><h3>Modules</h3><ul><li><a href="module-core_core.html">core/core</a></li><li><a href="module-core_injector.html">core/injector</a></li><li><a href="module-core_provider_manager.html">core/provider_manager</a></li><li><a href="module-core_provider_recipes.html">core/provider_recipes</a></li><li><a href="module-flux_flux.html">flux/flux</a></li><li><a href="module-utils_array_utils.html">utils/array_utils</a></li><li><a href="module-utils_compare.html">utils/compare</a></li></ul><h3>Global</h3><ul><li><a href="global.html#_context_store_instances">_context_store_instances</a></li><li><a href="global.html#_contextStoreKey">_contextStoreKey</a></li><li><a href="global.html#_instantiateCoordinator">_instantiateCoordinator</a></li><li><a href="global.html#_instantiateStore">_instantiateStore</a></li><li><a href="global.html#_provider_fns">_provider_fns</a></li><li><a href="global.html#_provider_instances">_provider_instances</a></li><li><a href="global.html#_store_constructors">_store_constructors</a></li><li><a href="global.html#addListener">addListener</a></li><li><a href="global.html#config">config</a></li><li><a href="global.html#defineComponents">defineComponents</a></li><li><a href="global.html#defineCoordinators">defineCoordinators</a></li><li><a href="global.html#defineStores">defineStores</a></li><li><a href="global.html#emit">emit</a></li><li><a href="global.html#getAllContext">getAllContext</a></li><li><a href="global.html#getComponent">getComponent</a></li><li><a href="global.html#getContext">getContext</a></li><li><a href="global.html#getStore">getStore</a></li><li><a href="global.html#mountComponents">mountComponents</a></li><li><a href="global.html#registerComponent">registerComponent</a></li><li><a href="global.html#registerCoordinator">registerCoordinator</a></li><li><a href="global.html#registerStore">registerStore</a></li><li><a href="global.html#releaseStores">releaseStores</a></li><li><a href="global.html#removeListener">removeListener</a></li><li><a href="global.html#requireStores">requireStores</a></li><li><a href="global.html#setContext">setContext</a></li><li><a href="global.html#start">start</a></li><li><a href="global.html#startCoordinators">startCoordinators</a></li><li><a href="global.html#stopCoordinators">stopCoordinators</a></li><li><a href="global.html#unmountComponents">unmountComponents</a></li><li><a href="global.html#useJQuery">useJQuery</a></li><li><a href="global.html#useReact">useReact</a></li></ul>
+</nav>
+
+<br class="clear">
+
+<footer>
+    Documentation generated by <a href="https://github.com/jsdoc3/jsdoc">JSDoc 3.3.0</a> on Thu May 28 2015 01:45:47 GMT+0800 (HKT)
+</footer>
+
+<script> prettyPrint(); </script>
+<script src="scripts/linenumber.js"> </script>
+</body>
+</html>

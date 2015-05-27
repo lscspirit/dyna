@@ -1,0 +1,206 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <title>JSDoc: Source: core/injector.js</title>
+
+    <script src="scripts/prettify/prettify.js"> </script>
+    <script src="scripts/prettify/lang-css.js"> </script>
+    <!--[if lt IE 9]>
+      <script src="//html5shiv.googlecode.com/svn/trunk/html5.js"></script>
+    <![endif]-->
+    <link type="text/css" rel="stylesheet" href="styles/prettify-tomorrow.css">
+    <link type="text/css" rel="stylesheet" href="styles/jsdoc-default.css">
+</head>
+
+<body>
+
+<div id="main">
+
+    <h1 class="page-title">Source: core/injector.js</h1>
+
+    
+
+
+
+    
+    <section>
+        <article>
+            <pre class="prettyprint source linenums"><code>'use strict';
+
+/**
+ * Dependency Injector
+ *
+ * @module core/injector
+ * @requires module:utils/compare
+ * @requires module:utils/array_utils
+ * @requires module:core/provider_manager
+ */
+
+var compare    = require('../utils/compare');
+var arrayUtils = require('../utils/array_utils');
+
+var manager    = require('./provider_manager');
+
+/** Cache of values returned by providers */
+var _provider_value_cache = {};
+
+/**
+ * Invoke a function with dependencies
+ * @param {Object}          thisArg - object to be bind to this when the function is invoked
+ * @param {Array|function}  fn      - a function in the &lt;tt>Dependency Injection&lt;/tt> format
+ * @returns {*} return value of the execution
+ * @throws {Error} throw an error if fn is not a function nor a &lt;tt>Dependency Injection&lt;/tt> array
+ *
+ * @example &lt;caption>Invoke without dependency&lt;/caption>
+ * injector.invoke(this, function() { return true; });     //=> true
+ *
+ * @example &lt;caption>Invoke with function dependency array&lt;/caption>
+ * injector.invoke(this, ["dep_1", "dep_2", function(dep_1, dep_2) { return dep_1; }]);    //=> dep_1
+ */
+function invoke(thisArg, fn) {
+  if (compare.isArray(fn)) {
+    var last = fn.length - 1;
+    if (compare.isFunction(fn[last])) {
+      var deps = fn.slice(0, last);
+      return fn[last].apply(thisArg, _providerValues(deps));
+    } else {
+      throw new Error("Last element of the dependency injection array must be a function");
+    }
+  } else if (compare.isFunction(fn)) {
+    return fn.apply(thisArg);
+  }
+
+  throw new Error("fn is not a function nor a dependency injection array");
+}
+
+/**
+ * Invoke a function with dependent providers
+ * This is similar to the {@link invoke()} with the exception that the dependent provider instances are
+ * loaded instead of the actual values returned by provider instance
+ * @param {Object}          thisArg - object to be bind to this when the function is invoked
+ * @param {Array|function}  fn      - a function in the &lt;tt>Dependency Injection&lt;/tt> format
+ * @returns {*} return value of the execution
+ * @throws {Error} throw an error if fn is not a function nor a &lt;tt>Dependency Injection&lt;/tt> array
+ *
+ * @example &lt;caption>Invoke without dependency&lt;/caption>
+ * injector.invokeWithProviders(this, function() { return true; });     //=> true
+ *
+ * @example &lt;caption>Invoke with function dependency array&lt;/caption>
+ * injector.invokeWithProviders(this, ["dep_1", "dep_2", function(dep_1_provider, dep_2_provider) { return dep_1_provider; }]);    //=> dep_1_provider
+ */
+function invokeWithProviders(thisArg, fn) {
+  if (compare.isArray(fn)) {
+    var last = fn.length - 1;
+    if (compare.isFunction(fn[last])) {
+      var deps = fn.slice(0, last);
+      return fn[last].apply(thisArg, _providers(deps));
+    } else {
+      throw new Error("Last element of the dependency injection array must be a function");
+    }
+  } else if (compare.isFunction(fn)) {
+    return fn.apply(thisArg);
+  }
+
+  throw new Error("fn is not a function nor a dependency injection array");
+}
+
+/**
+ * Get the value returned by a provider
+ * @param {string} provider_name - name of provider
+ * @returns {*} provider value
+ */
+function inject(name) {
+  return _loadProviderValue(name);
+}
+
+//
+// Private Methods
+//
+
+/**
+ * Get the value returned by a provider
+ * @param {string} provider_name - name of provider
+ * @returns {*} value returned by the provider
+ * @private
+ */
+function _loadProviderValue(provider_name) {
+  var cache = _provider_value_cache[provider_name];
+  if (cache) return cache;
+
+  var provider = manager.provider(provider_name);
+  if (provider.$get) {
+    return invoke(this, provider.$get);
+  } else {
+    throw new Error("Provider '" + provider_name + "' does not have a $get method");
+  }
+}
+
+/**
+ * Get the values returned by providers
+ * @param {Array|string} providers - provider names
+ * @returns {Array} an array of provider values in the same order as specified in the param
+ * @private
+ */
+function _providerValues(providers) {
+  var names  = arrayUtils.arrayWrap(providers);
+  var result = [];
+
+  for (var i = 0; i &lt; names.length; i++) {
+    result.push(_loadProviderValue(names[i]));
+  }
+  return result;
+}
+
+/**
+ * Get the provider instances
+ * @param {string[]|string} providers - provider names
+ * @returns {Array} an array of provider instances (not values) in the same order as specified in the param
+ * @private
+ */
+function _providers(providers) {
+  var names  = arrayUtils.arrayWrap(providers);
+  var result = [];
+
+  for (var i = 0; i &lt; names.length; i++) {
+    result.push(manager.provider(names[i]));
+  }
+  return result;
+}
+
+var Injector = {
+  inject: inject,
+  invoke: invoke,
+  invokeWithProviders: invokeWithProviders
+};
+
+// Define the Injector itself as '$injector' provider
+manager.define('$injector', function() {
+  this.$get = function() {
+    return Injector;
+  };
+});
+
+module.exports = Injector;</code></pre>
+        </article>
+    </section>
+
+
+
+
+</div>
+
+<nav>
+    <h2><a href="index.html">Home</a></h2><h3>Modules</h3><ul><li><a href="module-core_core.html">core/core</a></li><li><a href="module-core_injector.html">core/injector</a></li><li><a href="module-core_provider_manager.html">core/provider_manager</a></li><li><a href="module-core_provider_recipes.html">core/provider_recipes</a></li><li><a href="module-flux_flux.html">flux/flux</a></li><li><a href="module-utils_array_utils.html">utils/array_utils</a></li><li><a href="module-utils_compare.html">utils/compare</a></li></ul><h3>Global</h3><ul><li><a href="global.html#_context_store_instances">_context_store_instances</a></li><li><a href="global.html#_contextStoreKey">_contextStoreKey</a></li><li><a href="global.html#_instantiateCoordinator">_instantiateCoordinator</a></li><li><a href="global.html#_instantiateStore">_instantiateStore</a></li><li><a href="global.html#_provider_fns">_provider_fns</a></li><li><a href="global.html#_provider_instances">_provider_instances</a></li><li><a href="global.html#_store_constructors">_store_constructors</a></li><li><a href="global.html#addListener">addListener</a></li><li><a href="global.html#config">config</a></li><li><a href="global.html#defineComponents">defineComponents</a></li><li><a href="global.html#defineCoordinators">defineCoordinators</a></li><li><a href="global.html#defineStores">defineStores</a></li><li><a href="global.html#emit">emit</a></li><li><a href="global.html#getAllContext">getAllContext</a></li><li><a href="global.html#getComponent">getComponent</a></li><li><a href="global.html#getContext">getContext</a></li><li><a href="global.html#getStore">getStore</a></li><li><a href="global.html#mountComponents">mountComponents</a></li><li><a href="global.html#registerComponent">registerComponent</a></li><li><a href="global.html#registerCoordinator">registerCoordinator</a></li><li><a href="global.html#registerStore">registerStore</a></li><li><a href="global.html#releaseStores">releaseStores</a></li><li><a href="global.html#removeListener">removeListener</a></li><li><a href="global.html#requireStores">requireStores</a></li><li><a href="global.html#setContext">setContext</a></li><li><a href="global.html#start">start</a></li><li><a href="global.html#startCoordinators">startCoordinators</a></li><li><a href="global.html#stopCoordinators">stopCoordinators</a></li><li><a href="global.html#unmountComponents">unmountComponents</a></li><li><a href="global.html#useJQuery">useJQuery</a></li><li><a href="global.html#useReact">useReact</a></li></ul>
+</nav>
+
+<br class="clear">
+
+<footer>
+    Documentation generated by <a href="https://github.com/jsdoc3/jsdoc">JSDoc 3.3.0</a> on Thu May 28 2015 01:45:47 GMT+0800 (HKT)
+</footer>
+
+<script> prettyPrint(); </script>
+<script src="scripts/linenumber.js"> </script>
+</body>
+</html>
