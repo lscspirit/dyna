@@ -5,4 +5,4 @@ var assign     = require('object-assign');
 var ArrayUtils = require('./array_utils');
 var Compare    = require('./compare');
 
-module.exports = assign({ assign: assign }, ArrayUtils, Compare);
+module.exports = assign({}, ArrayUtils, Compare);

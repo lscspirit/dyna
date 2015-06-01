@@ -2005,6 +2005,6 @@ var assign     = _dereq_('object-assign');
 var ArrayUtils = _dereq_('./array_utils');
 var Compare    = _dereq_('./compare');
 
-module.exports = assign({ assign: assign }, ArrayUtils, Compare);
+module.exports = assign({}, ArrayUtils, Compare);
 },{"./array_utils":38,"./compare":39,"object-assign":19}]},{},[35])(35)
 });
