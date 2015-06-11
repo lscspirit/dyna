@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
     <meta charset="utf-8">
-    <title>JSDoc: Class: ActionFactory</title>
+    <title>JSDoc: Source: flux/mixin.js</title>
 
     <script src="scripts/prettify/prettify.js"> </script>
     <script src="scripts/prettify/lang-css.js"> </script>
@@ -17,313 +17,57 @@
 
 <div id="main">
 
-    <h1 class="page-title">Class: ActionFactory</h1>
+    <h1 class="page-title">Source: flux/mixin.js</h1>
 
     
 
 
 
-
-<section>
-
-<header>
     
-        <h2>
-            <span class="ancestors"><a href="global.html#createActionFactory">createActionFactory</a>~</span>
-        
-        ActionFactory
-        </h2>
-        
-    
-</header>
-
-<article>
-    <div class="container-overview">
-    
-        
-
-    
-
-    <h4 class="name" id="ActionFactory"><span class="type-signature"></span>new ActionFactory<span class="signature">()</span><span class="type-signature"></span></h4>
-
-    
-
-
-
-<div class="description">
-    Factory class for creating Actions
-</div>
-
-
-
-
-
-
-
-
-
-
-
-
-
-<dl class="details">
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-    <dt class="tag-source">Source:</dt>
-    <dd class="tag-source"><ul class="dummy"><li>
-        <a href="flux_action.js.html">flux/action.js</a>, <a href="flux_action.js.html#line68">line 68</a>
-    </li></ul></dd>
-    
-
-    
-
-    
-
-    
-</dl>
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-    
-    </div>
-
-    
-
-    
-
-    
-
-     
-
-    
-
-    
-
-    
-        <h3 class="subsection-title">Methods</h3>
-
-        
-            
-
-    
-
-    <h4 class="name" id="createAction"><span class="type-signature"></span>createAction<span class="signature">(name, payload)</span><span class="type-signature"> &rarr; {<a href="Action.html">Action</a>}</span></h4>
-
-    
-
-
-
-<div class="description">
-    Create a new Action object
-</div>
-
-
-
-
-
-
-
-
-
-    <h5>Parameters:</h5>
-    
-
-<table class="params">
-    <thead>
-    <tr>
-        
-        <th>Name</th>
-        
-
-        <th>Type</th>
-
-        
-
-        
-
-        <th class="last">Description</th>
-    </tr>
-    </thead>
-
-    <tbody>
-    
-
-        <tr>
-            
-                <td class="name"><code>name</code></td>
-            
-
-            <td class="type">
-            
-                
-<span class="param-type">string</span>
-
-
-            
-            </td>
-
-            
-
-            
-
-            <td class="description last">name of the event</td>
-        </tr>
-
-    
-
-        <tr>
-            
-                <td class="name"><code>payload</code></td>
-            
-
-            <td class="type">
-            
-                
-<span class="param-type">*</span>
-
-
-            
-            </td>
-
-            
-
-            
-
-            <td class="description last">any data to be sent along with this Action</td>
-        </tr>
-
-    
-    </tbody>
-</table>
-
-
-
-
-
-
-<dl class="details">
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-    <dt class="tag-source">Source:</dt>
-    <dd class="tag-source"><ul class="dummy"><li>
-        <a href="flux_action.js.html">flux/action.js</a>, <a href="flux_action.js.html#line75">line 75</a>
-    </li></ul></dd>
-    
-
-    
-
-    
-
-    
-</dl>
-
-
-
-
-
-
-
-
-
-
-
-
-
-<h5>Returns:</h5>
-
-        
-<div class="param-desc">
-    - the event object @see <a href="Action.html">Action</a>
-</div>
-
-
-
-<dl>
-    <dt>
-        Type
-    </dt>
-    <dd>
-        
-<span class="param-type"><a href="Action.html">Action</a></span>
-
-
-    </dd>
-</dl>
-
-    
-
-
-
-        
-    
-
-    
-
-    
-</article>
-
-</section>
+    <section>
+        <article>
+            <pre class="prettyprint source linenums"><code>'use strict';
+
+/**
+ * Constructor for creating a DynaFluxMixin that will pass the Flux instance to child components
+ *
+ * @param {React} React - instance of React
+ * @returns {Object} mixin definition
+ * @constructor
+ *
+ * @see {@link https://github.com/BinaryMuse/fluxxor/blob/master/lib/flux_mixin.js}
+ */
+var DynaFluxMixin = function(React) {
+  return {
+    componentWillMount : function() {
+      if (!this.props.flux &amp;&amp; (!this.context || !this.context.flux)) {
+        throw new Error('Could not find flux in component\'s props or context');
+      }
+    },
+
+    childContextTypes : {
+      flux: React.PropTypes.object.isRequired
+    },
+
+    getChildContext : function() {
+      return {
+        flux: this.flux()
+      };
+    },
+
+    flux : function() {
+      return this.props.flux || (this.context &amp;&amp; this.context.flux)
+    }
+  };
+};
+
+DynaFluxMixin.componentWillMount = function() {
+  throw new Error('DynaFluxMixin must be created through dyna.DynaFluxMixin(React), instead of being used directly.');
+};
+
+module.exports = DynaFluxMixin;</code></pre>
+        </article>
+    </section>
 
 
 

@@ -895,7 +895,7 @@ manager.define('$injector', function() {
 });
 
 module.exports = Injector;
-},{"../utils/array_utils":38,"../utils/compare":39,"./provider_manager":24}],23:[function(_dereq_,module,exports){
+},{"../utils/array_utils":39,"../utils/compare":40,"./provider_manager":24}],23:[function(_dereq_,module,exports){
 'use strict';
 
 var assign     = _dereq_('object-assign');
@@ -955,7 +955,7 @@ var Lifecycle = {
 assign(Lifecycle, ujs);
 
 module.exports = Lifecycle;
-},{"../utils/array_utils":38,"./injector":22,"./ujs":26,"object-assign":19}],24:[function(_dereq_,module,exports){
+},{"../utils/array_utils":39,"./injector":22,"./ujs":26,"object-assign":19}],24:[function(_dereq_,module,exports){
 'use strict';
 
 var compare = _dereq_('../utils/compare');
@@ -1053,7 +1053,7 @@ ProviderManager.define('$providers', function() {
 
 module.exports = ProviderManager;
 
-},{"../utils/compare":39}],25:[function(_dereq_,module,exports){
+},{"../utils/compare":40}],25:[function(_dereq_,module,exports){
 'use strict';
 
 /**
@@ -1139,7 +1139,7 @@ module.exports = {
   factory : factory,
   service : service
 };
-},{"../utils/compare":39,"../utils/create_with_args":40,"./provider_manager":24}],26:[function(_dereq_,module,exports){
+},{"../utils/compare":40,"../utils/create_with_args":41,"./provider_manager":24}],26:[function(_dereq_,module,exports){
 'use strict';
 
 var assign     = _dereq_('object-assign');
@@ -1194,7 +1194,7 @@ module.exports = {
   mountComponents   : mountComponents,
   unmountComponents : unmountComponents
 };
-},{"../flux/components":29,"../utils/compare":39,"object-assign":19}],27:[function(_dereq_,module,exports){
+},{"../flux/components":29,"../utils/compare":40,"object-assign":19}],27:[function(_dereq_,module,exports){
 'use strict';
 
 /**
@@ -1406,7 +1406,7 @@ module.exports = {
 };
 
 
-},{"../utils/compare":39,"object-assign":19}],30:[function(_dereq_,module,exports){
+},{"../utils/compare":40,"object-assign":19}],30:[function(_dereq_,module,exports){
 'use strict';
 
 var argsCreate = _dereq_('../utils/create_with_args');
@@ -1530,7 +1530,7 @@ module.exports = {
   registerCoordinator   : registerCoordinator,
   instantiateCoordinator: instantiateCoordinator
 };
-},{"../core/injector":22,"../utils/array_utils":38,"../utils/compare":39,"../utils/create_with_args":40}],31:[function(_dereq_,module,exports){
+},{"../core/injector":22,"../utils/array_utils":39,"../utils/compare":40,"../utils/create_with_args":41}],31:[function(_dereq_,module,exports){
 'use strict';
 
 /**
@@ -1652,10 +1652,13 @@ var Events       = _dereq_('./event');
 var ActionDispatcher = _dereq_('./action_dispatcher');
 var EventDispatcher  = _dereq_('./event_dispatcher');
 
+var DynaFluxMixin    = _dereq_('./mixin');
+
 var next_flux_id = 1;
 
 var Flux = function(coordinators, stores) {
-  var _id = _generateFluxId();
+  var self = this;
+  var _id  = _generateFluxId();
   var _started = false;
 
   var action_dispatcher = new ActionDispatcher();
@@ -1667,18 +1670,6 @@ var Flux = function(coordinators, stores) {
 
   var required_coordinators = [], required_stores = [];
   var coordinator_instances = {}, store_instances = {};
-
-  // check whether coordinators are valid
-  arrayUtils.arrayWrap(coordinators).forEach(function(c) {
-    if (!Coordinators.hasCoordinator(c)) throw new Error('Coordinator "' + c + '" not found. Please make sure it has been registered.');
-    required_coordinators.push(c);
-  });
-
-  // check whether stores are valid
-  arrayUtils.arrayWrap(stores).forEach(function(s) {
-    if (!Stores.hasStore(s)) throw new Error('Store "' + s + '" not found. Please make sure it has been registered.');
-    required_stores.push(s);
-  });
 
   //
   // Accessors
@@ -1693,29 +1684,18 @@ var Flux = function(coordinators, stores) {
   //
 
   this.start = function() {
-    var self = this;
-
     if (_started == true) throw new Error('This flux is running already.');
 
     // instantiate stores
     required_stores.forEach(function(s) {
-      var s_instance = Stores.instantiateStore(s, self);
-      // inject the Flux instance id to the store instance so that we know which flux the instance is running within
-      _injectFluxId(s_instance, _id);
+      var s_instance = store_instances[s];
       // initialize store
       if (compare.isFunction(s_instance.$initialize)) s_instance.$initialize();
-      store_instances[s] = s_instance;
     });
 
     // instantiate coordinators
     required_coordinators.forEach(function(c) {
-      var c_instance = Coordinators.instantiateCoordinator(c, self);
-      if (!compare.isFunction(c_instance.$start)) {
-        throw new Error('Coordinator "' + c +  '" must have a $start() method.');
-      }
-      // inject the Flux instance id to the coordinator instance so that we know which flux the instance is running within
-      _injectFluxId(c_instance, _id);
-      coordinator_instances[c] = c_instance;
+      var c_instance = coordinator_instances[c];
       c_instance.$start();
     });
 
@@ -1759,6 +1739,36 @@ var Flux = function(coordinators, stores) {
     if (compare.isUndefined(instance)) throw new Error('Store "' + name + '" is not running within this Flux.');
     return instance;
   };
+
+
+  //
+  // Create Coordinator and Store instances
+  //
+
+  // check whether coordinators are valid
+  arrayUtils.arrayWrap(coordinators).forEach(function(c) {
+    if (!Coordinators.hasCoordinator(c)) throw new Error('Coordinator "' + c + '" not found. Please make sure it has been registered.');
+    required_coordinators.push(c);
+
+    var c_instance = Coordinators.instantiateCoordinator(c, self);
+    if (!compare.isFunction(c_instance.$start)) {
+      throw new Error('Coordinator "' + c +  '" must have a $start() method.');
+    }
+    // inject the Flux instance id to the coordinator instance so that we know which flux the instance is running within
+    _injectFluxId(c_instance, _id);
+    coordinator_instances[c] = c_instance;
+  });
+
+  // check whether stores are valid
+  arrayUtils.arrayWrap(stores).forEach(function(s) {
+    if (!Stores.hasStore(s)) throw new Error('Store "' + s + '" not found. Please make sure it has been registered.');
+    required_stores.push(s);
+
+    var s_instance = Stores.instantiateStore(s, self);
+    // inject the Flux instance id to the store instance so that we know which flux the instance is running within
+    _injectFluxId(s_instance, _id);
+    store_instances[s] = s_instance;
+  });
 };
 
 //
@@ -1795,13 +1805,55 @@ var DynaFlux = {
   registerStore      : Stores.registerStore,
   registerComponent  : Components.registerComponent,
   registerCoordinator: Coordinators.registerCoordinator,
+  DynaFluxMixin      : DynaFluxMixin
 };
 
 assign(DynaFlux, Actions, Events);
 
 module.exports = DynaFlux;
 
-},{"../utils/array_utils":38,"../utils/compare":39,"./action":27,"./action_dispatcher":28,"./components":29,"./coordinators":30,"./event":31,"./event_dispatcher":32,"./stores":34,"object-assign":19}],34:[function(_dereq_,module,exports){
+},{"../utils/array_utils":39,"../utils/compare":40,"./action":27,"./action_dispatcher":28,"./components":29,"./coordinators":30,"./event":31,"./event_dispatcher":32,"./mixin":34,"./stores":35,"object-assign":19}],34:[function(_dereq_,module,exports){
+'use strict';
+
+/**
+ * Constructor for creating a DynaFluxMixin that will pass the Flux instance to child components
+ *
+ * @param {React} React - instance of React
+ * @returns {Object} mixin definition
+ * @constructor
+ *
+ * @see {@link https://github.com/BinaryMuse/fluxxor/blob/master/lib/flux_mixin.js}
+ */
+var DynaFluxMixin = function(React) {
+  return {
+    componentWillMount : function() {
+      if (!this.props.flux && (!this.context || !this.context.flux)) {
+        throw new Error('Could not find flux in component\'s props or context');
+      }
+    },
+
+    childContextTypes : {
+      flux: React.PropTypes.object.isRequired
+    },
+
+    getChildContext : function() {
+      return {
+        flux: this.flux()
+      };
+    },
+
+    flux : function() {
+      return this.props.flux || (this.context && this.context.flux)
+    }
+  };
+};
+
+DynaFluxMixin.componentWillMount = function() {
+  throw new Error('DynaFluxMixin must be created through dyna.DynaFluxMixin(React), instead of being used directly.');
+};
+
+module.exports = DynaFluxMixin;
+},{}],35:[function(_dereq_,module,exports){
 'use strict';
 
 var compare      = _dereq_('../utils/compare');
@@ -1962,7 +2014,7 @@ module.exports = {
   hasStore        : hasStore,
   instantiateStore: instantiateStore
 };
-},{"../utils/compare":39,"event-emitter":1,"object-assign":19}],35:[function(_dereq_,module,exports){
+},{"../utils/compare":40,"event-emitter":1,"object-assign":19}],36:[function(_dereq_,module,exports){
 'use strict';
 
 var assign   = _dereq_('object-assign');
@@ -1982,7 +2034,7 @@ assign(dyna, DynaFlux);
 
 module.exports = dyna;
 
-},{"./core/core":20,"./flux/flux":33,"./providers/providers":37,"./utils/utils":41,"object-assign":19}],36:[function(_dereq_,module,exports){
+},{"./core/core":20,"./flux/flux":33,"./providers/providers":38,"./utils/utils":42,"object-assign":19}],37:[function(_dereq_,module,exports){
 'use strict';
 
 var compare = _dereq_('../utils/compare');
@@ -2036,11 +2088,11 @@ var Context = function() {
 providerManager.define('$context', Context);
 
 module.exports = Context;
-},{"../core/provider_manager":24,"../utils/compare":39}],37:[function(_dereq_,module,exports){
+},{"../core/provider_manager":24,"../utils/compare":40}],38:[function(_dereq_,module,exports){
 'use strict';
 
 _dereq_('./context');
-},{"./context":36}],38:[function(_dereq_,module,exports){
+},{"./context":37}],39:[function(_dereq_,module,exports){
 'use strict';
 
 
@@ -2067,7 +2119,7 @@ module.exports = {
     else return [obj];
   }
 };
-},{"./compare":39}],39:[function(_dereq_,module,exports){
+},{"./compare":40}],40:[function(_dereq_,module,exports){
 'use strict';
 
 /**
@@ -2133,7 +2185,7 @@ module.exports = {
     return true;
   }
 };
-},{}],40:[function(_dereq_,module,exports){
+},{}],41:[function(_dereq_,module,exports){
 module.exports = function(constructor, args) {
   'use strict';
 
@@ -2143,7 +2195,7 @@ module.exports = function(constructor, args) {
   F.prototype = constructor.prototype;
   return new F();
 };
-},{}],41:[function(_dereq_,module,exports){
+},{}],42:[function(_dereq_,module,exports){
 'use strict';
 
 var assign     = _dereq_('object-assign');
@@ -2152,5 +2204,5 @@ var ArrayUtils = _dereq_('./array_utils');
 var Compare    = _dereq_('./compare');
 
 module.exports = assign({}, ArrayUtils, Compare);
-},{"./array_utils":38,"./compare":39,"object-assign":19}]},{},[35])(35)
+},{"./array_utils":39,"./compare":40,"object-assign":19}]},{},[36])(36)
 });

@@ -17,14 +17,16 @@
       });
 
       var Buzzer = React.createClass({
+        mixins : [dyna.DynaFluxMixin(React)],
+
         getInitialState : function() {
           return {
-            status: this.props.flux.store('BuzzerStore').getStatus()
+            status: this.flux().store('BuzzerStore').getStatus()
           }
         },
 
         componentDidMount : function() {
-          this.props.flux.store('BuzzerStore').addChangeListener(this._statusChanged);
+          this.flux().store('BuzzerStore').addChangeListener(this._statusChanged);
         },
 
         render : function() {
@@ -38,12 +40,12 @@
 
         _buzzClick : function() {
           var click_action = actions.buzzClick();
-          click_action.dispatch(this.props.flux.action_dispatcher);
+          click_action.dispatch(this.flux().action_dispatcher);
         },
 
         _statusChanged : function() {
           this.setState({
-            status: this.props.flux.store('BuzzerStore').getStatus()
+            status: this.flux().store('BuzzerStore').getStatus()
           });
         }
       });

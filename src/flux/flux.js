@@ -18,10 +18,13 @@ var Events       = require('./event');
 var ActionDispatcher = require('./action_dispatcher');
 var EventDispatcher  = require('./event_dispatcher');
 
+var DynaFluxMixin    = require('./mixin');
+
 var next_flux_id = 1;
 
 var Flux = function(coordinators, stores) {
-  var _id = _generateFluxId();
+  var self = this;
+  var _id  = _generateFluxId();
   var _started = false;
 
   var action_dispatcher = new ActionDispatcher();
@@ -33,18 +36,6 @@ var Flux = function(coordinators, stores) {
 
   var required_coordinators = [], required_stores = [];
   var coordinator_instances = {}, store_instances = {};
-
-  // check whether coordinators are valid
-  arrayUtils.arrayWrap(coordinators).forEach(function(c) {
-    if (!Coordinators.hasCoordinator(c)) throw new Error('Coordinator "' + c + '" not found. Please make sure it has been registered.');
-    required_coordinators.push(c);
-  });
-
-  // check whether stores are valid
-  arrayUtils.arrayWrap(stores).forEach(function(s) {
-    if (!Stores.hasStore(s)) throw new Error('Store "' + s + '" not found. Please make sure it has been registered.');
-    required_stores.push(s);
-  });
 
   //
   // Accessors
@@ -59,29 +50,18 @@ var Flux = function(coordinators, stores) {
   //
 
   this.start = function() {
-    var self = this;
-
     if (_started == true) throw new Error('This flux is running already.');
 
     // instantiate stores
     required_stores.forEach(function(s) {
-      var s_instance = Stores.instantiateStore(s, self);
-      // inject the Flux instance id to the store instance so that we know which flux the instance is running within
-      _injectFluxId(s_instance, _id);
+      var s_instance = store_instances[s];
       // initialize store
       if (compare.isFunction(s_instance.$initialize)) s_instance.$initialize();
-      store_instances[s] = s_instance;
     });
 
     // instantiate coordinators
     required_coordinators.forEach(function(c) {
-      var c_instance = Coordinators.instantiateCoordinator(c, self);
-      if (!compare.isFunction(c_instance.$start)) {
-        throw new Error('Coordinator "' + c +  '" must have a $start() method.');
-      }
-      // inject the Flux instance id to the coordinator instance so that we know which flux the instance is running within
-      _injectFluxId(c_instance, _id);
-      coordinator_instances[c] = c_instance;
+      var c_instance = coordinator_instances[c];
       c_instance.$start();
     });
 
@@ -125,6 +105,36 @@ var Flux = function(coordinators, stores) {
     if (compare.isUndefined(instance)) throw new Error('Store "' + name + '" is not running within this Flux.');
     return instance;
   };
+
+
+  //
+  // Create Coordinator and Store instances
+  //
+
+  // check whether coordinators are valid
+  arrayUtils.arrayWrap(coordinators).forEach(function(c) {
+    if (!Coordinators.hasCoordinator(c)) throw new Error('Coordinator "' + c + '" not found. Please make sure it has been registered.');
+    required_coordinators.push(c);
+
+    var c_instance = Coordinators.instantiateCoordinator(c, self);
+    if (!compare.isFunction(c_instance.$start)) {
+      throw new Error('Coordinator "' + c +  '" must have a $start() method.');
+    }
+    // inject the Flux instance id to the coordinator instance so that we know which flux the instance is running within
+    _injectFluxId(c_instance, _id);
+    coordinator_instances[c] = c_instance;
+  });
+
+  // check whether stores are valid
+  arrayUtils.arrayWrap(stores).forEach(function(s) {
+    if (!Stores.hasStore(s)) throw new Error('Store "' + s + '" not found. Please make sure it has been registered.');
+    required_stores.push(s);
+
+    var s_instance = Stores.instantiateStore(s, self);
+    // inject the Flux instance id to the store instance so that we know which flux the instance is running within
+    _injectFluxId(s_instance, _id);
+    store_instances[s] = s_instance;
+  });
 };
 
 //
@@ -161,6 +171,7 @@ var DynaFlux = {
   registerStore      : Stores.registerStore,
   registerComponent  : Components.registerComponent,
   registerCoordinator: Coordinators.registerCoordinator,
+  DynaFluxMixin      : DynaFluxMixin
 };
 
 assign(DynaFlux, Actions, Events);

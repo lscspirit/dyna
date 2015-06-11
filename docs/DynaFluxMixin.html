@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
     <meta charset="utf-8">
-    <title>JSDoc: Class: ActionFactory</title>
+    <title>JSDoc: Class: DynaFluxMixin</title>
 
     <script src="scripts/prettify/prettify.js"> </script>
     <script src="scripts/prettify/lang-css.js"> </script>
@@ -17,7 +17,7 @@
 
 <div id="main">
 
-    <h1 class="page-title">Class: ActionFactory</h1>
+    <h1 class="page-title">Class: DynaFluxMixin</h1>
 
     
 
@@ -29,9 +29,7 @@
 <header>
     
         <h2>
-            <span class="ancestors"><a href="global.html#createActionFactory">createActionFactory</a>~</span>
-        
-        ActionFactory
+        DynaFluxMixin
         </h2>
         
     
@@ -44,114 +42,14 @@
 
     
 
-    <h4 class="name" id="ActionFactory"><span class="type-signature"></span>new ActionFactory<span class="signature">()</span><span class="type-signature"></span></h4>
+    <h4 class="name" id="DynaFluxMixin"><span class="type-signature"></span>new DynaFluxMixin<span class="signature">(React)</span><span class="type-signature"> &rarr; {Object}</span></h4>
 
     
 
 
 
 <div class="description">
-    Factory class for creating Actions
-</div>
-
-
-
-
-
-
-
-
-
-
-
-
-
-<dl class="details">
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-    <dt class="tag-source">Source:</dt>
-    <dd class="tag-source"><ul class="dummy"><li>
-        <a href="flux_action.js.html">flux/action.js</a>, <a href="flux_action.js.html#line68">line 68</a>
-    </li></ul></dd>
-    
-
-    
-
-    
-
-    
-</dl>
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-    
-    </div>
-
-    
-
-    
-
-    
-
-     
-
-    
-
-    
-
-    
-        <h3 class="subsection-title">Methods</h3>
-
-        
-            
-
-    
-
-    <h4 class="name" id="createAction"><span class="type-signature"></span>createAction<span class="signature">(name, payload)</span><span class="type-signature"> &rarr; {<a href="Action.html">Action</a>}</span></h4>
-
-    
-
-
-
-<div class="description">
-    Create a new Action object
+    Constructor for creating a DynaFluxMixin that will pass the Flux instance to child components
 </div>
 
 
@@ -187,13 +85,13 @@
 
         <tr>
             
-                <td class="name"><code>name</code></td>
+                <td class="name"><code>React</code></td>
             
 
             <td class="type">
             
                 
-<span class="param-type">string</span>
+<span class="param-type">React</span>
 
 
             
@@ -203,30 +101,7 @@
 
             
 
-            <td class="description last">name of the event</td>
-        </tr>
-
-    
-
-        <tr>
-            
-                <td class="name"><code>payload</code></td>
-            
-
-            <td class="type">
-            
-                
-<span class="param-type">*</span>
-
-
-            
-            </td>
-
-            
-
-            
-
-            <td class="description last">any data to be sent along with this Action</td>
+            <td class="description last">instance of React</td>
         </tr>
 
     
@@ -267,12 +142,19 @@
     
     <dt class="tag-source">Source:</dt>
     <dd class="tag-source"><ul class="dummy"><li>
-        <a href="flux_action.js.html">flux/action.js</a>, <a href="flux_action.js.html#line75">line 75</a>
+        <a href="flux_mixin.js.html">flux/mixin.js</a>, <a href="flux_mixin.js.html#line12">line 12</a>
     </li></ul></dd>
     
 
     
 
+    
+    <dt class="tag-see">See:</dt>
+    <dd class="tag-see">
+        <ul>
+            <li><a href="https://github.com/BinaryMuse/fluxxor/blob/master/lib/flux_mixin.js">https://github.com/BinaryMuse/fluxxor/blob/master/lib/flux_mixin.js</a></li>
+        </ul>
+    </dd>
     
 
     
@@ -294,7 +176,7 @@
 
         
 <div class="param-desc">
-    - the event object @see <a href="Action.html">Action</a>
+    mixin definition
 </div>
 
 
@@ -305,7 +187,7 @@
     </dt>
     <dd>
         
-<span class="param-type"><a href="Action.html">Action</a></span>
+<span class="param-type">Object</span>
 
 
     </dd>
@@ -315,7 +197,21 @@
 
 
 
-        
+    
+    </div>
+
+    
+
+    
+
+    
+
+     
+
+    
+
+    
+
     
 
     
