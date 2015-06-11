@@ -3,7 +3,6 @@
 var assign     = require('object-assign');
 var arrayUtils = require('../utils/array_utils');
 
-var coordin  = require('../flux/coordinators');
 var injector = require('./injector');
 var ujs      = require('./ujs');
 
@@ -25,13 +24,25 @@ function config(deps, fn) {
 }
 
 /**
- * Start the app with coordinators
- * @param {string|string[]}           coordinators - coordinator names
- * @param {coordinatorConfigCallback} config_cb    - coordinator configuration callback
+ * Start the app with a particular Flux
+ * @param {Flux} flux   - Flux instance
+ * @param {*}    [root] - component root under which dyna components will be mounted.
+ *                        This can either be a DOM node, jQuery object or a selector
+ *
+ * @example <caption>Start a single Flux</caption>
+ * var flux = dyna.flux(["Buzzer"], ["BuzzerStore"]);
+ * dyna.start(flux);
+ *
+ * @example <caption>Start multiple Flux on different set of nodesß</caption>
+ * var flux_one = dyna.flux(["Buzzer"], ["BuzzerStore"]);
+ * var flux_two = dyna.flux(["Buzzer"], ["BuzzerStore"]);
+ *
+ * dyna.start(flux_one, $('#buzzer-one'));
+ * dyna.start(flux_two, $('#buzzer-two'));
  */
-function start(coordinators, config_cb) {
-  coordin.startCoordinators.call(this, coordinators, config_cb);
-  this.mountComponents();
+function start(flux, root) {
+  flux.start();
+  this.mountComponents(flux, root);
 }
 
 //

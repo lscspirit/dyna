@@ -1,10 +1,10 @@
 'use strict';
 
-var recipes = require('../core/provider_recipes');
-var Flux    = require('flux');
+/**
+ * Event Dispatcher
+ * @module EventDispatcher
+ */
 
-var event_dispatcher = new Flux.Dispatcher();
+var Flux = require('flux');
 
-recipes.value('$eventDispatcher', event_dispatcher);
-
-module.exports = event_dispatcher;
+module.exports = Flux.Dispatcher;

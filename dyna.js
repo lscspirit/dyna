@@ -708,15 +708,9 @@ assign(core, Lifecycle);
 module.exports = core;
 
 },{"./external_lib":21,"./injector":22,"./lifecycle":23,"./provider_manager":24,"./provider_recipes":25,"object-assign":19}],21:[function(_dereq_,module,exports){
-(function (global){
 'use strict';
 
 var assign = _dereq_('object-assign');
-
-var external_libs = {
-  $: (typeof window !== "undefined" ? window.$_dyna : typeof global !== "undefined" ? global.$_dyna : null),
-  React: (typeof window !== "undefined" ? window.React : typeof global !== "undefined" ? global.React : null)
-};
 
 /**
  * Set the jQuery library to be used within this framework. If not specified, it will look
@@ -724,7 +718,7 @@ var external_libs = {
  * @param {Object} jQuery - jQuery object
  */
 function useJQuery(jQuery) {
-  external_libs.$ = jQuery;
+  this.$ = jQuery;
 }
 
 /**
@@ -733,18 +727,17 @@ function useJQuery(jQuery) {
  * @param {Object} React - ReactJS library object
  */
 function useReact(React) {
-  external_libs.React = React;
+  this.React = React;
 }
 
 var Libs = {
+  $        : window && window.$,
+  React    : window && window.React,
   useJQuery: useJQuery,
   useReact : useReact
 };
 
-assign(Libs, { libs: external_libs });
-
 module.exports = Libs;
-}).call(this,typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {})
 },{"object-assign":19}],22:[function(_dereq_,module,exports){
 'use strict';
 
@@ -908,7 +901,6 @@ module.exports = Injector;
 var assign     = _dereq_('object-assign');
 var arrayUtils = _dereq_('../utils/array_utils');
 
-var coordin  = _dereq_('../flux/coordinators');
 var injector = _dereq_('./injector');
 var ujs      = _dereq_('./ujs');
 
@@ -930,13 +922,25 @@ function config(deps, fn) {
 }
 
 /**
- * Start the app with coordinators
- * @param {string|string[]}           coordinators - coordinator names
- * @param {coordinatorConfigCallback} config_cb    - coordinator configuration callback
+ * Start the app with a particular Flux
+ * @param {Flux} flux   - Flux instance
+ * @param {*}    [root] - component root under which dyna components will be mounted.
+ *                        This can either be a DOM node, jQuery object or a selector
+ *
+ * @example <caption>Start a single Flux</caption>
+ * var flux = dyna.flux(["Buzzer"], ["BuzzerStore"]);
+ * dyna.start(flux);
+ *
+ * @example <caption>Start multiple Flux on different set of nodesß</caption>
+ * var flux_one = dyna.flux(["Buzzer"], ["BuzzerStore"]);
+ * var flux_two = dyna.flux(["Buzzer"], ["BuzzerStore"]);
+ *
+ * dyna.start(flux_one, $('#buzzer-one'));
+ * dyna.start(flux_two, $('#buzzer-two'));
  */
-function start(coordinators, config_cb) {
-  coordin.startCoordinators.call(this, coordinators, config_cb);
-  this.mountComponents();
+function start(flux, root) {
+  flux.start();
+  this.mountComponents(flux, root);
 }
 
 //
@@ -951,7 +955,7 @@ var Lifecycle = {
 assign(Lifecycle, ujs);
 
 module.exports = Lifecycle;
-},{"../flux/coordinators":30,"../utils/array_utils":38,"./injector":22,"./ujs":26,"object-assign":19}],24:[function(_dereq_,module,exports){
+},{"../utils/array_utils":38,"./injector":22,"./ujs":26,"object-assign":19}],24:[function(_dereq_,module,exports){
 'use strict';
 
 var compare = _dereq_('../utils/compare');
@@ -1138,23 +1142,31 @@ module.exports = {
 },{"../utils/compare":39,"../utils/create_with_args":40,"./provider_manager":24}],26:[function(_dereq_,module,exports){
 'use strict';
 
+var assign     = _dereq_('object-assign');
+var compare    = _dereq_('../utils/compare');
 var components = _dereq_('../flux/components');
 
 /**
  * Mounts corresponding components to DOM nodes that has "data-dyna-component" attribute set
  * The value of this attribute indicates which registered component to mount
+ *
+ * @param {Flux} flux   - instance of Flux
+ * @param {*}    [root] - component root under which dyna components will be mounted.
+ *                        This can either be a DOM node, jQuery object or a selector
  */
-function mountComponents() {
-  var $ = _dereq_('./external_lib').libs.$;
-  var React = _dereq_('./external_lib').libs.React;
+function mountComponents(flux, root) {
+  var $ = this.$;
+  var React = this.React;
 
-  var $elems = $("[data-dyna-component]");
+  var $root  = compare.isUndefined(root) ? $(':root') : $(root);
+  var $elems = $root.find('[data-dyna-component]').addBack('[data-dyna-component]');
 
   $elems.each(function() {
-    var component_name = $(this).data("dyna-component");
+    var component_name = $(this).data('dyna-component');
     var component = components.getComponent(component_name);
 
-    var props = $(this).data("props");
+    var props = $(this).data('props') || {};
+    assign(props, { flux: {id: flux._id(), store: flux.store, action_dispatcher: flux.actionDispatcher()} });
 
     React.render(React.createElement(component, props), this);
   });
@@ -1162,12 +1174,17 @@ function mountComponents() {
 
 /**
  * Unmount all previously mounted components
+ *
+ * @param {*} [root] - component root under which dyna components will be mounted.
+ *                     This can either be a DOM node, jQuery object or a selector
  */
-function unmountComponents() {
-  var $ = _dereq_('./external_lib').libs.$;
-  var React = _dereq_('./external_lib').libs.React;
+function unmountComponents(root) {
+  var $ = this.$;
+  var React = this.React;
 
-  var $elems = $("[data-dyna-component]");
+  var $root  = compare.isUndefined(root) ? $(':root') : $(root);
+  var $elems = $root.find('[data-dyna-component]').addBack('[data-dyna-component]');
+
   $elems.each(function() {
     React.unmountComponentAtNode(this);
   });
@@ -1177,135 +1194,162 @@ module.exports = {
   mountComponents   : mountComponents,
   unmountComponents : unmountComponents
 };
-},{"../flux/components":29,"./external_lib":21}],27:[function(_dereq_,module,exports){
+},{"../flux/components":29,"../utils/compare":39,"object-assign":19}],27:[function(_dereq_,module,exports){
 'use strict';
 
-var actionDispatcher = _dereq_('./action_dispatcher');
-
+/**
+ * Action object to be sent through the ActionDispatcher
+ * @param {string} name    - name of the event
+ * @param {*}      payload - any data to be sent along with this Event
+ * @constructor
+ */
 var Action = function(name, payload) {
   var _name    = name;
   var _payload = payload;
-  var _context = undefined;
 
+  /**
+   * Return the name of the Action
+   * @returns {string} event name
+   */
   this.name = function() {
     return _name;
   };
 
-  this.setContext = function(context) {
-    _context = context;
-  };
-
-  this.context = function() {
-    return _context;
-  };
-
+  /**
+   * Return the payload of the Action
+   * @returns {*} payload data
+   */
   this.payload = function() {
     return _payload;
   };
 
-  this.dispatch = function() {
-    actionDispatcher.emit(this.name(), this);
+  /**
+   * Dispatch this Action through a ActionDispatcher
+   * @param {ActionDispatcher} action_dispatcher - dispatcher through which the Action is dispatched
+   */
+  this.dispatch = function(action_dispatcher) {
+    action_dispatcher.emit(this.name(), this);
   };
 };
+
+/**
+ * Create a factory object that can build Action according to the <tt>action_specs</tt>
+ * @param action_specs - action specifications
+ * @returns {ActionFactory} the factory object
+ *
+ * @example
+ * var actions = dyna.createActionFactory({
+ *   buzzClick: function() {
+ *     return this.createAction('buzzer-clicked', 'clicked');
+ *   },
+ *   buzzSnooze: function() {
+ *     return this.createAction('buzzer-snoozed', 'snoozed');
+ *   }
+ * });
+ *
+ * // Component
+ * var Buzzer = React.createClass({
+ *   // ...
+ *
+ *   _buzzClick : function() {
+ *     var click = actions.buzzClick();
+ *     click.dispatch(this.props.flux.action_dispatcher);
+ *   }
+ * });
+ */
+function createActionFactory(action_specs) {
+  /**
+   * Factory class for creating Actions
+   * @constructor
+   */
+  var ActionFactory = function() {
+    /**
+     * Create a new Action object
+     * @param {string} name    - name of the event
+     * @param {*}      payload - any data to be sent along with this Action
+     * @returns {Action} - the event object @see {@link Action}
+     */
+    this.createAction = function(name, payload) {
+      return new Action(name, payload);
+    };
+  };
+
+  ActionFactory.prototype = Object.create(action_specs);
+  ActionFactory.prototype.constructor = ActionFactory;
+
+  return new ActionFactory();
+}
 
 //
 // Exports
 //
 
-module.exports = Action;
-},{"./action_dispatcher":28}],28:[function(_dereq_,module,exports){
+module.exports = { createActionFactory: createActionFactory };
+},{}],28:[function(_dereq_,module,exports){
 'use strict';
 
-var recipes = _dereq_('../core/provider_recipes');
+/**
+ * Action Dispatcher
+ * @module ActionDispatcher
+ */
+
 var EventEmitter = _dereq_('event-emitter');
 
-var emitter = EventEmitter();
-
 /**
- * Add a event listener
- * @param {string}    action_name - action name
- * @param {function}  listener    - listener function
- * @example
- * addListener('user_click', function(payload) {
+ * Action Dispatcher
+ * @alias module:ActionDispatcher
+ */
+var ActionDispatcher = function() {
+  var emitter = EventEmitter();
+
+  /**
+   * Add a event listener
+   * @param {string}    action_name - action name
+   * @param {function}  listener    - listener function
+   * @example
+   * addListener('user_click', function(payload) {
  *   payload.position
  * });
- */
-function addListener(action_name, listener) {
-  emitter.on(action_name, listener);
-}
+   */
+  this.addListener = function(action_name, listener) {
+    emitter.on(action_name, listener);
+  };
 
-/**
- * Remove a event listener
- * @param {string}    action_name - action name
- * @param {function}  listener    - listener function
- * @example
- * var listener;
- * addListener('user_click', listener = function(payload) {
+  /**
+   * Remove a event listener
+   * @param {string}    action_name - action name
+   * @param {function}  listener    - listener function
+   * @example
+   * var listener;
+   * addListener('user_click', listener = function(payload) {
  *   payload.position
  * });
- * removeListener('user_click', listener);
- */
-function removeListener(action_name, listener) {
-  emitter.off(action_name, listener);
-}
+   * removeListener('user_click', listener);
+   */
+  this.removeListener = function(action_name, listener) {
+    emitter.off(action_name, listener);
+  };
 
-/**
- * Emit a event
- * @param {string} action_name - action name
- * @param {{}}     payload     - payload data
- * @example
- * emit('user_click', { position: { x: 100, y: 50 } });
- */
-function emit(action_name, payload) {
-  emitter.emit(action_name, payload);
-}
-
-var action_dispatcher = {
-  addListener     : addListener,
-  removeListenter : removeListener,
-  emit            : emit
+  /**
+   * Emit a event
+   * @param {string} action_name - action name
+   * @param {{}}     payload     - payload data
+   * @example
+   * emit('user_click', { position: { x: 100, y: 50 } });
+   */
+  this.emit = function(action_name, payload) {
+    emitter.emit(action_name, payload);
+  };
 };
 
-recipes.value('$actionDispatcher', action_dispatcher);
-
-module.exports = action_dispatcher;
-},{"../core/provider_recipes":25,"event-emitter":1}],29:[function(_dereq_,module,exports){
+module.exports = ActionDispatcher;
+},{"event-emitter":1}],29:[function(_dereq_,module,exports){
 'use strict';
 
-var compare      = _dereq_('../utils/compare');
-var recipes      = _dereq_('../core/provider_recipes');
-var assign       = _dereq_('object-assign');
-
-var Action = _dereq_('./action');
-var stores = _dereq_('./stores');
+var compare = _dereq_('../utils/compare');
+var assign  = _dereq_('object-assign');
 
 var _components = {};
-
-/**
- * Provide a context for defining Components
- * @param {componentDefCallback} callback - callback function that handles the component definition logic
- * @example
- * defineComponents(function($components, $stores, $Action, React, $) {
- *   var SomeComponent = React.createClass({
- *     //...
- *   });
- *
- *   $components.registerComponent('SomeComponent', SomeComponent);
- * });
- */
-function defineComponents(callback) {
-  var external_lib = _dereq_('../core/external_lib').libs;
-  var React  = external_lib.React;
-  var jQuery = external_lib.$;
-
-  callback(
-    { registerComponent: registerComponent, getComponent: getComponent },
-    { getStore: stores.getStore, requireStores: stores.requireStores, releaseStores: stores.releaseStores },
-    Action,
-    React,
-    jQuery
-  );
-}
 
 /**
  * Component definition context callback
@@ -1321,12 +1365,20 @@ function defineComponents(callback) {
  * Register a React Component
  * @param {string}     name            - name of the component
  * @param {ReactClass} react_component - react component class
+ *
+ * @example
+ * var React = dyna.React;
+ * var SomeComponent = React.createClass({
+ *   //...
+ * });
+ *
+ * dyna.registerComponent('SomeComponent', SomeComponent);
  */
 function registerComponent(name, react_component) {
   if(_components[name]) {
-    throw new Error('conflicting component name: "' + name+ '"');
+    throw new Error('Conflicting component name: "' + name+ '". Please use another name.');
   } else if(!compare.isString(name)) {
-    throw new Error('component name must be a string');
+    throw new Error('Component name must be a string');
   }
 
   _components[name] = react_component;
@@ -1334,7 +1386,7 @@ function registerComponent(name, react_component) {
 
 /**
  * Get the registered React Component
- * @param {string}     name            - name of the component
+ * @param {string} name - name of the component
  * @returns {ReactClass} the matching react component class
  */
 function getComponent(name) {
@@ -1348,164 +1400,79 @@ function getComponent(name) {
 // Exports
 //
 
-// make getComponent() available under the $components provider
-recipes.value('$components', { getComponent: getComponent });
-
 module.exports = {
-  defineComponents: defineComponents,
-  getComponent    : getComponent
+  registerComponent: registerComponent,
+  getComponent     : getComponent
 };
 
 
-},{"../core/external_lib":21,"../core/provider_recipes":25,"../utils/compare":39,"./action":27,"./stores":34,"object-assign":19}],30:[function(_dereq_,module,exports){
+},{"../utils/compare":39,"object-assign":19}],30:[function(_dereq_,module,exports){
 'use strict';
 
 var argsCreate = _dereq_('../utils/create_with_args');
 var arrayUtils = _dereq_('../utils/array_utils');
 var compare    = _dereq_('../utils/compare');
 
-var recipes  = _dereq_('../core/provider_recipes');
 var injector = _dereq_('../core/injector');
-var stores   = _dereq_('./stores');
-var Event    = _dereq_('./event');
-var ActionDispatcher = _dereq_('./action_dispatcher');
 
-var _coordinators = {};
+var _coordinator_defs = {};
 
 /**
- * Provide a context for defining Coordinators
- * @param {coordinatorDefCallback} callback - callback function that handles the coordinator definition logic
+ * Register a coordinator
+ * @param {string}   name - name of the coordinator
+ * @param {function} def  - a constructor function in the <tt>Dependency Injection</tt> format
+ * @throws {Error} if coordinator with the same name has already been defined
+ *
  * @example
- * defineCoordinators(function($coordinators, $Event, $actionDispatcher, $stores) {
- *   var Alarm = function(speaker) {
- *     var interval_secs = 0;
- *     var interval = null;
+ * var Alarm = function(speaker) {
+ *   var interval_secs = 0;
+ *   var interval = null;
  *
- *     // starting up
- *     this.$start = function() {
- *       interval = setInterval(function() { speaker.buzz(); }, interval_secs * 1000);
- *     };
- *
- *     // stopping
- *     this.$stop  = function() {
- *       clearInterval(interval);
- *     };
- *
- *     // configuration
- *     this.setInterval = function(seconds) {
- *       interval_secs = seconds;
- *     };
+ *   // starting up
+ *   this.$start = function() {
+ *     interval = setInterval(function() { speaker.buzz(); }, interval_secs * 1000);
  *   };
  *
- *   $coordinators.registerCoordinator('Alarm', ['speaker', Alarm]);
- * });
+ *   // stopping
+ *   this.$stop  = function() {
+ *     clearInterval(interval);
+ *   };
+ *
+ *   // configuration
+ *   this.setInterval = function(seconds) {
+ *     interval_secs = seconds;
+ *   };
+ * };
+ *
+ * dyna.registerCoordinator('Alarm', ['speaker', Alarm]);
  *
  * @example To configure a coordinator
  * dyna.start(["Alarm"], function(Alarm) {
  *   Alarm.setInterval(60);
  * });
  */
-function defineCoordinators(callback) {
-  callback(
-    { registerCoordinator: registerCoordinator },
-    Event,
-    { addListener: ActionDispatcher.addListener, removeListener: ActionDispatcher.removeListener },
-    stores
-  );
-}
-
-/**
- * Coordinator definition context callback
- * @callback coordinatorDefCallback
- * @param {{}} $coordinators     - with registerCoordinator() method
- * @param {*}  $Event            - Event constructor
- * @param {*}  $actionDispatcher - Action Dispatcher with addListener() and removeListener() methods
- * @param {{}} $stores           - with getStore(), requireStores() and releaseStores() methods
- * @see {@link defineCoordinators}
- */
-
-/**
- * Register a coordinator
- * @param {string}   name - name of the coordinator
- * @param {function} fn   - a constructor function in the <tt>Dependency Injection</tt> format
- * @throws {Error} if coordinator with the same name has already been defined
- */
-function registerCoordinator(name, fn) {
-  if (compare.isUndefined(_coordinators[name])) {
-    _coordinators[name] = { started: false, def: fn, instance: null };
-  } else throw new Error('conflicting coordinator name: "' + name+ '"');
-}
-
-/**
- * Start coordinators
- * @param {string|string[]}           coordinators - list of coordinator names
- * @param {coordinatorConfigCallback} config_cb    - coordinator configuration callback
- * @throws {Error} if coordinator is not registered or is not valid
- */
-function startCoordinators(coordinator_names, config_cb) {
-  var names     = arrayUtils.arrayWrap(coordinator_names);
-  var instances = names.map(function(n) { return _instantiateCoordinator.call(this, n); });
-
-  // invoke the config callback function
-  if (compare.isFunction(config_cb)) config_cb.apply(this, instances);
-
-  names.forEach(function(n) {
-    var state = _coordinators[n];
-    state.instance.$start.call(this);
-    state.started = true;
-  });
-}
-
-/**
- * Coordinator configuration callback
- * @callback coordinatorConfigCallback
- * @param {...*} coordinators - coordinator instances in the same order as the coordinator names specified in {@link startCoordinators}
- * @see {@link startCoordinators}
- */
-
-/**
- * Stop coordinators
- * @param {string|string[]} coordinators - list of coordinator names
- * @throws {Error} if coordinator is not registered or is not running
- */
-function stopCoordinators(coordinator_names) {
-  var names = arrayUtils.arrayWrap(coordinator_names);
-  for (var i = 0; i < names.length; i++) {
-    var state = _coordinators[names[i]];
-
-    if (!state) {
-      throw new Error('Coordinator "' + names[i] + '" is not found. Please use registerCoordinator() to define one first.');
-    } else if (!state.started) {
-      throw new Error('Coordinator "' + names[i] + '" is not running.');
-    } else {
-      if (compare.isFunction(state.instance.$stop)) {
-        state.instance.$stop.call(this);
-      }
-
-      state.started = true;
-    }
+function registerCoordinator(name, def) {
+  if (!compare.isUndefined(_coordinator_defs[name])) {
+    throw new Error('Conflicting coordinator name: "' + name+ '". Please use another name.');
   }
-}
 
-//
-// Private Methods
-//
+  _coordinator_defs[name] = def;
+}
 
 /**
  * Instantiate (without starting) a coordinator
  * @param {string} name - name of coordinator
- * @returns {*} coordinator instance
+ * @param {Flux}   flux - Flux instance in which to create the Store
+ * @returns {Object} coordinator instance
  * @throws {Error} if coordinator is not registered or has already been initiated before
  * @private
  */
-function _instantiateCoordinator(name) {
-  var state = _coordinators[name];
-  if (compare.isUndefined(state)) {
+function instantiateCoordinator(name, flux) {
+  var def = _coordinator_defs[name];
+  if (compare.isUndefined(def)) {
     throw new Error('Coordinator "' + name + '" is not found. Please use registerCoordinator() to define one first.');
-  } else if (state.instance) {
-    throw new Error('Coordinator "' + name + '" has already been initiated.')
   } else {
-    var fn = arrayUtils.arrayWrap(state.def);
+    var fn = arrayUtils.arrayWrap(def);
     var c = fn[fn.length - 1];
     var deps = fn.slice(0, -1);
 
@@ -1513,68 +1480,158 @@ function _instantiateCoordinator(name) {
       return argsCreate(c, arguments);
     });
 
-    state.instance = injector.invoke(this, deps);
-    return state.instance;
+    var instance = injector.invoke(this, deps);
+    return _injectFlux(instance, flux);
   }
 }
+
+/**
+ * Check whether a Coordinator is registered
+ * @param {string} name - name of the Coordinator
+ * @returns {boolean} true if Coordinator with the provided name is registered; other false.
+ */
+function hasCoordinator(name) {
+  return !compare.isUndefined(_coordinator_defs[name]);
+}
+
+//
+// Private Methods
+//
+
+
+/**
+ * Inject the Flux instance to the <tt>flux</tt> property of the Coordinator
+ * @param {Object} instance - Coordinator instance
+ * @param {Flux}   flux     - Flux instance
+ * @returns {Object} the coordinator instance
+ * @private
+ */
+var _injectFlux = function(instance, flux) {
+  if (instance.hasOwnProperty('flux')) throw new Error('"flux" is a reserved property in coordinator. Please use another name for your property.');
+
+  var event_dispatcher  = flux.eventDispatcher();
+  var action_dispatcher = flux.actionDispatcher();
+
+  instance.flux = {
+    store: flux.store,
+    event_dispatcher : event_dispatcher,
+    action_dispatcher: action_dispatcher
+  };
+
+  return instance;
+};
 
 //
 // Exports
 //
 
 module.exports = {
-  defineCoordinators: defineCoordinators,
-  startCoordinators : startCoordinators,
-  stopCoordinators  : stopCoordinators
+  hasCoordinator        : hasCoordinator,
+  registerCoordinator   : registerCoordinator,
+  instantiateCoordinator: instantiateCoordinator
 };
-},{"../core/injector":22,"../core/provider_recipes":25,"../utils/array_utils":38,"../utils/compare":39,"../utils/create_with_args":40,"./action_dispatcher":28,"./event":31,"./stores":34}],31:[function(_dereq_,module,exports){
+},{"../core/injector":22,"../utils/array_utils":38,"../utils/compare":39,"../utils/create_with_args":40}],31:[function(_dereq_,module,exports){
 'use strict';
 
-var eventDispatcher = _dereq_('./event_dispatcher');
-
+/**
+ * Event object to be sent through the EventDispatcher
+ * @param {string} name    - name of the event
+ * @param {*}      payload - any data to be sent along with this Event
+ * @constructor
+ */
 var Event = function(name, payload) {
   var _name    = name;
   var _payload = payload;
-  var _context = undefined;
 
+  /**
+   * Return the name of the Event
+   * @returns {string} event name
+   */
   this.name = function() {
     return _name;
   };
 
-  this.setContext = function(context) {
-    _context = context;
-  };
-
-  this.context = function() {
-    return _context;
-  };
-
+  /**
+   * Return the payload of the Event
+   * @returns {*} payload data
+   */
   this.payload = function() {
     return _payload;
   };
 
-  this.dispatch = function() {
-    eventDispatcher.dispatch(this);
+  /**
+   * Dispatch this Event through a EventDispatcher
+   * @param {EventDispatcher} event_dispatcher - dispatcher through which the Event is dispatched
+   */
+  this.dispatch = function(event_dispatcher) {
+    event_dispatcher.dispatch(this);
   };
 };
+
+/**
+ * Create a factory object that can build Action according to the <tt>event_specs</tt>
+ * @param {object} event_specs - event specifications
+ * @returns {EventFactory} the factory object
+ *
+ * @example
+ * var events = dyna.createEventFactory({
+ *   statusChange : function(status) {
+ *     return this.createEvent('buzzer.status-change', status);
+ *   },
+ *   snoozed : function() {
+ *     return this.createEvent('buzzer.snoozed');
+ *   }
+ * });
+ *
+ * // Coordinator
+ * var Buzzer = function() {
+ *   // ...
+ *
+ *   function _buzzStatusChange(status) {
+ *     events.statusChange(status).dispatch(this.flux.event_dispatcher);
+ *   }
+ * }
+ */
+function createEventFactory(event_specs) {
+  /**
+   * Factory class for creating Events.
+   * @constructor
+   */
+  var EventFactory = function() {
+    /**
+     * Create a new Event object
+     * @param {string} name    - name of the event
+     * @param {*}      payload - any data to be sent along with this Event
+     * @returns {Event} - the event object @see {@link Event}
+     */
+    this.createEvent = function(name, payload) {
+      return new Event(name, payload);
+    }
+  };
+
+  EventFactory.prototype = Object.create(event_specs);
+  EventFactory.prototype.constructor = EventFactory;
+
+  return new EventFactory();
+}
 
 //
 // Exports
 //
 
-module.exports = Event;
-},{"./event_dispatcher":32}],32:[function(_dereq_,module,exports){
+module.exports = { createEventFactory: createEventFactory };
+},{}],32:[function(_dereq_,module,exports){
 'use strict';
 
-var recipes = _dereq_('../core/provider_recipes');
-var Flux    = _dereq_('flux');
+/**
+ * Event Dispatcher
+ * @module EventDispatcher
+ */
 
-var event_dispatcher = new Flux.Dispatcher();
+var Flux = _dereq_('flux');
 
-recipes.value('$eventDispatcher', event_dispatcher);
-
-module.exports = event_dispatcher;
-},{"../core/provider_recipes":25,"flux":16}],33:[function(_dereq_,module,exports){
+module.exports = Flux.Dispatcher;
+},{"flux":16}],33:[function(_dereq_,module,exports){
 'use strict';
 
 /**
@@ -1582,241 +1639,330 @@ module.exports = event_dispatcher;
  * @exports flux/flux
  */
 
-var assign = _dereq_('object-assign');
+var arrayUtils = _dereq_('../utils/array_utils');
+var assign     = _dereq_('object-assign');
+var compare    = _dereq_('../utils/compare');
 
 var Stores       = _dereq_('./stores');
 var Components   = _dereq_('./components');
 var Coordinators = _dereq_('./coordinators');
+var Actions      = _dereq_('./action');
+var Events       = _dereq_('./event');
 
-var DynaFlux = {
-  defineStores      : Stores.defineStores,
-  defineComponents  : Components.defineComponents,
-  defineCoordinators: Coordinators.defineCoordinators
+var ActionDispatcher = _dereq_('./action_dispatcher');
+var EventDispatcher  = _dereq_('./event_dispatcher');
+
+var next_flux_id = 1;
+
+var Flux = function(coordinators, stores) {
+  var _id = _generateFluxId();
+  var _started = false;
+
+  var action_dispatcher = new ActionDispatcher();
+  var event_dispatcher  = new EventDispatcher();
+
+  // inject the flux instance id to the dispatchers
+  _injectFluxId(action_dispatcher, _id);
+  _injectFluxId(event_dispatcher, _id);
+
+  var required_coordinators = [], required_stores = [];
+  var coordinator_instances = {}, store_instances = {};
+
+  // check whether coordinators are valid
+  arrayUtils.arrayWrap(coordinators).forEach(function(c) {
+    if (!Coordinators.hasCoordinator(c)) throw new Error('Coordinator "' + c + '" not found. Please make sure it has been registered.');
+    required_coordinators.push(c);
+  });
+
+  // check whether stores are valid
+  arrayUtils.arrayWrap(stores).forEach(function(s) {
+    if (!Stores.hasStore(s)) throw new Error('Store "' + s + '" not found. Please make sure it has been registered.');
+    required_stores.push(s);
+  });
+
+  //
+  // Accessors
+  //
+
+  this._id = function() {
+    return _id;
+  };
+
+  //
+  // Public Methods
+  //
+
+  this.start = function() {
+    var self = this;
+
+    if (_started == true) throw new Error('This flux is running already.');
+
+    // instantiate stores
+    required_stores.forEach(function(s) {
+      var s_instance = Stores.instantiateStore(s, self);
+      // inject the Flux instance id to the store instance so that we know which flux the instance is running within
+      _injectFluxId(s_instance, _id);
+      // initialize store
+      if (compare.isFunction(s_instance.$initialize)) s_instance.$initialize();
+      store_instances[s] = s_instance;
+    });
+
+    // instantiate coordinators
+    required_coordinators.forEach(function(c) {
+      var c_instance = Coordinators.instantiateCoordinator(c, self);
+      if (!compare.isFunction(c_instance.$start)) {
+        throw new Error('Coordinator "' + c +  '" must have a $start() method.');
+      }
+      // inject the Flux instance id to the coordinator instance so that we know which flux the instance is running within
+      _injectFluxId(c_instance, _id);
+      coordinator_instances[c] = c_instance;
+      c_instance.$start();
+    });
+
+    _started = true;
+  };
+
+  /**
+   * Flux configuration callback
+   * @callback FluxConfigCallback
+   * @param {...*} coordinators - coordinator instances in the same order as the coordinator names specified in Flux constructor
+   */
+
+  /**
+   * Configure Flux's coordinators
+   * @param {FluxConfigCallback} config_cb
+   */
+  this.config = function(config_cb) {
+    var instances = [];
+
+    required_coordinators.forEach(function(c) {
+      instances.push(coordinator_instances[c]);
+    });
+
+    config_cb.apply(this, instances);
+  };
+
+  //
+  // Accessors
+  //
+
+  this.eventDispatcher = function() {
+    return event_dispatcher;
+  };
+
+  this.actionDispatcher = function() {
+    return action_dispatcher;
+  };
+
+  this.store = function(name) {
+    var instance = store_instances[name];
+    if (compare.isUndefined(instance)) throw new Error('Store "' + name + '" is not running within this Flux.');
+    return instance;
+  };
 };
-
-module.exports = DynaFlux;
-
-},{"./components":29,"./coordinators":30,"./stores":34,"object-assign":19}],34:[function(_dereq_,module,exports){
-'use strict';
-
-var compare      = _dereq_('../utils/compare');
-var recipes      = _dereq_('../core/provider_recipes');
-var arrayUtils   = _dereq_('../utils/array_utils');
-var assign       = _dereq_('object-assign');
-var EventEmitter = _dereq_('event-emitter');
-
-var eventDispatcher = _dereq_('./event_dispatcher');
-
-/** Keep track of all registered Store constructors */
-var _store_constructors = {};
-/** Keep track of all Store instances */
-var _context_store_instances = {};
-
-/**
- * Provide a context for defining Stores
- * @param {storeDefCallback} callback - callback function that handles the store definition logic
- * @example
- * defineStores(function($stores) {
- *   var todoStore = function() {
- *     //...
- *     this.$processEvent = function(event) { };
- *   };
- *
- *   $stores.registerStore("todoStore", todoStore);
- * });
- */
-function defineStores(callback) {
-  callback(
-    { registerStore: registerStore, getStore: getStore, requireStores: requireStores, releaseStores: releaseStores }
-  );
-}
-
-/**
- * Store definition context callback
- * @callback storeDefCallback
- * @param {{}} $stores - with registerStore(), getStore(), requireStores() and releaseStores() methods
- */
-
-/**
- * Register a Store
- *
- * When registering a new store, the Store object will be extended with three event methods: emitChange(), addChangeListener(),
- * removeChangeListener() and waitFor(), plus a event_dispatch_token property.
- *
- * @param {string}   name        - name of the Store
- * @param {function} constructor - constructor of the Store
- * @throws {Error} if constructor is not valid
- *
- * @example
- * var todoStore = function() {
- *   var _todo_list = ["buy milk", "clean dishes"];
- *
- *   this.getTodoList = function() { return _todo_list; };
- *
- *   this.$processEvent = function(event) {
- *     if (event.eventName() == 'todo_create') {
- *       emitChange();
- *     }
- *   };
- * };
- *
- * // Register a new Store named "todoStore"
- * stores.registerStore("todoStore", todoStore);
- * // Retrieve the "todoStore"
- * stores.getStore("todoStore");                  //=> todoStore instance
- */
-function registerStore(name, constructor) {
-  if(_store_constructors[name]) {
-    throw new Error('conflicting store name: "' + name+ '"');
-  } else if(!compare.isFunction(constructor)) {
-    throw new Error('store constructor must be a function');
-  } else if (!compare.isString(name)) {
-    throw new Error('store name must be a string');
-  }
-
-  _store_constructors[name] = constructor;
-}
-
-/**
- * Indicate store(s) as required resource(s) in a certain context
- * Any store marked as required in a context must be released using <tt>releaseStores()</tt> when it is no longer needed.
- * @param {string|string[]} store_names - store names
- * @param {string}          [context]   - the context to create the store in. Default is global context.
- * @throws {Error} if there is no store constructor registered under any of the store names
- */
-function requireStores(store_names, context) {
-  var names = arrayUtils.arrayWrap(store_names);
-
-  names.forEach(function(s) {
-    var context_key = _contextStoreKey(s, context);
-    var cache = _context_store_instances[context_key];
-
-    if (cache) {
-      // if the store has already been initiated in this context
-      // then simply increment the reference count
-      cache.reference_count++;
-    } else if (cache = _store_constructors[s]){
-      // otherwise initiate the store under this context
-      var instance = _instantiateStore(cache);
-      _context_store_instances[context_key] = {
-        instance        : instance,
-        reference_count : 1
-      };
-    } else {
-      throw new Error('There is no registered Store with the name "' + s + '"');
-    }
-  });
-}
-
-/**
- * Release store(s) from a certain context
- * This is to release any store that was marked as required using <tt>requireStores()</tt>
- * @param {string|string[]} store_names - store names
- * @param {string}          [context]   - the context to create the store in. Default is global context.
- */
-function releaseStores(store_names, context) {
-  var names = arrayUtils.arrayWrap(store_names);
-
-  names.forEach(function(s) {
-    var context_key = _contextStoreKey(s, context);
-    var cache = _context_store_instances[context_key];
-
-    if (cache) {
-      if (cache.reference_count > 1) cache.reference_count--;
-      else delete _context_store_instances[context_key];
-    }
-  });
-}
-
-/**
- * Get an instance of a store for a particular context
- * @param {string} name       - name of the store
- * @param {string} [context]  - the context to create the store in. Default is global context.
- * @throws {Error} if the store has not yet been instantiated
- * @returns {Object} an instance of the store in the provided context
- */
-function getStore(name, context) {
-  var context_key = _contextStoreKey(name, context);
-  var cache = _context_store_instances[context_key];
-
-  if (cache) return cache.instance;
-  else throw new Error('The store "' + name + '" has not yet been loaded under this context. Please use requireStores() to load any store needed.');
-}
 
 //
 // Private Methods
 //
 
 /**
- * Generate a key for a store in a particular context
- * @param {string} store_name - store name
- * @param {string} [context]  - context name
- * @returns {string} a string that represents the store in a context
+ * Generate a id for Flux instance
  * @private
  */
-function _contextStoreKey(store_name, context) {
-  if(compare.isString(context)) return context + '-' + store_name;
-  else return '__default-' + store_name;
+function _generateFluxId() {
+  return next_flux_id++;
 }
 
 /**
- * Instantiate a Store instance
- * @param {function} constructor - Store constructor function
- * @returns {Object} an instance of the store
- * @throws {Error} if store instance does not have a $processEvent method
+ * Inject the Flux instance id as the <tt>_flux_id</tt> property to an Object
+ * @param {Object}  obj - any object
+ * @param {Integer} id  - Flux instance id
  * @private
  */
-function _instantiateStore(constructor) {
-  var instance = new constructor();
-
-  if (!compare.isFunction(instance.$processEvent)) {
-    throw new Error('Store object does not have a $processEvent method');
-  } else {
-    var emitter = EventEmitter();
-
-    // add dispatcher methods
-    assign(instance, {
-      emitChange          : function() {
-        emitter.emit('CHANGE');
-      },
-
-      addChangeListener   : function(listener) {
-        emitter.on('CHANGE', listener);
-      },
-
-      removeChangeListener: function(listener) {
-        emitter.off('CHANGE', listener);
-      },
-
-      waitFor             : function(tokens) {
-        eventDispatcher.waitFor(tokens);
-      },
-
-      event_dispatch_token: eventDispatcher.register(instance.$processEvent.bind(instance))
-    });
-  }
-
-  return instance;
+function _injectFluxId(obj, id) {
+  if (obj.hasOwnProperty('_flux_id')) throw new Error('Cannot inject Flux Id. Object already has a _flux_id property.');
+  obj._flux_id = id;
 }
 
 //
 // Exports
 //
 
-// make store methods except defineStores() available under the $stores provider
-recipes.value('$stores', {
-  getStore     : getStore,
-  requireStores: requireStores,
-  releaseStores: releaseStores
-});
+var DynaFlux = {
+  flux : function(coordinators, stores) {
+    return new Flux(coordinators, stores);
+  },
+  registerStore      : Stores.registerStore,
+  registerComponent  : Components.registerComponent,
+  registerCoordinator: Coordinators.registerCoordinator,
+};
+
+assign(DynaFlux, Actions, Events);
+
+module.exports = DynaFlux;
+
+},{"../utils/array_utils":38,"../utils/compare":39,"./action":27,"./action_dispatcher":28,"./components":29,"./coordinators":30,"./event":31,"./event_dispatcher":32,"./stores":34,"object-assign":19}],34:[function(_dereq_,module,exports){
+'use strict';
+
+var compare      = _dereq_('../utils/compare');
+var assign       = _dereq_('object-assign');
+var EventEmitter = _dereq_('event-emitter');
+
+/** Keep track of all registered Store specs */
+var _store_specs = {};
+
+var Store = function(flux) {
+  var emitter = EventEmitter();
+
+  var _processEvent = function() {
+    return this.$processEvent.apply(this, arguments);
+  };
+
+  var event_dispatcher       = flux.eventDispatcher();
+  var event_dispatcher_token = event_dispatcher.register(_processEvent.bind(this));
+
+  /**
+   * Return the Flux instance in which this Store is contained
+   * @returns {{}} store() method of the Flux instance
+   */
+  this.flux = function() {
+    return { store: flux.store };
+  };
+
+  /**
+   * Emit a change event signalling a data change within the Store
+   */
+  this.emitChange = function() {
+    emitter.emit('CHANGE');
+  };
+
+  /**
+   * Add a change listener to handle the Store's data change event
+   * @param {function} listener - change handler function
+   */
+  this.addChangeListener = function(listener) {
+    emitter.on('CHANGE', listener);
+  };
+
+  /**
+   * Remove a change listener
+   * @param {function} listener - change handler function that was previously added
+   */
+  this.removeChangeListener = function(listener) {
+    emitter.off('CHANGE', listener);
+  };
+
+  /**
+   * Wait for other Stores to finished processing an event before processing begin in this Store
+   * @param tokens
+   */
+  this.waitFor = function(tokens) {
+    event_dispatcher.waitFor(tokens);
+  };
+
+  /**
+   * Return the event dispatcher token of this Store
+   * @returns {*} event dispatcher token
+   */
+  this.eventDispatcherToken = function() {
+    return event_dispatcher_token;
+  };
+};
+
+/**
+ * Register a Store
+ *
+ * Register the specification (implementation) for a Store.
+ *
+ * A Store will not be instantiated at this point. The Store instance will be created when the Flux flow starts.
+ * Once created, the Store instance will be extended with four event methods: emitChange(), addChangeListener(),
+ * removeChangeListener() and waitFor(), plus flux() and eventDispatcherToken().
+ *
+ * The Store spec must include a $processEvent() method. It may also include a $initialize() method for initializing the Store.
+ *
+ * @param {string} name - name of the Store
+ * @param {Object} spec - store specification
+ * @throws {Error} if name or spec is not valid
+ *
+ * @example
+ * // Register a new Store named "todoStore"
+ * dyna.registerStore("TodoStore", {
+ *   $initialize : function() {
+ *     this.todo_list = [];
+ *   },
+ *
+ *   $processEvent : function(event) {
+ *     if (event.eventName() == 'todo_add') {
+ *       this.addItem(event.payload());
+ *     }
+ *   },
+ *
+ *   addItem : function(item) {
+ *     this.todo_list.push(item);
+ *     this.emitChange();
+ *   },
+ *
+ *   todoList : function() {
+ *     return this.todo_list;
+ *   }
+ * });
+ *
+ */
+function registerStore(name, spec) {
+  if (_store_specs[name]) {
+    throw new Error('Conflicting store name: "' + name+ '". Please use another name.');
+  } else if (!compare.isString(name)) {
+    throw new Error('Store name must be a string.');
+  } else if (!compare.isObject(spec)) {
+    throw new Error('Store spec must be an Object.');
+  } else if (!compare.isFunction(spec.$processEvent)) {
+    throw new Error('Store spec must included a $processEvent method.');
+  }
+
+  _store_specs[name] = spec;
+}
+
+/**
+ * Instantiate a store under with a Flux
+ * @param {string} name - name of the Store
+ * @param {Flux}   flux - Flux instance in which to create the Store
+ * @returns {Object} the Store instance
+ */
+function instantiateStore(name, flux) {
+  var spec = _store_specs[name];
+
+  if (compare.isUndefined(spec)) throw new Error('Store spec with name "' + '" not found. Please register it with registerStore() first.');
+  else if (!compare.isObject(spec)) throw new Error('Store spec must be an Object.');
+
+  var StoreInstance = function() {
+    Store.call(this, flux);
+  };
+
+  StoreInstance.prototype = Object.create(spec);
+  StoreInstance.prototype.constructor = StoreInstance;
+
+  return new StoreInstance();
+}
+
+/**
+ * Check whether a Store is registered
+ * @param {string} name - name of the Store
+ * @returns {boolean} true if Store with the provided name is registered; other false.
+ */
+function hasStore(name) {
+  return !compare.isUndefined(_store_specs[name]);
+}
+
+//
+// Exports
+//
 
 module.exports = {
-  defineStores : defineStores,
-  getStore     : getStore,
-  requireStores: requireStores,
-  releaseStores: releaseStores
+  registerStore   : registerStore,
+  hasStore        : hasStore,
+  instantiateStore: instantiateStore
 };
-},{"../core/provider_recipes":25,"../utils/array_utils":38,"../utils/compare":39,"./event_dispatcher":32,"event-emitter":1,"object-assign":19}],35:[function(_dereq_,module,exports){
+},{"../utils/compare":39,"event-emitter":1,"object-assign":19}],35:[function(_dereq_,module,exports){
 'use strict';
 
 var assign   = _dereq_('object-assign');

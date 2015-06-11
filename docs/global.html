@@ -98,68 +98,6 @@
 
         
             
-<h4 class="name" id="_context_store_instances"><span class="type-signature"></span>_context_store_instances<span class="type-signature"></span></h4>
-
-
-
-
-<div class="description">
-    Keep track of all Store instances
-</div>
-
-
-
-
-
-
-
-<dl class="details">
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-    <dt class="tag-source">Source:</dt>
-    <dd class="tag-source"><ul class="dummy"><li>
-        <a href="flux_stores.js.html">flux/stores.js</a>, <a href="flux_stores.js.html#line14">line 14</a>
-    </li></ul></dd>
-    
-
-    
-
-    
-
-    
-</dl>
-
-
-
-
-
-
-        
-            
 <h4 class="name" id="_provider_fns"><span class="type-signature"></span>_provider_fns<span class="type-signature"></span></h4>
 
 
@@ -284,13 +222,13 @@
 
         
             
-<h4 class="name" id="_store_constructors"><span class="type-signature"></span>_store_constructors<span class="type-signature"></span></h4>
+<h4 class="name" id="_store_specs"><span class="type-signature"></span>_store_specs<span class="type-signature"></span></h4>
 
 
 
 
 <div class="description">
-    Keep track of all registered Store constructors
+    Keep track of all registered Store specs
 </div>
 
 
@@ -328,7 +266,7 @@
     
     <dt class="tag-source">Source:</dt>
     <dd class="tag-source"><ul class="dummy"><li>
-        <a href="flux_stores.js.html">flux/stores.js</a>, <a href="flux_stores.js.html#line12">line 12</a>
+        <a href="flux_stores.js.html">flux/stores.js</a>, <a href="flux_stores.js.html#line8">line 8</a>
     </li></ul></dd>
     
 
@@ -355,14 +293,14 @@
 
     
 
-    <h4 class="name" id="_contextStoreKey"><span class="type-signature">(private) </span>_contextStoreKey<span class="signature">(store_name, context<span class="signature-attributes">opt</span>)</span><span class="type-signature"> &rarr; {string}</span></h4>
+    <h4 class="name" id="_injectFlux"><span class="type-signature">(private) </span>_injectFlux<span class="signature">(instance, flux)</span><span class="type-signature"> &rarr; {Object}</span></h4>
 
     
 
 
 
 <div class="description">
-    Generate a key for a store in a particular context
+    Inject the Flux instance to the <tt>flux</tt> property of the Coordinator
 </div>
 
 
@@ -386,8 +324,6 @@
         <th>Type</th>
 
         
-        <th>Attributes</th>
-        
 
         
 
@@ -400,64 +336,46 @@
 
         <tr>
             
-                <td class="name"><code>store_name</code></td>
+                <td class="name"><code>instance</code></td>
             
 
             <td class="type">
             
                 
-<span class="param-type">string</span>
+<span class="param-type">Object</span>
 
 
             
             </td>
 
             
-                <td class="attributes">
-                
-
-                
-
-                
-                </td>
-            
 
             
 
-            <td class="description last">store name</td>
+            <td class="description last">Coordinator instance</td>
         </tr>
 
     
 
         <tr>
             
-                <td class="name"><code>context</code></td>
+                <td class="name"><code>flux</code></td>
             
 
             <td class="type">
             
                 
-<span class="param-type">string</span>
+<span class="param-type">Flux</span>
 
 
             
             </td>
 
             
-                <td class="attributes">
-                
-                    &lt;optional><br>
-                
-
-                
-
-                
-                </td>
-            
 
             
 
-            <td class="description last">context name</td>
+            <td class="description last">Flux instance</td>
         </tr>
 
     
@@ -498,7 +416,7 @@
     
     <dt class="tag-source">Source:</dt>
     <dd class="tag-source"><ul class="dummy"><li>
-        <a href="flux_stores.js.html">flux/stores.js</a>, <a href="flux_stores.js.html#line158">line 158</a>
+        <a href="flux_coordinators.js.html">flux/coordinators.js</a>, <a href="flux_coordinators.js.html#line100">line 100</a>
     </li></ul></dd>
     
 
@@ -525,371 +443,7 @@
 
         
 <div class="param-desc">
-    a string that represents the store in a context
-</div>
-
-
-
-<dl>
-    <dt>
-        Type
-    </dt>
-    <dd>
-        
-<span class="param-type">string</span>
-
-
-    </dd>
-</dl>
-
-    
-
-
-
-        
-            
-
-    
-
-    <h4 class="name" id="_instantiateCoordinator"><span class="type-signature">(private) </span>_instantiateCoordinator<span class="signature">(name)</span><span class="type-signature"> &rarr; {*}</span></h4>
-
-    
-
-
-
-<div class="description">
-    Instantiate (without starting) a coordinator
-</div>
-
-
-
-
-
-
-
-
-
-    <h5>Parameters:</h5>
-    
-
-<table class="params">
-    <thead>
-    <tr>
-        
-        <th>Name</th>
-        
-
-        <th>Type</th>
-
-        
-
-        
-
-        <th class="last">Description</th>
-    </tr>
-    </thead>
-
-    <tbody>
-    
-
-        <tr>
-            
-                <td class="name"><code>name</code></td>
-            
-
-            <td class="type">
-            
-                
-<span class="param-type">string</span>
-
-
-            
-            </td>
-
-            
-
-            
-
-            <td class="description last">name of coordinator</td>
-        </tr>
-
-    
-    </tbody>
-</table>
-
-
-
-
-
-
-<dl class="details">
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-    <dt class="tag-source">Source:</dt>
-    <dd class="tag-source"><ul class="dummy"><li>
-        <a href="flux_coordinators.js.html">flux/coordinators.js</a>, <a href="flux_coordinators.js.html#line141">line 141</a>
-    </li></ul></dd>
-    
-
-    
-
-    
-
-    
-</dl>
-
-
-
-
-
-
-
-
-
-
-
-<h5>Throws:</h5>
-
-        
-
-<dl>
-    <dt>
-        <div class="param-desc">
-        if coordinator is not registered or has already been initiated before
-        </div>
-    </dt>
-    <dd></dd>
-    <dt>
-        <dl>
-            <dt>
-                Type
-            </dt>
-            <dd>
-                
-<span class="param-type">Error</span>
-
-
-            </dd>
-        </dl>
-    </dt>
-    <dd></dd>
-</dl>
-
-
-    
-
-
-<h5>Returns:</h5>
-
-        
-<div class="param-desc">
-    coordinator instance
-</div>
-
-
-
-<dl>
-    <dt>
-        Type
-    </dt>
-    <dd>
-        
-<span class="param-type">*</span>
-
-
-    </dd>
-</dl>
-
-    
-
-
-
-        
-            
-
-    
-
-    <h4 class="name" id="_instantiateStore"><span class="type-signature">(private) </span>_instantiateStore<span class="signature">(constructor)</span><span class="type-signature"> &rarr; {Object}</span></h4>
-
-    
-
-
-
-<div class="description">
-    Instantiate a Store instance
-</div>
-
-
-
-
-
-
-
-
-
-    <h5>Parameters:</h5>
-    
-
-<table class="params">
-    <thead>
-    <tr>
-        
-        <th>Name</th>
-        
-
-        <th>Type</th>
-
-        
-
-        
-
-        <th class="last">Description</th>
-    </tr>
-    </thead>
-
-    <tbody>
-    
-
-        <tr>
-            
-                <td class="name"><code>constructor</code></td>
-            
-
-            <td class="type">
-            
-                
-<span class="param-type">function</span>
-
-
-            
-            </td>
-
-            
-
-            
-
-            <td class="description last">Store constructor function</td>
-        </tr>
-
-    
-    </tbody>
-</table>
-
-
-
-
-
-
-<dl class="details">
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-    <dt class="tag-source">Source:</dt>
-    <dd class="tag-source"><ul class="dummy"><li>
-        <a href="flux_stores.js.html">flux/stores.js</a>, <a href="flux_stores.js.html#line170">line 170</a>
-    </li></ul></dd>
-    
-
-    
-
-    
-
-    
-</dl>
-
-
-
-
-
-
-
-
-
-
-
-<h5>Throws:</h5>
-
-        
-
-<dl>
-    <dt>
-        <div class="param-desc">
-        if store instance does not have a $processEvent method
-        </div>
-    </dt>
-    <dd></dd>
-    <dt>
-        <dl>
-            <dt>
-                Type
-            </dt>
-            <dd>
-                
-<span class="param-type">Error</span>
-
-
-            </dd>
-        </dl>
-    </dt>
-    <dd></dd>
-</dl>
-
-
-    
-
-
-<h5>Returns:</h5>
-
-        
-<div class="param-desc">
-    an instance of the store
+    the coordinator instance
 </div>
 
 
@@ -915,14 +469,14 @@
 
     
 
-    <h4 class="name" id="addListener"><span class="type-signature"></span>addListener<span class="signature">(action_name, listener)</span><span class="type-signature"></span></h4>
+    <h4 class="name" id="addChangeListener"><span class="type-signature"></span>addChangeListener<span class="signature">(listener)</span><span class="type-signature"></span></h4>
 
     
 
 
 
 <div class="description">
-    Add a event listener
+    Add a change listener to handle the Store's data change event
 </div>
 
 
@@ -958,29 +512,6 @@
 
         <tr>
             
-                <td class="name"><code>action_name</code></td>
-            
-
-            <td class="type">
-            
-                
-<span class="param-type">string</span>
-
-
-            
-            </td>
-
-            
-
-            
-
-            <td class="description last">action name</td>
-        </tr>
-
-    
-
-        <tr>
-            
                 <td class="name"><code>listener</code></td>
             
 
@@ -997,7 +528,7 @@
 
             
 
-            <td class="description last">listener function</td>
+            <td class="description last">change handler function</td>
         </tr>
 
     
@@ -1038,7 +569,7 @@
     
     <dt class="tag-source">Source:</dt>
     <dd class="tag-source"><ul class="dummy"><li>
-        <a href="flux_action_dispatcher.js.html">flux/action_dispatcher.js</a>, <a href="flux_action_dispatcher.js.html#line17">line 17</a>
+        <a href="flux_stores.js.html">flux/stores.js</a>, <a href="flux_stores.js.html#line39">line 39</a>
     </li></ul></dd>
     
 
@@ -1061,13 +592,6 @@
 
 
 
-
-
-    <h5>Example</h5>
-    
-    <pre class="prettyprint"><code>addListener('user_click', function(payload) {
-  payload.position
-});</code></pre>
 
 
 
@@ -1203,7 +727,7 @@ Configure the various services and coordinators here
     
     <dt class="tag-source">Source:</dt>
     <dd class="tag-source"><ul class="dummy"><li>
-        <a href="core_lifecycle.js.html">core/lifecycle.js</a>, <a href="core_lifecycle.js.html#line21">line 21</a>
+        <a href="core_lifecycle.js.html">core/lifecycle.js</a>, <a href="core_lifecycle.js.html#line20">line 20</a>
     </li></ul></dd>
     
 
@@ -1241,14 +765,14 @@ Configure the various services and coordinators here
 
     
 
-    <h4 class="name" id="defineComponents"><span class="type-signature"></span>defineComponents<span class="signature">(callback)</span><span class="type-signature"></span></h4>
+    <h4 class="name" id="createActionFactory"><span class="type-signature"></span>createActionFactory<span class="signature">(action_specs)</span><span class="type-signature"> &rarr; {ActionFactory}</span></h4>
 
     
 
 
 
 <div class="description">
-    Provide a context for defining Components
+    Create a factory object that can build Action according to the <tt>action_specs</tt>
 </div>
 
 
@@ -1284,15 +808,10 @@ Configure the various services and coordinators here
 
         <tr>
             
-                <td class="name"><code>callback</code></td>
+                <td class="name"><code>action_specs</code></td>
             
 
             <td class="type">
-            
-                
-<span class="param-type"><a href="global.html#componentDefCallback">componentDefCallback</a></span>
-
-
             
             </td>
 
@@ -1300,7 +819,7 @@ Configure the various services and coordinators here
 
             
 
-            <td class="description last">callback function that handles the component definition logic</td>
+            <td class="description last">action specifications</td>
         </tr>
 
     
@@ -1341,7 +860,7 @@ Configure the various services and coordinators here
     
     <dt class="tag-source">Source:</dt>
     <dd class="tag-source"><ul class="dummy"><li>
-        <a href="flux_components.js.html">flux/components.js</a>, <a href="flux_components.js.html#line24">line 24</a>
+        <a href="flux_action.js.html">flux/action.js</a>, <a href="flux_action.js.html#line63">line 63</a>
     </li></ul></dd>
     
 
@@ -1364,16 +883,49 @@ Configure the various services and coordinators here
 
 
 
+<h5>Returns:</h5>
+
+        
+<div class="param-desc">
+    the factory object
+</div>
+
+
+
+<dl>
+    <dt>
+        Type
+    </dt>
+    <dd>
+        
+<span class="param-type">ActionFactory</span>
+
+
+    </dd>
+</dl>
+
+    
 
 
     <h5>Example</h5>
     
-    <pre class="prettyprint"><code>defineComponents(function($components, $stores, $Action, React, $) {
-  var SomeComponent = React.createClass({
-    //...
-  });
+    <pre class="prettyprint"><code>var actions = dyna.createActionFactory({
+  buzzClick: function() {
+    return this.createAction('buzzer-clicked', 'clicked');
+  },
+  buzzSnooze: function() {
+    return this.createAction('buzzer-snoozed', 'snoozed');
+  }
+});
 
-  $components.registerComponent('SomeComponent', SomeComponent);
+// Component
+var Buzzer = React.createClass({
+  // ...
+
+  _buzzClick : function() {
+    var click = actions.buzzClick();
+    click.dispatch(this.props.flux.action_dispatcher);
+  }
 });</code></pre>
 
 
@@ -1383,14 +935,14 @@ Configure the various services and coordinators here
 
     
 
-    <h4 class="name" id="defineCoordinators"><span class="type-signature"></span>defineCoordinators<span class="signature">(callback)</span><span class="type-signature"></span></h4>
+    <h4 class="name" id="createEventFactory"><span class="type-signature"></span>createEventFactory<span class="signature">(event_specs)</span><span class="type-signature"> &rarr; {EventFactory}</span></h4>
 
     
 
 
 
 <div class="description">
-    Provide a context for defining Coordinators
+    Create a factory object that can build Action according to the <tt>event_specs</tt>
 </div>
 
 
@@ -1426,13 +978,13 @@ Configure the various services and coordinators here
 
         <tr>
             
-                <td class="name"><code>callback</code></td>
+                <td class="name"><code>event_specs</code></td>
             
 
             <td class="type">
             
                 
-<span class="param-type"><a href="global.html#coordinatorDefCallback">coordinatorDefCallback</a></span>
+<span class="param-type">object</span>
 
 
             
@@ -1442,7 +994,7 @@ Configure the various services and coordinators here
 
             
 
-            <td class="description last">callback function that handles the coordinator definition logic</td>
+            <td class="description last">event specifications</td>
         </tr>
 
     
@@ -1483,7 +1035,7 @@ Configure the various services and coordinators here
     
     <dt class="tag-source">Source:</dt>
     <dd class="tag-source"><ul class="dummy"><li>
-        <a href="flux_coordinators.js.html">flux/coordinators.js</a>, <a href="flux_coordinators.js.html#line48">line 48</a>
+        <a href="flux_event.js.html">flux/event.js</a>, <a href="flux_event.js.html#line62">line 62</a>
     </li></ul></dd>
     
 
@@ -1506,181 +1058,49 @@ Configure the various services and coordinators here
 
 
 
-
-
-    <h5>Examples</h5>
-    
-    <pre class="prettyprint"><code>defineCoordinators(function($coordinators, $Event, $actionDispatcher, $stores) {
-  var Alarm = function(speaker) {
-    var interval_secs = 0;
-    var interval = null;
-
-    // starting up
-    this.$start = function() {
-      interval = setInterval(function() { speaker.buzz(); }, interval_secs * 1000);
-    };
-
-    // stopping
-    this.$stop  = function() {
-      clearInterval(interval);
-    };
-
-    // configuration
-    this.setInterval = function(seconds) {
-      interval_secs = seconds;
-    };
-  };
-
-  $coordinators.registerCoordinator('Alarm', ['speaker', Alarm]);
-});</code></pre>
-
-    <pre class="prettyprint"><code>To configure a coordinator
-dyna.start(["Alarm"], function(Alarm) {
-  Alarm.setInterval(60);
-});</code></pre>
-
-
+<h5>Returns:</h5>
 
         
-            
-
-    
-
-    <h4 class="name" id="defineStores"><span class="type-signature"></span>defineStores<span class="signature">(callback)</span><span class="type-signature"></span></h4>
-
-    
-
-
-
-<div class="description">
-    Provide a context for defining Stores
+<div class="param-desc">
+    the factory object
 </div>
 
 
 
-
-
-
-
-
-
-    <h5>Parameters:</h5>
-    
-
-<table class="params">
-    <thead>
-    <tr>
+<dl>
+    <dt>
+        Type
+    </dt>
+    <dd>
         
-        <th>Name</th>
-        
-
-        <th>Type</th>
-
-        
-
-        
-
-        <th class="last">Description</th>
-    </tr>
-    </thead>
-
-    <tbody>
-    
-
-        <tr>
-            
-                <td class="name"><code>callback</code></td>
-            
-
-            <td class="type">
-            
-                
-<span class="param-type"><a href="global.html#storeDefCallback">storeDefCallback</a></span>
+<span class="param-type">EventFactory</span>
 
 
-            
-            </td>
-
-            
-
-            
-
-            <td class="description last">callback function that handles the store definition logic</td>
-        </tr>
-
-    
-    </tbody>
-</table>
-
-
-
-
-
-
-<dl class="details">
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-    <dt class="tag-source">Source:</dt>
-    <dd class="tag-source"><ul class="dummy"><li>
-        <a href="flux_stores.js.html">flux/stores.js</a>, <a href="flux_stores.js.html#line29">line 29</a>
-    </li></ul></dd>
-    
-
-    
-
-    
-
-    
+    </dd>
 </dl>
 
-
-
-
-
-
-
-
-
-
-
-
-
+    
 
 
     <h5>Example</h5>
     
-    <pre class="prettyprint"><code>defineStores(function($stores) {
-  var todoStore = function() {
-    //...
-    this.$processEvent = function(event) { };
-  };
+    <pre class="prettyprint"><code>var events = dyna.createEventFactory({
+  statusChange : function(status) {
+    return this.createEvent('buzzer.status-change', status);
+  },
+  snoozed : function() {
+    return this.createEvent('buzzer.snoozed');
+  }
+});
 
-  $stores.registerStore("todoStore", todoStore);
-});</code></pre>
+// Coordinator
+var Buzzer = function() {
+  // ...
+
+  function _buzzStatusChange(status) {
+    events.statusChange(status).dispatch(this.flux.event_dispatcher);
+  }
+}</code></pre>
 
 
 
@@ -1689,14 +1109,14 @@ dyna.start(["Alarm"], function(Alarm) {
 
     
 
-    <h4 class="name" id="emit"><span class="type-signature"></span>emit<span class="signature">(action_name, payload)</span><span class="type-signature"></span></h4>
+    <h4 class="name" id="emitChange"><span class="type-signature"></span>emitChange<span class="signature">()</span><span class="type-signature"></span></h4>
 
     
 
 
 
 <div class="description">
-    Emit a event
+    Emit a change event signalling a data change within the Store
 </div>
 
 
@@ -1707,139 +1127,270 @@ dyna.start(["Alarm"], function(Alarm) {
 
 
 
-    <h5>Parameters:</h5>
-    
-
-<table class="params">
-    <thead>
-    <tr>
-        
-        <th>Name</th>
-        
-
-        <th>Type</th>
-
-        
-
-        
-
-        <th class="last">Description</th>
-    </tr>
-    </thead>
-
-    <tbody>
-    
-
-        <tr>
-            
-                <td class="name"><code>action_name</code></td>
-            
-
-            <td class="type">
-            
-                
-<span class="param-type">string</span>
 
 
-            
-            </td>
 
-            
 
-            
-
-            <td class="description last">action name</td>
-        </tr>
+<dl class="details">
 
     
 
-        <tr>
-            
-                <td class="name"><code>payload</code></td>
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+    <dt class="tag-source">Source:</dt>
+    <dd class="tag-source"><ul class="dummy"><li>
+        <a href="flux_stores.js.html">flux/stores.js</a>, <a href="flux_stores.js.html#line31">line 31</a>
+    </li></ul></dd>
+    
+
+    
+
+    
+
+    
+</dl>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+        
             
 
-            <td class="type">
+    
+
+    <h4 class="name" id="eventDispatcherToken"><span class="type-signature"></span>eventDispatcherToken<span class="signature">()</span><span class="type-signature"> &rarr; {*}</span></h4>
+
+    
+
+
+
+<div class="description">
+    Return the event dispatcher token of this Store
+</div>
+
+
+
+
+
+
+
+
+
+
+
+
+
+<dl class="details">
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+    <dt class="tag-source">Source:</dt>
+    <dd class="tag-source"><ul class="dummy"><li>
+        <a href="flux_stores.js.html">flux/stores.js</a>, <a href="flux_stores.js.html#line63">line 63</a>
+    </li></ul></dd>
+    
+
+    
+
+    
+
+    
+</dl>
+
+
+
+
+
+
+
+
+
+
+
+
+
+<h5>Returns:</h5>
+
+        
+<div class="param-desc">
+    event dispatcher token
+</div>
+
+
+
+<dl>
+    <dt>
+        Type
+    </dt>
+    <dd>
+        
+<span class="param-type">*</span>
+
+
+    </dd>
+</dl>
+
+    
+
+
+
+        
             
-                
+
+    
+
+    <h4 class="name" id="flux"><span class="type-signature"></span>flux<span class="signature">()</span><span class="type-signature"> &rarr; {Object}</span></h4>
+
+    
+
+
+
+<div class="description">
+    Return the Flux instance in which this Store is contained
+</div>
+
+
+
+
+
+
+
+
+
+
+
+
+
+<dl class="details">
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+    <dt class="tag-source">Source:</dt>
+    <dd class="tag-source"><ul class="dummy"><li>
+        <a href="flux_stores.js.html">flux/stores.js</a>, <a href="flux_stores.js.html#line24">line 24</a>
+    </li></ul></dd>
+    
+
+    
+
+    
+
+    
+</dl>
+
+
+
+
+
+
+
+
+
+
+
+
+
+<h5>Returns:</h5>
+
+        
+<div class="param-desc">
+    store() method of the Flux instance
+</div>
+
+
+
+<dl>
+    <dt>
+        Type
+    </dt>
+    <dd>
+        
 <span class="param-type">Object</span>
 
 
-            
-            </td>
-
-            
-
-            
-
-            <td class="description last">payload data</td>
-        </tr>
-
-    
-    </tbody>
-</table>
-
-
-
-
-
-
-<dl class="details">
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-    <dt class="tag-source">Source:</dt>
-    <dd class="tag-source"><ul class="dummy"><li>
-        <a href="flux_action_dispatcher.js.html">flux/action_dispatcher.js</a>, <a href="flux_action_dispatcher.js.html#line43">line 43</a>
-    </li></ul></dd>
-    
-
-    
-
-    
-
-    
+    </dd>
 </dl>
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-    <h5>Example</h5>
     
-    <pre class="prettyprint"><code>emit('user_click', { position: { x: 100, y: 50 } });</code></pre>
 
 
 
@@ -2052,7 +1603,7 @@ dyna.start(["Alarm"], function(Alarm) {
     
     <dt class="tag-source">Source:</dt>
     <dd class="tag-source"><ul class="dummy"><li>
-        <a href="flux_components.js.html">flux/components.js</a>, <a href="flux_components.js.html#line68">line 68</a>
+        <a href="flux_components.js.html">flux/components.js</a>, <a href="flux_components.js.html#line46">line 46</a>
     </li></ul></dd>
     
 
@@ -2258,14 +1809,14 @@ dyna.start(["Alarm"], function(Alarm) {
 
     
 
-    <h4 class="name" id="getStore"><span class="type-signature"></span>getStore<span class="signature">(name, context<span class="signature-attributes">opt</span>)</span><span class="type-signature"> &rarr; {Object}</span></h4>
+    <h4 class="name" id="hasCoordinator"><span class="type-signature"></span>hasCoordinator<span class="signature">(name)</span><span class="type-signature"> &rarr; {boolean}</span></h4>
 
     
 
 
 
 <div class="description">
-    Get an instance of a store for a particular context
+    Check whether a Coordinator is registered
 </div>
 
 
@@ -2288,8 +1839,6 @@ dyna.start(["Alarm"], function(Alarm) {
 
         <th>Type</th>
 
-        
-        <th>Attributes</th>
         
 
         
@@ -2316,51 +1865,10 @@ dyna.start(["Alarm"], function(Alarm) {
             </td>
 
             
-                <td class="attributes">
-                
-
-                
-
-                
-                </td>
-            
 
             
 
-            <td class="description last">name of the store</td>
-        </tr>
-
-    
-
-        <tr>
-            
-                <td class="name"><code>context</code></td>
-            
-
-            <td class="type">
-            
-                
-<span class="param-type">string</span>
-
-
-            
-            </td>
-
-            
-                <td class="attributes">
-                
-                    &lt;optional><br>
-                
-
-                
-
-                
-                </td>
-            
-
-            
-
-            <td class="description last">the context to create the store in. Default is global context.</td>
+            <td class="description last">name of the Coordinator</td>
         </tr>
 
     
@@ -2401,7 +1909,336 @@ dyna.start(["Alarm"], function(Alarm) {
     
     <dt class="tag-source">Source:</dt>
     <dd class="tag-source"><ul class="dummy"><li>
-        <a href="flux_stores.js.html">flux/stores.js</a>, <a href="flux_stores.js.html#line139">line 139</a>
+        <a href="flux_coordinators.js.html">flux/coordinators.js</a>, <a href="flux_coordinators.js.html#line84">line 84</a>
+    </li></ul></dd>
+    
+
+    
+
+    
+
+    
+</dl>
+
+
+
+
+
+
+
+
+
+
+
+
+
+<h5>Returns:</h5>
+
+        
+<div class="param-desc">
+    true if Coordinator with the provided name is registered; other false.
+</div>
+
+
+
+<dl>
+    <dt>
+        Type
+    </dt>
+    <dd>
+        
+<span class="param-type">boolean</span>
+
+
+    </dd>
+</dl>
+
+    
+
+
+
+        
+            
+
+    
+
+    <h4 class="name" id="hasStore"><span class="type-signature"></span>hasStore<span class="signature">(name)</span><span class="type-signature"> &rarr; {boolean}</span></h4>
+
+    
+
+
+
+<div class="description">
+    Check whether a Store is registered
+</div>
+
+
+
+
+
+
+
+
+
+    <h5>Parameters:</h5>
+    
+
+<table class="params">
+    <thead>
+    <tr>
+        
+        <th>Name</th>
+        
+
+        <th>Type</th>
+
+        
+
+        
+
+        <th class="last">Description</th>
+    </tr>
+    </thead>
+
+    <tbody>
+    
+
+        <tr>
+            
+                <td class="name"><code>name</code></td>
+            
+
+            <td class="type">
+            
+                
+<span class="param-type">string</span>
+
+
+            
+            </td>
+
+            
+
+            
+
+            <td class="description last">name of the Store</td>
+        </tr>
+
+    
+    </tbody>
+</table>
+
+
+
+
+
+
+<dl class="details">
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+    <dt class="tag-source">Source:</dt>
+    <dd class="tag-source"><ul class="dummy"><li>
+        <a href="flux_stores.js.html">flux/stores.js</a>, <a href="flux_stores.js.html#line148">line 148</a>
+    </li></ul></dd>
+    
+
+    
+
+    
+
+    
+</dl>
+
+
+
+
+
+
+
+
+
+
+
+
+
+<h5>Returns:</h5>
+
+        
+<div class="param-desc">
+    true if Store with the provided name is registered; other false.
+</div>
+
+
+
+<dl>
+    <dt>
+        Type
+    </dt>
+    <dd>
+        
+<span class="param-type">boolean</span>
+
+
+    </dd>
+</dl>
+
+    
+
+
+
+        
+            
+
+    
+
+    <h4 class="name" id="instantiateCoordinator"><span class="type-signature">(private) </span>instantiateCoordinator<span class="signature">(name, flux)</span><span class="type-signature"> &rarr; {Object}</span></h4>
+
+    
+
+
+
+<div class="description">
+    Instantiate (without starting) a coordinator
+</div>
+
+
+
+
+
+
+
+
+
+    <h5>Parameters:</h5>
+    
+
+<table class="params">
+    <thead>
+    <tr>
+        
+        <th>Name</th>
+        
+
+        <th>Type</th>
+
+        
+
+        
+
+        <th class="last">Description</th>
+    </tr>
+    </thead>
+
+    <tbody>
+    
+
+        <tr>
+            
+                <td class="name"><code>name</code></td>
+            
+
+            <td class="type">
+            
+                
+<span class="param-type">string</span>
+
+
+            
+            </td>
+
+            
+
+            
+
+            <td class="description last">name of coordinator</td>
+        </tr>
+
+    
+
+        <tr>
+            
+                <td class="name"><code>flux</code></td>
+            
+
+            <td class="type">
+            
+                
+<span class="param-type">Flux</span>
+
+
+            
+            </td>
+
+            
+
+            
+
+            <td class="description last">Flux instance in which to create the Store</td>
+        </tr>
+
+    
+    </tbody>
+</table>
+
+
+
+
+
+
+<dl class="details">
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+    <dt class="tag-source">Source:</dt>
+    <dd class="tag-source"><ul class="dummy"><li>
+        <a href="flux_coordinators.js.html">flux/coordinators.js</a>, <a href="flux_coordinators.js.html#line61">line 61</a>
     </li></ul></dd>
     
 
@@ -2429,7 +2266,7 @@ dyna.start(["Alarm"], function(Alarm) {
 <dl>
     <dt>
         <div class="param-desc">
-        if the store has not yet been instantiated
+        if coordinator is not registered or has already been initiated before
         </div>
     </dt>
     <dd></dd>
@@ -2457,7 +2294,7 @@ dyna.start(["Alarm"], function(Alarm) {
 
         
 <div class="param-desc">
-    an instance of the store in the provided context
+    coordinator instance
 </div>
 
 
@@ -2483,15 +2320,190 @@ dyna.start(["Alarm"], function(Alarm) {
 
     
 
-    <h4 class="name" id="mountComponents"><span class="type-signature"></span>mountComponents<span class="signature">()</span><span class="type-signature"></span></h4>
+    <h4 class="name" id="instantiateStore"><span class="type-signature"></span>instantiateStore<span class="signature">(name, flux)</span><span class="type-signature"> &rarr; {Object}</span></h4>
 
     
 
 
 
 <div class="description">
-    Mounts corresponding components to DOM nodes that has "data-dyna-component" attribute set
-The value of this attribute indicates which registered component to mount
+    Instantiate a store under with a Flux
+</div>
+
+
+
+
+
+
+
+
+
+    <h5>Parameters:</h5>
+    
+
+<table class="params">
+    <thead>
+    <tr>
+        
+        <th>Name</th>
+        
+
+        <th>Type</th>
+
+        
+
+        
+
+        <th class="last">Description</th>
+    </tr>
+    </thead>
+
+    <tbody>
+    
+
+        <tr>
+            
+                <td class="name"><code>name</code></td>
+            
+
+            <td class="type">
+            
+                
+<span class="param-type">string</span>
+
+
+            
+            </td>
+
+            
+
+            
+
+            <td class="description last">name of the Store</td>
+        </tr>
+
+    
+
+        <tr>
+            
+                <td class="name"><code>flux</code></td>
+            
+
+            <td class="type">
+            
+                
+<span class="param-type">Flux</span>
+
+
+            
+            </td>
+
+            
+
+            
+
+            <td class="description last">Flux instance in which to create the Store</td>
+        </tr>
+
+    
+    </tbody>
+</table>
+
+
+
+
+
+
+<dl class="details">
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+    <dt class="tag-source">Source:</dt>
+    <dd class="tag-source"><ul class="dummy"><li>
+        <a href="flux_stores.js.html">flux/stores.js</a>, <a href="flux_stores.js.html#line127">line 127</a>
+    </li></ul></dd>
+    
+
+    
+
+    
+
+    
+</dl>
+
+
+
+
+
+
+
+
+
+
+
+
+
+<h5>Returns:</h5>
+
+        
+<div class="param-desc">
+    the Store instance
+</div>
+
+
+
+<dl>
+    <dt>
+        Type
+    </dt>
+    <dd>
+        
+<span class="param-type">Object</span>
+
+
+    </dd>
+</dl>
+
+    
+
+
+
+        
+            
+
+    
+
+    <h4 class="name" id="module:ActionDispatcher"><span class="type-signature"></span>module:ActionDispatcher<span class="signature">()</span><span class="type-signature"></span></h4>
+
+    
+
+
+
+<div class="description">
+    Action Dispatcher
 </div>
 
 
@@ -2535,7 +2547,183 @@ The value of this attribute indicates which registered component to mount
     
     <dt class="tag-source">Source:</dt>
     <dd class="tag-source"><ul class="dummy"><li>
-        <a href="core_ujs.js.html">core/ujs.js</a>, <a href="core_ujs.js.html#line9">line 9</a>
+        <a href="flux_action_dispatcher.js.html">flux/action_dispatcher.js</a>, <a href="flux_action_dispatcher.js.html#line14">line 14</a>
+    </li></ul></dd>
+    
+
+    
+
+    
+
+    
+</dl>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+        
+            
+
+    
+
+    <h4 class="name" id="mountComponents"><span class="type-signature"></span>mountComponents<span class="signature">(flux, root<span class="signature-attributes">opt</span>)</span><span class="type-signature"></span></h4>
+
+    
+
+
+
+<div class="description">
+    Mounts corresponding components to DOM nodes that has "data-dyna-component" attribute set
+The value of this attribute indicates which registered component to mount
+</div>
+
+
+
+
+
+
+
+
+
+    <h5>Parameters:</h5>
+    
+
+<table class="params">
+    <thead>
+    <tr>
+        
+        <th>Name</th>
+        
+
+        <th>Type</th>
+
+        
+        <th>Attributes</th>
+        
+
+        
+
+        <th class="last">Description</th>
+    </tr>
+    </thead>
+
+    <tbody>
+    
+
+        <tr>
+            
+                <td class="name"><code>flux</code></td>
+            
+
+            <td class="type">
+            
+                
+<span class="param-type">Flux</span>
+
+
+            
+            </td>
+
+            
+                <td class="attributes">
+                
+
+                
+
+                
+                </td>
+            
+
+            
+
+            <td class="description last">instance of Flux</td>
+        </tr>
+
+    
+
+        <tr>
+            
+                <td class="name"><code>root</code></td>
+            
+
+            <td class="type">
+            
+                
+<span class="param-type">*</span>
+
+
+            
+            </td>
+
+            
+                <td class="attributes">
+                
+                    &lt;optional><br>
+                
+
+                
+
+                
+                </td>
+            
+
+            
+
+            <td class="description last">component root under which dyna components will be mounted.
+                       This can either be a DOM node, jQuery object or a selector</td>
+        </tr>
+
+    
+    </tbody>
+</table>
+
+
+
+
+
+
+<dl class="details">
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+    <dt class="tag-source">Source:</dt>
+    <dd class="tag-source"><ul class="dummy"><li>
+        <a href="core_ujs.js.html">core/ujs.js</a>, <a href="core_ujs.js.html#line15">line 15</a>
     </li></ul></dd>
     
 
@@ -2689,7 +2877,7 @@ The value of this attribute indicates which registered component to mount
     
     <dt class="tag-source">Source:</dt>
     <dd class="tag-source"><ul class="dummy"><li>
-        <a href="flux_components.js.html">flux/components.js</a>, <a href="flux_components.js.html#line53">line 53</a>
+        <a href="flux_components.js.html">flux/components.js</a>, <a href="flux_components.js.html#line31">line 31</a>
     </li></ul></dd>
     
 
@@ -2714,13 +2902,23 @@ The value of this attribute indicates which registered component to mount
 
 
 
+    <h5>Example</h5>
+    
+    <pre class="prettyprint"><code>var React = dyna.React;
+var SomeComponent = React.createClass({
+  //...
+});
+
+dyna.registerComponent('SomeComponent', SomeComponent);</code></pre>
+
+
 
         
             
 
     
 
-    <h4 class="name" id="registerCoordinator"><span class="type-signature"></span>registerCoordinator<span class="signature">(name, fn)</span><span class="type-signature"></span></h4>
+    <h4 class="name" id="registerCoordinator"><span class="type-signature"></span>registerCoordinator<span class="signature">(name, def)</span><span class="type-signature"></span></h4>
 
     
 
@@ -2786,7 +2984,7 @@ The value of this attribute indicates which registered component to mount
 
         <tr>
             
-                <td class="name"><code>fn</code></td>
+                <td class="name"><code>def</code></td>
             
 
             <td class="type">
@@ -2843,7 +3041,7 @@ The value of this attribute indicates which registered component to mount
     
     <dt class="tag-source">Source:</dt>
     <dd class="tag-source"><ul class="dummy"><li>
-        <a href="flux_coordinators.js.html">flux/coordinators.js</a>, <a href="flux_coordinators.js.html#line73">line 73</a>
+        <a href="flux_coordinators.js.html">flux/coordinators.js</a>, <a href="flux_coordinators.js.html#line45">line 45</a>
     </li></ul></dd>
     
 
@@ -2897,13 +3095,43 @@ The value of this attribute indicates which registered component to mount
 
 
 
+    <h5>Examples</h5>
+    
+    <pre class="prettyprint"><code>var Alarm = function(speaker) {
+  var interval_secs = 0;
+  var interval = null;
+
+  // starting up
+  this.$start = function() {
+    interval = setInterval(function() { speaker.buzz(); }, interval_secs * 1000);
+  };
+
+  // stopping
+  this.$stop  = function() {
+    clearInterval(interval);
+  };
+
+  // configuration
+  this.setInterval = function(seconds) {
+    interval_secs = seconds;
+  };
+};
+
+dyna.registerCoordinator('Alarm', ['speaker', Alarm]);</code></pre>
+
+    <pre class="prettyprint"><code>To configure a coordinator
+dyna.start(["Alarm"], function(Alarm) {
+  Alarm.setInterval(60);
+});</code></pre>
+
+
 
         
             
 
     
 
-    <h4 class="name" id="registerStore"><span class="type-signature"></span>registerStore<span class="signature">(name, constructor)</span><span class="type-signature"></span></h4>
+    <h4 class="name" id="registerStore"><span class="type-signature"></span>registerStore<span class="signature">(name, spec)</span><span class="type-signature"></span></h4>
 
     
 
@@ -2912,8 +3140,13 @@ The value of this attribute indicates which registered component to mount
 <div class="description">
     Register a Store
 
-When registering a new store, the Store object will be extended with three event methods: emitChange(), addChangeListener(),
-removeChangeListener() and waitFor(), plus a event_dispatch_token property.
+Register the specification (implementation) for a Store.
+
+A Store will not be instantiated at this point. The Store instance will be created when the Flux flow starts.
+Once created, the Store instance will be extended with four event methods: emitChange(), addChangeListener(),
+removeChangeListener() and waitFor(), plus flux() and eventDispatcherToken().
+
+The Store spec must include a $processEvent() method. It may also include a $initialize() method for initializing the Store.
 </div>
 
 
@@ -2972,13 +3205,13 @@ removeChangeListener() and waitFor(), plus a event_dispatch_token property.
 
         <tr>
             
-                <td class="name"><code>constructor</code></td>
+                <td class="name"><code>spec</code></td>
             
 
             <td class="type">
             
                 
-<span class="param-type">function</span>
+<span class="param-type">Object</span>
 
 
             
@@ -2988,7 +3221,7 @@ removeChangeListener() and waitFor(), plus a event_dispatch_token property.
 
             
 
-            <td class="description last">constructor of the Store</td>
+            <td class="description last">store specification</td>
         </tr>
 
     
@@ -3029,7 +3262,7 @@ removeChangeListener() and waitFor(), plus a event_dispatch_token property.
     
     <dt class="tag-source">Source:</dt>
     <dd class="tag-source"><ul class="dummy"><li>
-        <a href="flux_stores.js.html">flux/stores.js</a>, <a href="flux_stores.js.html#line69">line 69</a>
+        <a href="flux_stores.js.html">flux/stores.js</a>, <a href="flux_stores.js.html#line107">line 107</a>
     </li></ul></dd>
     
 
@@ -3057,7 +3290,7 @@ removeChangeListener() and waitFor(), plus a event_dispatch_token property.
 <dl>
     <dt>
         <div class="param-desc">
-        if constructor is not valid
+        if name or spec is not valid
         </div>
     </dt>
     <dd></dd>
@@ -3085,22 +3318,27 @@ removeChangeListener() and waitFor(), plus a event_dispatch_token property.
 
     <h5>Example</h5>
     
-    <pre class="prettyprint"><code>var todoStore = function() {
-  var _todo_list = ["buy milk", "clean dishes"];
+    <pre class="prettyprint"><code>// Register a new Store named "todoStore"
+dyna.registerStore("TodoStore", {
+  $initialize : function() {
+    this.todo_list = [];
+  },
 
-  this.getTodoList = function() { return _todo_list; };
-
-  this.$processEvent = function(event) {
-    if (event.eventName() == 'todo_create') {
-      emitChange();
+  $processEvent : function(event) {
+    if (event.eventName() == 'todo_add') {
+      this.addItem(event.payload());
     }
-  };
-};
+  },
 
-// Register a new Store named "todoStore"
-stores.registerStore("todoStore", todoStore);
-// Retrieve the "todoStore"
-stores.getStore("todoStore");                  //=> todoStore instance</code></pre>
+  addItem : function(item) {
+    this.todo_list.push(item);
+    this.emitChange();
+  },
+
+  todoList : function() {
+    return this.todo_list;
+  }
+});</code></pre>
 
 
 
@@ -3109,192 +3347,14 @@ stores.getStore("todoStore");                  //=> todoStore instance</code></p
 
     
 
-    <h4 class="name" id="releaseStores"><span class="type-signature"></span>releaseStores<span class="signature">(store_names, context<span class="signature-attributes">opt</span>)</span><span class="type-signature"></span></h4>
+    <h4 class="name" id="removeChangeListener"><span class="type-signature"></span>removeChangeListener<span class="signature">(listener)</span><span class="type-signature"></span></h4>
 
     
 
 
 
 <div class="description">
-    Release store(s) from a certain context
-This is to release any store that was marked as required using <tt>requireStores()</tt>
-</div>
-
-
-
-
-
-
-
-
-
-    <h5>Parameters:</h5>
-    
-
-<table class="params">
-    <thead>
-    <tr>
-        
-        <th>Name</th>
-        
-
-        <th>Type</th>
-
-        
-        <th>Attributes</th>
-        
-
-        
-
-        <th class="last">Description</th>
-    </tr>
-    </thead>
-
-    <tbody>
-    
-
-        <tr>
-            
-                <td class="name"><code>store_names</code></td>
-            
-
-            <td class="type">
-            
-                
-<span class="param-type">string</span>
-|
-
-<span class="param-type">Array.&lt;string></span>
-
-
-            
-            </td>
-
-            
-                <td class="attributes">
-                
-
-                
-
-                
-                </td>
-            
-
-            
-
-            <td class="description last">store names</td>
-        </tr>
-
-    
-
-        <tr>
-            
-                <td class="name"><code>context</code></td>
-            
-
-            <td class="type">
-            
-                
-<span class="param-type">string</span>
-
-
-            
-            </td>
-
-            
-                <td class="attributes">
-                
-                    &lt;optional><br>
-                
-
-                
-
-                
-                </td>
-            
-
-            
-
-            <td class="description last">the context to create the store in. Default is global context.</td>
-        </tr>
-
-    
-    </tbody>
-</table>
-
-
-
-
-
-
-<dl class="details">
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-    <dt class="tag-source">Source:</dt>
-    <dd class="tag-source"><ul class="dummy"><li>
-        <a href="flux_stores.js.html">flux/stores.js</a>, <a href="flux_stores.js.html#line118">line 118</a>
-    </li></ul></dd>
-    
-
-    
-
-    
-
-    
-</dl>
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-        
-            
-
-    
-
-    <h4 class="name" id="removeListener"><span class="type-signature"></span>removeListener<span class="signature">(action_name, listener)</span><span class="type-signature"></span></h4>
-
-    
-
-
-
-<div class="description">
-    Remove a event listener
+    Remove a change listener
 </div>
 
 
@@ -3326,29 +3386,6 @@ This is to release any store that was marked as required using <tt>requireStores
     </thead>
 
     <tbody>
-    
-
-        <tr>
-            
-                <td class="name"><code>action_name</code></td>
-            
-
-            <td class="type">
-            
-                
-<span class="param-type">string</span>
-
-
-            
-            </td>
-
-            
-
-            
-
-            <td class="description last">action name</td>
-        </tr>
-
     
 
         <tr>
@@ -3369,7 +3406,7 @@ This is to release any store that was marked as required using <tt>requireStores
 
             
 
-            <td class="description last">listener function</td>
+            <td class="description last">change handler function that was previously added</td>
         </tr>
 
     
@@ -3410,7 +3447,7 @@ This is to release any store that was marked as required using <tt>requireStores
     
     <dt class="tag-source">Source:</dt>
     <dd class="tag-source"><ul class="dummy"><li>
-        <a href="flux_action_dispatcher.js.html">flux/action_dispatcher.js</a>, <a href="flux_action_dispatcher.js.html#line32">line 32</a>
+        <a href="flux_stores.js.html">flux/stores.js</a>, <a href="flux_stores.js.html#line47">line 47</a>
     </li></ul></dd>
     
 
@@ -3431,222 +3468,6 @@ This is to release any store that was marked as required using <tt>requireStores
 
 
 
-
-
-
-
-    <h5>Example</h5>
-    
-    <pre class="prettyprint"><code>var listener;
-addListener('user_click', listener = function(payload) {
-  payload.position
-});
-removeListener('user_click', listener);</code></pre>
-
-
-
-        
-            
-
-    
-
-    <h4 class="name" id="requireStores"><span class="type-signature"></span>requireStores<span class="signature">(store_names, context<span class="signature-attributes">opt</span>)</span><span class="type-signature"></span></h4>
-
-    
-
-
-
-<div class="description">
-    Indicate store(s) as required resource(s) in a certain context
-Any store marked as required in a context must be released using <tt>releaseStores()</tt> when it is no longer needed.
-</div>
-
-
-
-
-
-
-
-
-
-    <h5>Parameters:</h5>
-    
-
-<table class="params">
-    <thead>
-    <tr>
-        
-        <th>Name</th>
-        
-
-        <th>Type</th>
-
-        
-        <th>Attributes</th>
-        
-
-        
-
-        <th class="last">Description</th>
-    </tr>
-    </thead>
-
-    <tbody>
-    
-
-        <tr>
-            
-                <td class="name"><code>store_names</code></td>
-            
-
-            <td class="type">
-            
-                
-<span class="param-type">string</span>
-|
-
-<span class="param-type">Array.&lt;string></span>
-
-
-            
-            </td>
-
-            
-                <td class="attributes">
-                
-
-                
-
-                
-                </td>
-            
-
-            
-
-            <td class="description last">store names</td>
-        </tr>
-
-    
-
-        <tr>
-            
-                <td class="name"><code>context</code></td>
-            
-
-            <td class="type">
-            
-                
-<span class="param-type">string</span>
-
-
-            
-            </td>
-
-            
-                <td class="attributes">
-                
-                    &lt;optional><br>
-                
-
-                
-
-                
-                </td>
-            
-
-            
-
-            <td class="description last">the context to create the store in. Default is global context.</td>
-        </tr>
-
-    
-    </tbody>
-</table>
-
-
-
-
-
-
-<dl class="details">
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-    <dt class="tag-source">Source:</dt>
-    <dd class="tag-source"><ul class="dummy"><li>
-        <a href="flux_stores.js.html">flux/stores.js</a>, <a href="flux_stores.js.html#line88">line 88</a>
-    </li></ul></dd>
-    
-
-    
-
-    
-
-    
-</dl>
-
-
-
-
-
-
-
-
-
-
-
-<h5>Throws:</h5>
-
-        
-
-<dl>
-    <dt>
-        <div class="param-desc">
-        if there is no store constructor registered under any of the store names
-        </div>
-    </dt>
-    <dd></dd>
-    <dt>
-        <dl>
-            <dt>
-                Type
-            </dt>
-            <dd>
-                
-<span class="param-type">Error</span>
-
-
-            </dd>
-        </dl>
-    </dt>
-    <dd></dd>
-</dl>
-
-
-    
 
 
 
@@ -3847,14 +3668,14 @@ value can only be set during the dyna's config phase.
 
     
 
-    <h4 class="name" id="start"><span class="type-signature"></span>start<span class="signature">(coordinators, config_cb)</span><span class="type-signature"></span></h4>
+    <h4 class="name" id="start"><span class="type-signature"></span>start<span class="signature">(flux, root<span class="signature-attributes">opt</span>)</span><span class="type-signature"></span></h4>
 
     
 
 
 
 <div class="description">
-    Start the app with coordinators
+    Start the app with a particular Flux
 </div>
 
 
@@ -3878,6 +3699,8 @@ value can only be set during the dyna's config phase.
         <th>Type</th>
 
         
+        <th>Attributes</th>
+        
 
         
 
@@ -3890,49 +3713,65 @@ value can only be set during the dyna's config phase.
 
         <tr>
             
-                <td class="name"><code>coordinators</code></td>
+                <td class="name"><code>flux</code></td>
             
 
             <td class="type">
             
                 
-<span class="param-type">string</span>
-|
-
-<span class="param-type">Array.&lt;string></span>
+<span class="param-type">Flux</span>
 
 
             
             </td>
 
             
+                <td class="attributes">
+                
+
+                
+
+                
+                </td>
+            
 
             
 
-            <td class="description last">coordinator names</td>
+            <td class="description last">Flux instance</td>
         </tr>
 
     
 
         <tr>
             
-                <td class="name"><code>config_cb</code></td>
+                <td class="name"><code>root</code></td>
             
 
             <td class="type">
             
                 
-<span class="param-type"><a href="global.html#coordinatorConfigCallback">coordinatorConfigCallback</a></span>
+<span class="param-type">*</span>
 
 
             
             </td>
 
             
+                <td class="attributes">
+                
+                    &lt;optional><br>
+                
+
+                
+
+                
+                </td>
+            
 
             
 
-            <td class="description last">coordinator configuration callback</td>
+            <td class="description last">component root under which dyna components will be mounted.
+                       This can either be a DOM node, jQuery object or a selector</td>
         </tr>
 
     
@@ -3973,7 +3812,7 @@ value can only be set during the dyna's config phase.
     
     <dt class="tag-source">Source:</dt>
     <dd class="tag-source"><ul class="dummy"><li>
-        <a href="core_lifecycle.js.html">core/lifecycle.js</a>, <a href="core_lifecycle.js.html#line32">line 32</a>
+        <a href="core_lifecycle.js.html">core/lifecycle.js</a>, <a href="core_lifecycle.js.html#line43">line 43</a>
     </li></ul></dd>
     
 
@@ -3998,190 +3837,20 @@ value can only be set during the dyna's config phase.
 
 
 
-
-        
-            
-
+    <h5>Examples</h5>
     
-
-    <h4 class="name" id="startCoordinators"><span class="type-signature"></span>startCoordinators<span class="signature">(coordinators, config_cb)</span><span class="type-signature"></span></h4>
-
+        <p class="code-caption">Start a single Flux</p>
     
+    <pre class="prettyprint"><code>var flux = dyna.flux(["Buzzer"], ["BuzzerStore"]);
+dyna.start(flux);</code></pre>
 
-
-
-<div class="description">
-    Start coordinators
-</div>
-
-
-
-
-
-
-
-
-
-    <h5>Parameters:</h5>
+        <p class="code-caption">Start multiple Flux on different set of nodesß</p>
     
-
-<table class="params">
-    <thead>
-    <tr>
-        
-        <th>Name</th>
-        
-
-        <th>Type</th>
-
-        
-
-        
-
-        <th class="last">Description</th>
-    </tr>
-    </thead>
-
-    <tbody>
-    
-
-        <tr>
-            
-                <td class="name"><code>coordinators</code></td>
-            
-
-            <td class="type">
-            
-                
-<span class="param-type">string</span>
-|
-
-<span class="param-type">Array.&lt;string></span>
-
-
-            
-            </td>
-
-            
-
-            
-
-            <td class="description last">list of coordinator names</td>
-        </tr>
-
-    
-
-        <tr>
-            
-                <td class="name"><code>config_cb</code></td>
-            
-
-            <td class="type">
-            
-                
-<span class="param-type"><a href="global.html#coordinatorConfigCallback">coordinatorConfigCallback</a></span>
-
-
-            
-            </td>
-
-            
-
-            
-
-            <td class="description last">coordinator configuration callback</td>
-        </tr>
-
-    
-    </tbody>
-</table>
-
-
-
-
-
-
-<dl class="details">
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-    <dt class="tag-source">Source:</dt>
-    <dd class="tag-source"><ul class="dummy"><li>
-        <a href="flux_coordinators.js.html">flux/coordinators.js</a>, <a href="flux_coordinators.js.html#line85">line 85</a>
-    </li></ul></dd>
-    
-
-    
-
-    
-
-    
-</dl>
-
-
-
-
-
-
-
-
-
-
-
-<h5>Throws:</h5>
-
-        
-
-<dl>
-    <dt>
-        <div class="param-desc">
-        if coordinator is not registered or is not valid
-        </div>
-    </dt>
-    <dd></dd>
-    <dt>
-        <dl>
-            <dt>
-                Type
-            </dt>
-            <dd>
-                
-<span class="param-type">Error</span>
-
-
-            </dd>
-        </dl>
-    </dt>
-    <dd></dd>
-</dl>
-
-
-    
-
-
+    <pre class="prettyprint"><code>var flux_one = dyna.flux(["Buzzer"], ["BuzzerStore"]);
+var flux_two = dyna.flux(["Buzzer"], ["BuzzerStore"]);
+
+dyna.start(flux_one, $('#buzzer-one'));
+dyna.start(flux_two, $('#buzzer-two'));</code></pre>
 
 
 
@@ -4190,170 +3859,7 @@ value can only be set during the dyna's config phase.
 
     
 
-    <h4 class="name" id="stopCoordinators"><span class="type-signature"></span>stopCoordinators<span class="signature">(coordinators)</span><span class="type-signature"></span></h4>
-
-    
-
-
-
-<div class="description">
-    Stop coordinators
-</div>
-
-
-
-
-
-
-
-
-
-    <h5>Parameters:</h5>
-    
-
-<table class="params">
-    <thead>
-    <tr>
-        
-        <th>Name</th>
-        
-
-        <th>Type</th>
-
-        
-
-        
-
-        <th class="last">Description</th>
-    </tr>
-    </thead>
-
-    <tbody>
-    
-
-        <tr>
-            
-                <td class="name"><code>coordinators</code></td>
-            
-
-            <td class="type">
-            
-                
-<span class="param-type">string</span>
-|
-
-<span class="param-type">Array.&lt;string></span>
-
-
-            
-            </td>
-
-            
-
-            
-
-            <td class="description last">list of coordinator names</td>
-        </tr>
-
-    
-    </tbody>
-</table>
-
-
-
-
-
-
-<dl class="details">
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-    <dt class="tag-source">Source:</dt>
-    <dd class="tag-source"><ul class="dummy"><li>
-        <a href="flux_coordinators.js.html">flux/coordinators.js</a>, <a href="flux_coordinators.js.html#line111">line 111</a>
-    </li></ul></dd>
-    
-
-    
-
-    
-
-    
-</dl>
-
-
-
-
-
-
-
-
-
-
-
-<h5>Throws:</h5>
-
-        
-
-<dl>
-    <dt>
-        <div class="param-desc">
-        if coordinator is not registered or is not running
-        </div>
-    </dt>
-    <dd></dd>
-    <dt>
-        <dl>
-            <dt>
-                Type
-            </dt>
-            <dd>
-                
-<span class="param-type">Error</span>
-
-
-            </dd>
-        </dl>
-    </dt>
-    <dd></dd>
-</dl>
-
-
-    
-
-
-
-
-
-        
-            
-
-    
-
-    <h4 class="name" id="unmountComponents"><span class="type-signature"></span>unmountComponents<span class="signature">()</span><span class="type-signature"></span></h4>
+    <h4 class="name" id="unmountComponents"><span class="type-signature"></span>unmountComponents<span class="signature">(root<span class="signature-attributes">opt</span>)</span><span class="type-signature"></span></h4>
 
     
 
@@ -4371,6 +3877,68 @@ value can only be set during the dyna's config phase.
 
 
 
+    <h5>Parameters:</h5>
+    
+
+<table class="params">
+    <thead>
+    <tr>
+        
+        <th>Name</th>
+        
+
+        <th>Type</th>
+
+        
+        <th>Attributes</th>
+        
+
+        
+
+        <th class="last">Description</th>
+    </tr>
+    </thead>
+
+    <tbody>
+    
+
+        <tr>
+            
+                <td class="name"><code>root</code></td>
+            
+
+            <td class="type">
+            
+                
+<span class="param-type">*</span>
+
+
+            
+            </td>
+
+            
+                <td class="attributes">
+                
+                    &lt;optional><br>
+                
+
+                
+
+                
+                </td>
+            
+
+            
+
+            <td class="description last">component root under which dyna components will be mounted.
+                    This can either be a DOM node, jQuery object or a selector</td>
+        </tr>
+
+    
+    </tbody>
+</table>
+
+
 
 
 
@@ -4404,7 +3972,7 @@ value can only be set during the dyna's config phase.
     
     <dt class="tag-source">Source:</dt>
     <dd class="tag-source"><ul class="dummy"><li>
-        <a href="core_ujs.js.html">core/ujs.js</a>, <a href="core_ujs.js.html#line28">line 28</a>
+        <a href="core_ujs.js.html">core/ujs.js</a>, <a href="core_ujs.js.html#line39">line 39</a>
     </li></ul></dd>
     
 
@@ -4536,7 +4104,7 @@ for <tt>$</tt> in the global scope
     
     <dt class="tag-source">Source:</dt>
     <dd class="tag-source"><ul class="dummy"><li>
-        <a href="core_external_lib.js.html">core/external_lib.js</a>, <a href="core_external_lib.js.html#line15">line 15</a>
+        <a href="core_external_lib.js.html">core/external_lib.js</a>, <a href="core_external_lib.js.html#line10">line 10</a>
     </li></ul></dd>
     
 
@@ -4668,7 +4236,133 @@ for <tt>React</tt> in the global scope
     
     <dt class="tag-source">Source:</dt>
     <dd class="tag-source"><ul class="dummy"><li>
-        <a href="core_external_lib.js.html">core/external_lib.js</a>, <a href="core_external_lib.js.html#line24">line 24</a>
+        <a href="core_external_lib.js.html">core/external_lib.js</a>, <a href="core_external_lib.js.html#line19">line 19</a>
+    </li></ul></dd>
+    
+
+    
+
+    
+
+    
+</dl>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+        
+            
+
+    
+
+    <h4 class="name" id="waitFor"><span class="type-signature"></span>waitFor<span class="signature">(tokens)</span><span class="type-signature"></span></h4>
+
+    
+
+
+
+<div class="description">
+    Wait for other Stores to finished processing an event before processing begin in this Store
+</div>
+
+
+
+
+
+
+
+
+
+    <h5>Parameters:</h5>
+    
+
+<table class="params">
+    <thead>
+    <tr>
+        
+        <th>Name</th>
+        
+
+        <th>Type</th>
+
+        
+
+        
+
+        <th class="last">Description</th>
+    </tr>
+    </thead>
+
+    <tbody>
+    
+
+        <tr>
+            
+                <td class="name"><code>tokens</code></td>
+            
+
+            <td class="type">
+            
+            </td>
+
+            
+
+            
+
+            <td class="description last"></td>
+        </tr>
+
+    
+    </tbody>
+</table>
+
+
+
+
+
+
+<dl class="details">
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+    <dt class="tag-source">Source:</dt>
+    <dd class="tag-source"><ul class="dummy"><li>
+        <a href="flux_stores.js.html">flux/stores.js</a>, <a href="flux_stores.js.html#line55">line 55</a>
     </li></ul></dd>
     
 
@@ -4897,495 +4591,7 @@ for <tt>React</tt> in the global scope
     
     <dt class="tag-source">Source:</dt>
     <dd class="tag-source"><ul class="dummy"><li>
-        <a href="flux_components.js.html">flux/components.js</a>, <a href="flux_components.js.html#line38">line 38</a>
-    </li></ul></dd>
-    
-
-    
-
-    
-
-    
-</dl>
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-            
-                
-
-    
-
-    <h4 class="name" id="coordinatorConfigCallback"><span class="type-signature"></span>coordinatorConfigCallback<span class="signature">(&hellip;coordinators)</span><span class="type-signature"></span></h4>
-
-    
-
-
-
-<div class="description">
-    Coordinator configuration callback
-</div>
-
-
-
-
-
-
-
-
-
-    <h5>Parameters:</h5>
-    
-
-<table class="params">
-    <thead>
-    <tr>
-        
-        <th>Name</th>
-        
-
-        <th>Type</th>
-
-        
-        <th>Attributes</th>
-        
-
-        
-
-        <th class="last">Description</th>
-    </tr>
-    </thead>
-
-    <tbody>
-    
-
-        <tr>
-            
-                <td class="name"><code>coordinators</code></td>
-            
-
-            <td class="type">
-            
-                
-<span class="param-type">*</span>
-
-
-            
-            </td>
-
-            
-                <td class="attributes">
-                
-
-                
-
-                
-                    &lt;repeatable><br>
-                
-                </td>
-            
-
-            
-
-            <td class="description last">coordinator instances in the same order as the coordinator names specified in <a href="global.html#startCoordinators">startCoordinators</a></td>
-        </tr>
-
-    
-    </tbody>
-</table>
-
-
-
-
-
-
-<dl class="details">
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-    <dt class="tag-source">Source:</dt>
-    <dd class="tag-source"><ul class="dummy"><li>
-        <a href="flux_coordinators.js.html">flux/coordinators.js</a>, <a href="flux_coordinators.js.html#line99">line 99</a>
-    </li></ul></dd>
-    
-
-    
-
-    
-    <dt class="tag-see">See:</dt>
-    <dd class="tag-see">
-        <ul>
-            <li><a href="global.html#startCoordinators">startCoordinators</a></li>
-        </ul>
-    </dd>
-    
-
-    
-</dl>
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-            
-                
-
-    
-
-    <h4 class="name" id="coordinatorDefCallback"><span class="type-signature"></span>coordinatorDefCallback<span class="signature">($coordinators, $Event, $actionDispatcher, $stores)</span><span class="type-signature"></span></h4>
-
-    
-
-
-
-<div class="description">
-    Coordinator definition context callback
-</div>
-
-
-
-
-
-
-
-
-
-    <h5>Parameters:</h5>
-    
-
-<table class="params">
-    <thead>
-    <tr>
-        
-        <th>Name</th>
-        
-
-        <th>Type</th>
-
-        
-
-        
-
-        <th class="last">Description</th>
-    </tr>
-    </thead>
-
-    <tbody>
-    
-
-        <tr>
-            
-                <td class="name"><code>$coordinators</code></td>
-            
-
-            <td class="type">
-            
-                
-<span class="param-type">Object</span>
-
-
-            
-            </td>
-
-            
-
-            
-
-            <td class="description last">with registerCoordinator() method</td>
-        </tr>
-
-    
-
-        <tr>
-            
-                <td class="name"><code>$Event</code></td>
-            
-
-            <td class="type">
-            
-                
-<span class="param-type">*</span>
-
-
-            
-            </td>
-
-            
-
-            
-
-            <td class="description last">Event constructor</td>
-        </tr>
-
-    
-
-        <tr>
-            
-                <td class="name"><code>$actionDispatcher</code></td>
-            
-
-            <td class="type">
-            
-                
-<span class="param-type">*</span>
-
-
-            
-            </td>
-
-            
-
-            
-
-            <td class="description last">Action Dispatcher with addListener() and removeListener() methods</td>
-        </tr>
-
-    
-
-        <tr>
-            
-                <td class="name"><code>$stores</code></td>
-            
-
-            <td class="type">
-            
-                
-<span class="param-type">Object</span>
-
-
-            
-            </td>
-
-            
-
-            
-
-            <td class="description last">with getStore(), requireStores() and releaseStores() methods</td>
-        </tr>
-
-    
-    </tbody>
-</table>
-
-
-
-
-
-
-<dl class="details">
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-    <dt class="tag-source">Source:</dt>
-    <dd class="tag-source"><ul class="dummy"><li>
-        <a href="flux_coordinators.js.html">flux/coordinators.js</a>, <a href="flux_coordinators.js.html#line57">line 57</a>
-    </li></ul></dd>
-    
-
-    
-
-    
-    <dt class="tag-see">See:</dt>
-    <dd class="tag-see">
-        <ul>
-            <li><a href="global.html#defineCoordinators">defineCoordinators</a></li>
-        </ul>
-    </dd>
-    
-
-    
-</dl>
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-            
-                
-
-    
-
-    <h4 class="name" id="storeDefCallback"><span class="type-signature"></span>storeDefCallback<span class="signature">($stores)</span><span class="type-signature"></span></h4>
-
-    
-
-
-
-<div class="description">
-    Store definition context callback
-</div>
-
-
-
-
-
-
-
-
-
-    <h5>Parameters:</h5>
-    
-
-<table class="params">
-    <thead>
-    <tr>
-        
-        <th>Name</th>
-        
-
-        <th>Type</th>
-
-        
-
-        
-
-        <th class="last">Description</th>
-    </tr>
-    </thead>
-
-    <tbody>
-    
-
-        <tr>
-            
-                <td class="name"><code>$stores</code></td>
-            
-
-            <td class="type">
-            
-                
-<span class="param-type">Object</span>
-
-
-            
-            </td>
-
-            
-
-            
-
-            <td class="description last">with registerStore(), getStore(), requireStores() and releaseStores() methods</td>
-        </tr>
-
-    
-    </tbody>
-</table>
-
-
-
-
-
-
-<dl class="details">
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-    <dt class="tag-source">Source:</dt>
-    <dd class="tag-source"><ul class="dummy"><li>
-        <a href="flux_stores.js.html">flux/stores.js</a>, <a href="flux_stores.js.html#line35">line 35</a>
+        <a href="flux_components.js.html">flux/components.js</a>, <a href="flux_components.js.html#line8">line 8</a>
     </li></ul></dd>
     
 
@@ -5425,13 +4631,13 @@ for <tt>React</tt> in the global scope
 </div>
 
 <nav>
-    <h2><a href="index.html">Home</a></h2><h3>Modules</h3><ul><li><a href="module-core_core.html">core/core</a></li><li><a href="module-core_injector.html">core/injector</a></li><li><a href="module-core_provider_manager.html">core/provider_manager</a></li><li><a href="module-core_provider_recipes.html">core/provider_recipes</a></li><li><a href="module-flux_flux.html">flux/flux</a></li><li><a href="module-utils_array_utils.html">utils/array_utils</a></li><li><a href="module-utils_compare.html">utils/compare</a></li></ul><h3>Global</h3><ul><li><a href="global.html#_context_store_instances">_context_store_instances</a></li><li><a href="global.html#_contextStoreKey">_contextStoreKey</a></li><li><a href="global.html#_instantiateCoordinator">_instantiateCoordinator</a></li><li><a href="global.html#_instantiateStore">_instantiateStore</a></li><li><a href="global.html#_provider_fns">_provider_fns</a></li><li><a href="global.html#_provider_instances">_provider_instances</a></li><li><a href="global.html#_store_constructors">_store_constructors</a></li><li><a href="global.html#addListener">addListener</a></li><li><a href="global.html#config">config</a></li><li><a href="global.html#defineComponents">defineComponents</a></li><li><a href="global.html#defineCoordinators">defineCoordinators</a></li><li><a href="global.html#defineStores">defineStores</a></li><li><a href="global.html#emit">emit</a></li><li><a href="global.html#getAllContext">getAllContext</a></li><li><a href="global.html#getComponent">getComponent</a></li><li><a href="global.html#getContext">getContext</a></li><li><a href="global.html#getStore">getStore</a></li><li><a href="global.html#mountComponents">mountComponents</a></li><li><a href="global.html#registerComponent">registerComponent</a></li><li><a href="global.html#registerCoordinator">registerCoordinator</a></li><li><a href="global.html#registerStore">registerStore</a></li><li><a href="global.html#releaseStores">releaseStores</a></li><li><a href="global.html#removeListener">removeListener</a></li><li><a href="global.html#requireStores">requireStores</a></li><li><a href="global.html#setContext">setContext</a></li><li><a href="global.html#start">start</a></li><li><a href="global.html#startCoordinators">startCoordinators</a></li><li><a href="global.html#stopCoordinators">stopCoordinators</a></li><li><a href="global.html#unmountComponents">unmountComponents</a></li><li><a href="global.html#useJQuery">useJQuery</a></li><li><a href="global.html#useReact">useReact</a></li></ul>
+    <h2><a href="index.html">Home</a></h2><h3>Modules</h3><ul><li><a href="module-ActionDispatcher.html">ActionDispatcher</a></li><li><a href="module-core_core.html">core/core</a></li><li><a href="module-core_injector.html">core/injector</a></li><li><a href="module-core_provider_manager.html">core/provider_manager</a></li><li><a href="module-core_provider_recipes.html">core/provider_recipes</a></li><li><a href="module-EventDispatcher.html">EventDispatcher</a></li><li><a href="module-flux_flux.html">flux/flux</a></li><li><a href="module-utils_array_utils.html">utils/array_utils</a></li><li><a href="module-utils_compare.html">utils/compare</a></li></ul><h3>Classes</h3><ul><li><a href="Action.html">Action</a></li><li><a href="createActionFactory-ActionFactory.html">ActionFactory</a></li><li><a href="createEventFactory-EventFactory.html">EventFactory</a></li><li><a href="Event.html">Event</a></li></ul><h3>Global</h3><ul><li><a href="global.html#_injectFlux">_injectFlux</a></li><li><a href="global.html#_provider_fns">_provider_fns</a></li><li><a href="global.html#_provider_instances">_provider_instances</a></li><li><a href="global.html#_store_specs">_store_specs</a></li><li><a href="global.html#addChangeListener">addChangeListener</a></li><li><a href="global.html#config">config</a></li><li><a href="global.html#createActionFactory">createActionFactory</a></li><li><a href="global.html#createEventFactory">createEventFactory</a></li><li><a href="global.html#emitChange">emitChange</a></li><li><a href="global.html#eventDispatcherToken">eventDispatcherToken</a></li><li><a href="global.html#flux">flux</a></li><li><a href="global.html#getAllContext">getAllContext</a></li><li><a href="global.html#getComponent">getComponent</a></li><li><a href="global.html#getContext">getContext</a></li><li><a href="global.html#hasCoordinator">hasCoordinator</a></li><li><a href="global.html#hasStore">hasStore</a></li><li><a href="global.html#instantiateCoordinator">instantiateCoordinator</a></li><li><a href="global.html#instantiateStore">instantiateStore</a></li><li><a href="global.html#mountComponents">mountComponents</a></li><li><a href="global.html#registerComponent">registerComponent</a></li><li><a href="global.html#registerCoordinator">registerCoordinator</a></li><li><a href="global.html#registerStore">registerStore</a></li><li><a href="global.html#removeChangeListener">removeChangeListener</a></li><li><a href="global.html#setContext">setContext</a></li><li><a href="global.html#start">start</a></li><li><a href="global.html#unmountComponents">unmountComponents</a></li><li><a href="global.html#useJQuery">useJQuery</a></li><li><a href="global.html#useReact">useReact</a></li><li><a href="global.html#waitFor">waitFor</a></li></ul>
 </nav>
 
 <br class="clear">
 
 <footer>
-    Documentation generated by <a href="https://github.com/jsdoc3/jsdoc">JSDoc 3.3.0</a> on Mon Jun 01 2015 23:02:35 GMT+0800 (HKT)
+    Documentation generated by <a href="https://github.com/jsdoc3/jsdoc">JSDoc 3.3.0</a> on Thu Jun 11 2015 17:45:26 GMT+0800 (HKT)
 </footer>
 
 <script> prettyPrint(); </script>

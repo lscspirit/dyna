@@ -1,219 +1,160 @@
 'use strict';
 
 var compare      = require('../utils/compare');
-var recipes      = require('../core/provider_recipes');
-var arrayUtils   = require('../utils/array_utils');
 var assign       = require('object-assign');
 var EventEmitter = require('event-emitter');
 
-var eventDispatcher = require('./event_dispatcher');
+/** Keep track of all registered Store specs */
+var _store_specs = {};
 
-/** Keep track of all registered Store constructors */
-var _store_constructors = {};
-/** Keep track of all Store instances */
-var _context_store_instances = {};
+var Store = function(flux) {
+  var emitter = EventEmitter();
 
-/**
- * Provide a context for defining Stores
- * @param {storeDefCallback} callback - callback function that handles the store definition logic
- * @example
- * defineStores(function($stores) {
- *   var todoStore = function() {
- *     //...
- *     this.$processEvent = function(event) { };
- *   };
- *
- *   $stores.registerStore("todoStore", todoStore);
- * });
- */
-function defineStores(callback) {
-  callback(
-    { registerStore: registerStore, getStore: getStore, requireStores: requireStores, releaseStores: releaseStores }
-  );
-}
+  var _processEvent = function() {
+    return this.$processEvent.apply(this, arguments);
+  };
 
-/**
- * Store definition context callback
- * @callback storeDefCallback
- * @param {{}} $stores - with registerStore(), getStore(), requireStores() and releaseStores() methods
- */
+  var event_dispatcher       = flux.eventDispatcher();
+  var event_dispatcher_token = event_dispatcher.register(_processEvent.bind(this));
+
+  /**
+   * Return the Flux instance in which this Store is contained
+   * @returns {{}} store() method of the Flux instance
+   */
+  this.flux = function() {
+    return { store: flux.store };
+  };
+
+  /**
+   * Emit a change event signalling a data change within the Store
+   */
+  this.emitChange = function() {
+    emitter.emit('CHANGE');
+  };
+
+  /**
+   * Add a change listener to handle the Store's data change event
+   * @param {function} listener - change handler function
+   */
+  this.addChangeListener = function(listener) {
+    emitter.on('CHANGE', listener);
+  };
+
+  /**
+   * Remove a change listener
+   * @param {function} listener - change handler function that was previously added
+   */
+  this.removeChangeListener = function(listener) {
+    emitter.off('CHANGE', listener);
+  };
+
+  /**
+   * Wait for other Stores to finished processing an event before processing begin in this Store
+   * @param tokens
+   */
+  this.waitFor = function(tokens) {
+    event_dispatcher.waitFor(tokens);
+  };
+
+  /**
+   * Return the event dispatcher token of this Store
+   * @returns {*} event dispatcher token
+   */
+  this.eventDispatcherToken = function() {
+    return event_dispatcher_token;
+  };
+};
 
 /**
  * Register a Store
  *
- * When registering a new store, the Store object will be extended with three event methods: emitChange(), addChangeListener(),
- * removeChangeListener() and waitFor(), plus a event_dispatch_token property.
+ * Register the specification (implementation) for a Store.
  *
- * @param {string}   name        - name of the Store
- * @param {function} constructor - constructor of the Store
- * @throws {Error} if constructor is not valid
+ * A Store will not be instantiated at this point. The Store instance will be created when the Flux flow starts.
+ * Once created, the Store instance will be extended with four event methods: emitChange(), addChangeListener(),
+ * removeChangeListener() and waitFor(), plus flux() and eventDispatcherToken().
+ *
+ * The Store spec must include a $processEvent() method. It may also include a $initialize() method for initializing the Store.
+ *
+ * @param {string} name - name of the Store
+ * @param {Object} spec - store specification
+ * @throws {Error} if name or spec is not valid
  *
  * @example
- * var todoStore = function() {
- *   var _todo_list = ["buy milk", "clean dishes"];
- *
- *   this.getTodoList = function() { return _todo_list; };
- *
- *   this.$processEvent = function(event) {
- *     if (event.eventName() == 'todo_create') {
- *       emitChange();
- *     }
- *   };
- * };
- *
  * // Register a new Store named "todoStore"
- * stores.registerStore("todoStore", todoStore);
- * // Retrieve the "todoStore"
- * stores.getStore("todoStore");                  //=> todoStore instance
+ * dyna.registerStore("TodoStore", {
+ *   $initialize : function() {
+ *     this.todo_list = [];
+ *   },
+ *
+ *   $processEvent : function(event) {
+ *     if (event.eventName() == 'todo_add') {
+ *       this.addItem(event.payload());
+ *     }
+ *   },
+ *
+ *   addItem : function(item) {
+ *     this.todo_list.push(item);
+ *     this.emitChange();
+ *   },
+ *
+ *   todoList : function() {
+ *     return this.todo_list;
+ *   }
+ * });
+ *
  */
-function registerStore(name, constructor) {
-  if(_store_constructors[name]) {
-    throw new Error('conflicting store name: "' + name+ '"');
-  } else if(!compare.isFunction(constructor)) {
-    throw new Error('store constructor must be a function');
+function registerStore(name, spec) {
+  if (_store_specs[name]) {
+    throw new Error('Conflicting store name: "' + name+ '". Please use another name.');
   } else if (!compare.isString(name)) {
-    throw new Error('store name must be a string');
+    throw new Error('Store name must be a string.');
+  } else if (!compare.isObject(spec)) {
+    throw new Error('Store spec must be an Object.');
+  } else if (!compare.isFunction(spec.$processEvent)) {
+    throw new Error('Store spec must included a $processEvent method.');
   }
 
-  _store_constructors[name] = constructor;
+  _store_specs[name] = spec;
 }
 
 /**
- * Indicate store(s) as required resource(s) in a certain context
- * Any store marked as required in a context must be released using <tt>releaseStores()</tt> when it is no longer needed.
- * @param {string|string[]} store_names - store names
- * @param {string}          [context]   - the context to create the store in. Default is global context.
- * @throws {Error} if there is no store constructor registered under any of the store names
+ * Instantiate a store under with a Flux
+ * @param {string} name - name of the Store
+ * @param {Flux}   flux - Flux instance in which to create the Store
+ * @returns {Object} the Store instance
  */
-function requireStores(store_names, context) {
-  var names = arrayUtils.arrayWrap(store_names);
+function instantiateStore(name, flux) {
+  var spec = _store_specs[name];
 
-  names.forEach(function(s) {
-    var context_key = _contextStoreKey(s, context);
-    var cache = _context_store_instances[context_key];
+  if (compare.isUndefined(spec)) throw new Error('Store spec with name "' + '" not found. Please register it with registerStore() first.');
+  else if (!compare.isObject(spec)) throw new Error('Store spec must be an Object.');
 
-    if (cache) {
-      // if the store has already been initiated in this context
-      // then simply increment the reference count
-      cache.reference_count++;
-    } else if (cache = _store_constructors[s]){
-      // otherwise initiate the store under this context
-      var instance = _instantiateStore(cache);
-      _context_store_instances[context_key] = {
-        instance        : instance,
-        reference_count : 1
-      };
-    } else {
-      throw new Error('There is no registered Store with the name "' + s + '"');
-    }
-  });
+  var StoreInstance = function() {
+    Store.call(this, flux);
+  };
+
+  StoreInstance.prototype = Object.create(spec);
+  StoreInstance.prototype.constructor = StoreInstance;
+
+  return new StoreInstance();
 }
 
 /**
- * Release store(s) from a certain context
- * This is to release any store that was marked as required using <tt>requireStores()</tt>
- * @param {string|string[]} store_names - store names
- * @param {string}          [context]   - the context to create the store in. Default is global context.
+ * Check whether a Store is registered
+ * @param {string} name - name of the Store
+ * @returns {boolean} true if Store with the provided name is registered; other false.
  */
-function releaseStores(store_names, context) {
-  var names = arrayUtils.arrayWrap(store_names);
-
-  names.forEach(function(s) {
-    var context_key = _contextStoreKey(s, context);
-    var cache = _context_store_instances[context_key];
-
-    if (cache) {
-      if (cache.reference_count > 1) cache.reference_count--;
-      else delete _context_store_instances[context_key];
-    }
-  });
-}
-
-/**
- * Get an instance of a store for a particular context
- * @param {string} name       - name of the store
- * @param {string} [context]  - the context to create the store in. Default is global context.
- * @throws {Error} if the store has not yet been instantiated
- * @returns {Object} an instance of the store in the provided context
- */
-function getStore(name, context) {
-  var context_key = _contextStoreKey(name, context);
-  var cache = _context_store_instances[context_key];
-
-  if (cache) return cache.instance;
-  else throw new Error('The store "' + name + '" has not yet been loaded under this context. Please use requireStores() to load any store needed.');
-}
-
-//
-// Private Methods
-//
-
-/**
- * Generate a key for a store in a particular context
- * @param {string} store_name - store name
- * @param {string} [context]  - context name
- * @returns {string} a string that represents the store in a context
- * @private
- */
-function _contextStoreKey(store_name, context) {
-  if(compare.isString(context)) return context + '-' + store_name;
-  else return '__default-' + store_name;
-}
-
-/**
- * Instantiate a Store instance
- * @param {function} constructor - Store constructor function
- * @returns {Object} an instance of the store
- * @throws {Error} if store instance does not have a $processEvent method
- * @private
- */
-function _instantiateStore(constructor) {
-  var instance = new constructor();
-
-  if (!compare.isFunction(instance.$processEvent)) {
-    throw new Error('Store object does not have a $processEvent method');
-  } else {
-    var emitter = EventEmitter();
-
-    // add dispatcher methods
-    assign(instance, {
-      emitChange          : function() {
-        emitter.emit('CHANGE');
-      },
-
-      addChangeListener   : function(listener) {
-        emitter.on('CHANGE', listener);
-      },
-
-      removeChangeListener: function(listener) {
-        emitter.off('CHANGE', listener);
-      },
-
-      waitFor             : function(tokens) {
-        eventDispatcher.waitFor(tokens);
-      },
-
-      event_dispatch_token: eventDispatcher.register(instance.$processEvent.bind(instance))
-    });
-  }
-
-  return instance;
+function hasStore(name) {
+  return !compare.isUndefined(_store_specs[name]);
 }
 
 //
 // Exports
 //
 
-// make store methods except defineStores() available under the $stores provider
-recipes.value('$stores', {
-  getStore     : getStore,
-  requireStores: requireStores,
-  releaseStores: releaseStores
-});
-
 module.exports = {
-  defineStores : defineStores,
-  getStore     : getStore,
-  requireStores: requireStores,
-  releaseStores: releaseStores
+  registerStore   : registerStore,
+  hasStore        : hasStore,
+  instantiateStore: instantiateStore
 };

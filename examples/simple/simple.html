@@ -1,0 +1,69 @@
+<html>
+<head>
+  <script src="https://fb.me/JSXTransformer-0.13.3.js"></script>
+  <script src="https://fb.me/react-0.13.3.js"></script>
+  <script src="http://code.jquery.com/jquery-2.1.4.min.js"></script>
+  <script src="../../dyna.js"></script>
+  <script src="cooridnators.js"></script>
+  <script src="stores.js"></script>
+  <script type="text/jsx">
+    'use strict';
+
+    (function(dyna, React) {
+      var actions = dyna.createActionFactory({
+        buzzClick: function() {
+          return this.createAction('buzzer-clicked', 'clicked');
+        }
+      });
+
+      var Buzzer = React.createClass({
+        getInitialState : function() {
+          return {
+            status: this.props.flux.store('BuzzerStore').getStatus()
+          }
+        },
+
+        componentDidMount : function() {
+          this.props.flux.store('BuzzerStore').addChangeListener(this._statusChanged);
+        },
+
+        render : function() {
+          return (
+              <div>
+                <div>Buzzer - { this.state.status }</div>
+                <button onClick={ this._buzzClick }>Buzz</button>
+              </div>
+          );
+        },
+
+        _buzzClick : function() {
+          var click_action = actions.buzzClick();
+          click_action.dispatch(this.props.flux.action_dispatcher);
+        },
+
+        _statusChanged : function() {
+          this.setState({
+            status: this.props.flux.store('BuzzerStore').getStatus()
+          });
+        }
+      });
+
+      dyna.registerComponent('Buzzer', Buzzer);
+    }(dyna, dyna.React));
+
+    $(function() {
+      (function(dyna) {
+        var flux_one = dyna.flux(["Buzzer"], ["BuzzerStore"]);
+        var flux_two = dyna.flux(["Buzzer"], ["BuzzerStore"]);
+
+        dyna.start(flux_one, $('#buzzer-one'));
+        dyna.start(flux_two, $('#buzzer-two'));
+      }(dyna));
+    });
+  </script>
+</head>
+<body>
+  <div id="buzzer-one" data-dyna-component="Buzzer"></div>
+  <div id="buzzer-two" data-dyna-component="Buzzer"></div>
+</body>
+</html>

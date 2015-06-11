@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
     <meta charset="utf-8">
-    <title>JSDoc: Module: core/provider_recipes</title>
+    <title>JSDoc: Module: ActionDispatcher</title>
 
     <script src="scripts/prettify/prettify.js"> </script>
     <script src="scripts/prettify/lang-css.js"> </script>
@@ -17,7 +17,7 @@
 
 <div id="main">
 
-    <h1 class="page-title">Module: core/provider_recipes</h1>
+    <h1 class="page-title">Module: ActionDispatcher</h1>
 
     
 
@@ -31,6 +31,8 @@
         
             
         
+            
+        
     
 </header>
 
@@ -38,7 +40,7 @@
     <div class="container-overview">
     
         
-            <div class="description">Provider Recipes</div>
+            <div class="description">Action Dispatcher</div>
         
 
         
@@ -87,7 +89,89 @@
     
     <dt class="tag-source">Source:</dt>
     <dd class="tag-source"><ul class="dummy"><li>
-        <a href="core_provider_recipes.js.html">core/provider_recipes.js</a>, <a href="core_provider_recipes.js.html#line3">line 3</a>
+        <a href="flux_action_dispatcher.js.html">flux/action_dispatcher.js</a>, <a href="flux_action_dispatcher.js.html#line3">line 3</a>
+    </li></ul></dd>
+    
+
+    
+
+    
+
+    
+</dl>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+        
+            
+
+    
+
+    <h4 class="name" id="module:ActionDispatcher"><span class="type-signature"></span>(require("ActionDispatcher"))<span class="signature">()</span><span class="type-signature"></span></h4>
+
+    
+
+
+
+<div class="description">
+    Action Dispatcher
+</div>
+
+
+
+
+
+
+
+
+
+
+
+
+
+<dl class="details">
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+    <dt class="tag-source">Source:</dt>
+    <dd class="tag-source"><ul class="dummy"><li>
+        <a href="flux_action_dispatcher.js.html">flux/action_dispatcher.js</a>, <a href="flux_action_dispatcher.js.html#line14">line 14</a>
     </li></ul></dd>
     
 
@@ -120,12 +204,6 @@
     
 
     
-        <h3 class="subsection-title">Requires</h3>
-
-        <ul>
-            <li><a href="module-core_provider_manager.html">module:core/provider_manager</a></li>
-        </ul>
-    
 
     
 
@@ -143,14 +221,14 @@
 
     
 
-    <h4 class="name" id="~factory"><span class="type-signature">(inner) </span>factory<span class="signature">(name, fn)</span><span class="type-signature"></span></h4>
+    <h4 class="name" id=".addListener"><span class="type-signature">(static) </span>addListener<span class="signature">(action_name, listener)</span><span class="type-signature"></span></h4>
 
     
 
 
 
 <div class="description">
-    Define a +Factory+ provider
+    Add a event listener
 </div>
 
 
@@ -186,7 +264,7 @@
 
         <tr>
             
-                <td class="name"><code>name</code></td>
+                <td class="name"><code>action_name</code></td>
             
 
             <td class="type">
@@ -202,185 +280,14 @@
 
             
 
-            <td class="description last">provider name</td>
+            <td class="description last">action name</td>
         </tr>
 
     
 
         <tr>
             
-                <td class="name"><code>fn</code></td>
-            
-
-            <td class="type">
-            
-                
-<span class="param-type">*</span>
-
-
-            
-            </td>
-
-            
-
-            
-
-            <td class="description last">service/value constructor in the <tt>Dependency Injection</tt> format</td>
-        </tr>
-
-    
-    </tbody>
-</table>
-
-
-
-
-
-
-<dl class="details">
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-    <dt class="tag-source">Source:</dt>
-    <dd class="tag-source"><ul class="dummy"><li>
-        <a href="core_provider_recipes.js.html">core/provider_recipes.js</a>, <a href="core_provider_recipes.js.html#line40">line 40</a>
-    </li></ul></dd>
-    
-
-    
-
-    
-    <dt class="tag-see">See:</dt>
-    <dd class="tag-see">
-        <ul>
-            <li><a href="module-core_injector.html">module:core/injector</a></li>
-        </ul>
-    </dd>
-    
-
-    
-</dl>
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-    <h5>Example</h5>
-    
-        <p class="code-caption">Define a factory named "factory_1" that provides an instance of Service</p>
-    
-    <pre class="prettyprint"><code>factory("factory_1", ["dep_1", function(dep_1) {
-  // Function implementation
-  return new Service(dep_1);
-}]);</code></pre>
-
-
-
-        
-            
-
-    
-
-    <h4 class="name" id="~service"><span class="type-signature">(inner) </span>service<span class="signature">(name, constructor)</span><span class="type-signature"></span></h4>
-
-    
-
-
-
-<div class="description">
-    Define a +Service+ provider
-</div>
-
-
-
-
-
-
-
-
-
-    <h5>Parameters:</h5>
-    
-
-<table class="params">
-    <thead>
-    <tr>
-        
-        <th>Name</th>
-        
-
-        <th>Type</th>
-
-        
-
-        
-
-        <th class="last">Description</th>
-    </tr>
-    </thead>
-
-    <tbody>
-    
-
-        <tr>
-            
-                <td class="name"><code>name</code></td>
-            
-
-            <td class="type">
-            
-                
-<span class="param-type">string</span>
-
-
-            
-            </td>
-
-            
-
-            
-
-            <td class="description last">provider name</td>
-        </tr>
-
-    
-
-        <tr>
-            
-                <td class="name"><code>constructor</code></td>
+                <td class="name"><code>listener</code></td>
             
 
             <td class="type">
@@ -396,7 +303,7 @@
 
             
 
-            <td class="description last">a constructor function in the <tt>Dependency Injection</tt> format</td>
+            <td class="description last">listener function</td>
         </tr>
 
     
@@ -437,19 +344,12 @@
     
     <dt class="tag-source">Source:</dt>
     <dd class="tag-source"><ul class="dummy"><li>
-        <a href="core_provider_recipes.js.html">core/provider_recipes.js</a>, <a href="core_provider_recipes.js.html#line56">line 56</a>
+        <a href="flux_action_dispatcher.js.html">flux/action_dispatcher.js</a>, <a href="flux_action_dispatcher.js.html#line26">line 26</a>
     </li></ul></dd>
     
 
     
 
-    
-    <dt class="tag-see">See:</dt>
-    <dd class="tag-see">
-        <ul>
-            <li><a href="module-core_injector.html">module:core/injector</a></li>
-        </ul>
-    </dd>
     
 
     
@@ -471,9 +371,9 @@
 
     <h5>Example</h5>
     
-        <p class="code-caption">Define a service provider named "service_1" that provides an instance of Service</p>
-    
-    <pre class="prettyprint"><code>service('service_1', ['dep_1', Service]);</code></pre>
+    <pre class="prettyprint"><code>addListener('user_click', function(payload) {
+  payload.position
+});</code></pre>
 
 
 
@@ -482,14 +382,14 @@
 
     
 
-    <h4 class="name" id="~value"><span class="type-signature">(inner) </span>value<span class="signature">(name, val)</span><span class="type-signature"></span></h4>
+    <h4 class="name" id=".emit"><span class="type-signature">(static) </span>emit<span class="signature">(action_name, payload)</span><span class="type-signature"></span></h4>
 
     
 
 
 
 <div class="description">
-    Define a +Value+ provider
+    Emit a event
 </div>
 
 
@@ -525,7 +425,7 @@
 
         <tr>
             
-                <td class="name"><code>name</code></td>
+                <td class="name"><code>action_name</code></td>
             
 
             <td class="type">
@@ -541,20 +441,20 @@
 
             
 
-            <td class="description last">provider name</td>
+            <td class="description last">action name</td>
         </tr>
 
     
 
         <tr>
             
-                <td class="name"><code>val</code></td>
+                <td class="name"><code>payload</code></td>
             
 
             <td class="type">
             
                 
-<span class="param-type">*</span>
+<span class="param-type">Object</span>
 
 
             
@@ -564,7 +464,7 @@
 
             
 
-            <td class="description last">value</td>
+            <td class="description last">payload data</td>
         </tr>
 
     
@@ -605,7 +505,7 @@
     
     <dt class="tag-source">Source:</dt>
     <dd class="tag-source"><ul class="dummy"><li>
-        <a href="core_provider_recipes.js.html">core/provider_recipes.js</a>, <a href="core_provider_recipes.js.html#line21">line 21</a>
+        <a href="flux_action_dispatcher.js.html">flux/action_dispatcher.js</a>, <a href="flux_action_dispatcher.js.html#line52">line 52</a>
     </li></ul></dd>
     
 
@@ -632,9 +532,170 @@
 
     <h5>Example</h5>
     
-        <p class="code-caption">Define a value provider named "value_1" that provides the string "string_1"</p>
+    <pre class="prettyprint"><code>emit('user_click', { position: { x: 100, y: 50 } });</code></pre>
+
+
+
+        
+            
+
     
-    <pre class="prettyprint"><code>value('value_1', 'string_1');</code></pre>
+
+    <h4 class="name" id=".removeListener"><span class="type-signature">(static) </span>removeListener<span class="signature">(action_name, listener)</span><span class="type-signature"></span></h4>
+
+    
+
+
+
+<div class="description">
+    Remove a event listener
+</div>
+
+
+
+
+
+
+
+
+
+    <h5>Parameters:</h5>
+    
+
+<table class="params">
+    <thead>
+    <tr>
+        
+        <th>Name</th>
+        
+
+        <th>Type</th>
+
+        
+
+        
+
+        <th class="last">Description</th>
+    </tr>
+    </thead>
+
+    <tbody>
+    
+
+        <tr>
+            
+                <td class="name"><code>action_name</code></td>
+            
+
+            <td class="type">
+            
+                
+<span class="param-type">string</span>
+
+
+            
+            </td>
+
+            
+
+            
+
+            <td class="description last">action name</td>
+        </tr>
+
+    
+
+        <tr>
+            
+                <td class="name"><code>listener</code></td>
+            
+
+            <td class="type">
+            
+                
+<span class="param-type">function</span>
+
+
+            
+            </td>
+
+            
+
+            
+
+            <td class="description last">listener function</td>
+        </tr>
+
+    
+    </tbody>
+</table>
+
+
+
+
+
+
+<dl class="details">
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+    <dt class="tag-source">Source:</dt>
+    <dd class="tag-source"><ul class="dummy"><li>
+        <a href="flux_action_dispatcher.js.html">flux/action_dispatcher.js</a>, <a href="flux_action_dispatcher.js.html#line41">line 41</a>
+    </li></ul></dd>
+    
+
+    
+
+    
+
+    
+</dl>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+    <h5>Example</h5>
+    
+    <pre class="prettyprint"><code>var listener;
+addListener('user_click', listener = function(payload) {
+  payload.position
+});
+removeListener('user_click', listener);</code></pre>
 
 
 

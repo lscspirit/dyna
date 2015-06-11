@@ -1,39 +1,9 @@
 'use strict';
 
-var compare      = require('../utils/compare');
-var recipes      = require('../core/provider_recipes');
-var assign       = require('object-assign');
-
-var Action = require('./action');
-var stores = require('./stores');
+var compare = require('../utils/compare');
+var assign  = require('object-assign');
 
 var _components = {};
-
-/**
- * Provide a context for defining Components
- * @param {componentDefCallback} callback - callback function that handles the component definition logic
- * @example
- * defineComponents(function($components, $stores, $Action, React, $) {
- *   var SomeComponent = React.createClass({
- *     //...
- *   });
- *
- *   $components.registerComponent('SomeComponent', SomeComponent);
- * });
- */
-function defineComponents(callback) {
-  var external_lib = require('../core/external_lib').libs;
-  var React  = external_lib.React;
-  var jQuery = external_lib.$;
-
-  callback(
-    { registerComponent: registerComponent, getComponent: getComponent },
-    { getStore: stores.getStore, requireStores: stores.requireStores, releaseStores: stores.releaseStores },
-    Action,
-    React,
-    jQuery
-  );
-}
 
 /**
  * Component definition context callback
@@ -49,12 +19,20 @@ function defineComponents(callback) {
  * Register a React Component
  * @param {string}     name            - name of the component
  * @param {ReactClass} react_component - react component class
+ *
+ * @example
+ * var React = dyna.React;
+ * var SomeComponent = React.createClass({
+ *   //...
+ * });
+ *
+ * dyna.registerComponent('SomeComponent', SomeComponent);
  */
 function registerComponent(name, react_component) {
   if(_components[name]) {
-    throw new Error('conflicting component name: "' + name+ '"');
+    throw new Error('Conflicting component name: "' + name+ '". Please use another name.');
   } else if(!compare.isString(name)) {
-    throw new Error('component name must be a string');
+    throw new Error('Component name must be a string');
   }
 
   _components[name] = react_component;
@@ -62,7 +40,7 @@ function registerComponent(name, react_component) {
 
 /**
  * Get the registered React Component
- * @param {string}     name            - name of the component
+ * @param {string} name - name of the component
  * @returns {ReactClass} the matching react component class
  */
 function getComponent(name) {
@@ -76,11 +54,8 @@ function getComponent(name) {
 // Exports
 //
 
-// make getComponent() available under the $components provider
-recipes.value('$components', { getComponent: getComponent });
-
 module.exports = {
-  defineComponents: defineComponents,
-  getComponent    : getComponent
+  registerComponent: registerComponent,
+  getComponent     : getComponent
 };
 
