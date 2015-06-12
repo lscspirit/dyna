@@ -14,6 +14,7 @@ var Components   = require('./components');
 var Coordinators = require('./coordinators');
 var Actions      = require('./action');
 var Events       = require('./event');
+var Bridge       = require('./bridge');
 
 var ActionDispatcher = require('./action_dispatcher');
 var EventDispatcher  = require('./event_dispatcher');
@@ -86,6 +87,14 @@ var Flux = function(coordinators, stores) {
     });
 
     config_cb.apply(this, instances);
+  };
+
+  this.getBridge = function(name) {
+    var c_instance = coordinator_instances[name];
+
+    if (compare.isUndefined(c_instance)) throw new Error('Coordinator "' + name + '" is not running within this Flux.');
+    if (compare.isUndefined(c_instance.$bridge)) throw new Error('Coordinator "' + name + '" does not have a bridge. Please implement the $bridge property in your coordinator.');
+    return c_instance.$bridge;
   };
 
   //
@@ -174,6 +183,6 @@ var DynaFlux = {
   DynaFluxMixin      : DynaFluxMixin
 };
 
-assign(DynaFlux, Actions, Events);
+assign(DynaFlux, Actions, Events, Bridge);
 
 module.exports = DynaFlux;

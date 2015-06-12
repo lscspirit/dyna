@@ -4,7 +4,7 @@
   <script src="https://fb.me/react-0.13.3.js"></script>
   <script src="http://code.jquery.com/jquery-2.1.4.min.js"></script>
   <script src="../../dyna.js"></script>
-  <script src="coordinator.js"></script>
+  <script src="coordinators.js"></script>
   <script src="store.js"></script>
   <script type="text/jsx">
     'use strict';
@@ -55,8 +55,12 @@
 
     $(function() {
       (function(dyna) {
-        var flux_one = dyna.flux(["Buzzer"], ["BuzzerStore"]);
-        var flux_two = dyna.flux(["Buzzer"], ["BuzzerStore"]);
+        var flux_one = dyna.flux(["BuzzerWithBridge"], ["BuzzerStore"]);
+        var flux_two = dyna.flux(["BuzzerUsesBridge"], ["BuzzerStore"]);
+
+        flux_two.config(function(BuzzerUsesBridge) {
+          BuzzerUsesBridge.setBridge(flux_one.getBridge('BuzzerWithBridge'));
+        });
 
         dyna.start(flux_one, $('#buzzer-one'));
         dyna.start(flux_two, $('#buzzer-two'));
@@ -65,7 +69,7 @@
   </script>
 </head>
 <body>
-  <div id="buzzer-one" data-dyna-component="Buzzer"></div>
-  <div id="buzzer-two" data-dyna-component="Buzzer"></div>
+<div id="buzzer-one" data-dyna-component="Buzzer"></div>
+<div id="buzzer-two" data-dyna-component="Buzzer"></div>
 </body>
 </html>

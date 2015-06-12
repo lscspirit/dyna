@@ -895,7 +895,7 @@ manager.define('$injector', function() {
 });
 
 module.exports = Injector;
-},{"../utils/array_utils":39,"../utils/compare":40,"./provider_manager":24}],23:[function(_dereq_,module,exports){
+},{"../utils/array_utils":40,"../utils/compare":41,"./provider_manager":24}],23:[function(_dereq_,module,exports){
 'use strict';
 
 var assign     = _dereq_('object-assign');
@@ -955,7 +955,7 @@ var Lifecycle = {
 assign(Lifecycle, ujs);
 
 module.exports = Lifecycle;
-},{"../utils/array_utils":39,"./injector":22,"./ujs":26,"object-assign":19}],24:[function(_dereq_,module,exports){
+},{"../utils/array_utils":40,"./injector":22,"./ujs":26,"object-assign":19}],24:[function(_dereq_,module,exports){
 'use strict';
 
 var compare = _dereq_('../utils/compare');
@@ -1053,7 +1053,7 @@ ProviderManager.define('$providers', function() {
 
 module.exports = ProviderManager;
 
-},{"../utils/compare":40}],25:[function(_dereq_,module,exports){
+},{"../utils/compare":41}],25:[function(_dereq_,module,exports){
 'use strict';
 
 /**
@@ -1139,7 +1139,7 @@ module.exports = {
   factory : factory,
   service : service
 };
-},{"../utils/compare":40,"../utils/create_with_args":41,"./provider_manager":24}],26:[function(_dereq_,module,exports){
+},{"../utils/compare":41,"../utils/create_with_args":42,"./provider_manager":24}],26:[function(_dereq_,module,exports){
 'use strict';
 
 var assign     = _dereq_('object-assign');
@@ -1194,7 +1194,7 @@ module.exports = {
   mountComponents   : mountComponents,
   unmountComponents : unmountComponents
 };
-},{"../flux/components":29,"../utils/compare":40,"object-assign":19}],27:[function(_dereq_,module,exports){
+},{"../flux/components":30,"../utils/compare":41,"object-assign":19}],27:[function(_dereq_,module,exports){
 'use strict';
 
 /**
@@ -1347,6 +1347,115 @@ module.exports = ActionDispatcher;
 'use strict';
 
 var compare = _dereq_('../utils/compare');
+
+/**
+ * Create a Bridge for use in another coordinator
+ * The resulting bridge object must be assigned to the coordinator's $bridge property
+ *
+ * @param {Object} coordinator - coordinator for which the bridge is created. The coordinator's constructor must
+ *                               have a $BridgeInterface property that defines what methods are in the bridge
+ * @param {Object} impl        - implementation of methods in the bridge. All method implementations will be automatically
+ *                               bind to the coordinator instance when called
+ * @returns {Object} the bridge instance for use in other coordinator
+ * @throws {Error} if $BridgeInterface is not defined or the implementation is invalid
+ *
+ * @example
+ * var BuzzerWithBridge = function() {
+ *   // ...
+ *
+ *   // This allow this buzzer to be clicked through the Bridge
+ *   this.$bridge = dyna.createBridge(this, {
+ *     click : function(status) {
+ *       _setStatus.call(this, status);
+ *     }
+ *   });
+ *
+ *   function _setStatus(status) {
+ *     // ...
+ *   }
+ * };
+ *
+ * BuzzerWithBridge.$BridgeInterface = ['click'];
+ */
+function createBridge(coordinator, impl) {
+  var bridge = { $_constructor: coordinator.constructor };
+  var bridge_interface = coordinator.constructor.$BridgeInterface;
+  if (!compare.isArray(bridge_interface)) throw new Error('Coordinator constructor must have a $BridgeInterface string array.');
+
+  bridge_interface.forEach(function(method) {
+    if (method == '$_constructor') throw new Error('"$_constructor" is a reserved property. Please use another name for your method.');
+    if (!compare.isFunction(impl[method])) throw new Error('Missing implementation for "' + method + '". Bridge implementation must include all methods specified in $BridgeInterface.');
+
+    bridge[method] = impl[method].bind(coordinator);
+  });
+
+  return bridge;
+}
+
+/**
+ * Use a bridge of another coordinator
+ * @param {function} coordinator_constructor - Constructor of the coordinator with the bridge
+ * @param {Object}   bridge                  - bridge instance. Can be acquired using flux.getBridge()
+ * @returns {Object} the bridged interface
+ * @throws {Error} if the bridge or the interface is invalid
+ *
+ * @example
+ * var BuzzerUsesBridge = function() {
+ *   // (optional) this creates a noop interface
+ *   var bridged_buzzer = dyna.useBridge(BuzzerWithBridge);
+ *
+ *   this.setBridge = function(bridge) {
+ *     bridged_buzzer = dyna.useBridge(BuzzerWithBridge, bridge);
+ *   };
+ *
+ *   // ...
+ *
+ *   function _buzzerClicked(status) {
+ *     bridge_buzzer.click('clicked through bridging');
+ *   }
+ * };
+ *
+ * // To link the bridge
+ * flux_two.config(function(BuzzerUsesBridge) {
+ *   BuzzerUsesBridge.setBridge(flux_one.getBridge('BuzzerWithBridge'));
+ * });
+ */
+function useBridge(coordinator_constructor, bridge) {
+  if (!compare.isFunction(coordinator_constructor)) throw new Error('Invalid coordinator constructor.');
+  if (!compare.isArray(coordinator_constructor.$BridgeInterface)) throw new Error('Coordinator constructor must have a $BridgeInterface string array.');
+
+  var result = {};
+  var bridge_interface = coordinator_constructor.$BridgeInterface;
+  if (compare.isUndefined(bridge)) {
+    var noop = function() { };
+    bridge_interface.forEach(function(method) {
+      result[method] = noop;
+    });
+  } else {
+    if (compare.isUndefined(bridge.$_constructor)) throw new Error('Invalid bridge. Bridge must have a $_constructor property. Please use createBridge() to create this bridge.');
+    else if (bridge.$_constructor !== coordinator_constructor) throw new Error('The coordinator and bridge does not match. The bridge object provided is not a bridge of this coordinator.');
+
+    bridge_interface.forEach(function(method) {
+      if (!compare.isFunction(bridge[method])) throw new Error('Missing implementation for "' + method + '". Bridge implementation must include all methods specified in $BridgeInterface.');
+      result[method] = bridge[method];
+    });
+  }
+
+  return result;
+}
+
+//
+// Exports
+//
+
+module.exports = {
+  createBridge: createBridge,
+  useBridge   : useBridge
+};
+},{"../utils/compare":41}],30:[function(_dereq_,module,exports){
+'use strict';
+
+var compare = _dereq_('../utils/compare');
 var assign  = _dereq_('object-assign');
 
 var _components = {};
@@ -1406,7 +1515,7 @@ module.exports = {
 };
 
 
-},{"../utils/compare":40,"object-assign":19}],30:[function(_dereq_,module,exports){
+},{"../utils/compare":41,"object-assign":19}],31:[function(_dereq_,module,exports){
 'use strict';
 
 var argsCreate = _dereq_('../utils/create_with_args');
@@ -1530,7 +1639,7 @@ module.exports = {
   registerCoordinator   : registerCoordinator,
   instantiateCoordinator: instantiateCoordinator
 };
-},{"../core/injector":22,"../utils/array_utils":39,"../utils/compare":40,"../utils/create_with_args":41}],31:[function(_dereq_,module,exports){
+},{"../core/injector":22,"../utils/array_utils":40,"../utils/compare":41,"../utils/create_with_args":42}],32:[function(_dereq_,module,exports){
 'use strict';
 
 /**
@@ -1620,7 +1729,7 @@ function createEventFactory(event_specs) {
 //
 
 module.exports = { createEventFactory: createEventFactory };
-},{}],32:[function(_dereq_,module,exports){
+},{}],33:[function(_dereq_,module,exports){
 'use strict';
 
 /**
@@ -1631,7 +1740,7 @@ module.exports = { createEventFactory: createEventFactory };
 var Flux = _dereq_('flux');
 
 module.exports = Flux.Dispatcher;
-},{"flux":16}],33:[function(_dereq_,module,exports){
+},{"flux":16}],34:[function(_dereq_,module,exports){
 'use strict';
 
 /**
@@ -1648,6 +1757,7 @@ var Components   = _dereq_('./components');
 var Coordinators = _dereq_('./coordinators');
 var Actions      = _dereq_('./action');
 var Events       = _dereq_('./event');
+var Bridge       = _dereq_('./bridge');
 
 var ActionDispatcher = _dereq_('./action_dispatcher');
 var EventDispatcher  = _dereq_('./event_dispatcher');
@@ -1720,6 +1830,14 @@ var Flux = function(coordinators, stores) {
     });
 
     config_cb.apply(this, instances);
+  };
+
+  this.getBridge = function(name) {
+    var c_instance = coordinator_instances[name];
+
+    if (compare.isUndefined(c_instance)) throw new Error('Coordinator "' + name + '" is not running within this Flux.');
+    if (compare.isUndefined(c_instance.$bridge)) throw new Error('Coordinator "' + name + '" does not have a bridge. Please implement the $bridge property in your coordinator.');
+    return c_instance.$bridge;
   };
 
   //
@@ -1808,11 +1926,11 @@ var DynaFlux = {
   DynaFluxMixin      : DynaFluxMixin
 };
 
-assign(DynaFlux, Actions, Events);
+assign(DynaFlux, Actions, Events, Bridge);
 
 module.exports = DynaFlux;
 
-},{"../utils/array_utils":39,"../utils/compare":40,"./action":27,"./action_dispatcher":28,"./components":29,"./coordinators":30,"./event":31,"./event_dispatcher":32,"./mixin":34,"./stores":35,"object-assign":19}],34:[function(_dereq_,module,exports){
+},{"../utils/array_utils":40,"../utils/compare":41,"./action":27,"./action_dispatcher":28,"./bridge":29,"./components":30,"./coordinators":31,"./event":32,"./event_dispatcher":33,"./mixin":35,"./stores":36,"object-assign":19}],35:[function(_dereq_,module,exports){
 'use strict';
 
 /**
@@ -1853,7 +1971,7 @@ DynaFluxMixin.componentWillMount = function() {
 };
 
 module.exports = DynaFluxMixin;
-},{}],35:[function(_dereq_,module,exports){
+},{}],36:[function(_dereq_,module,exports){
 'use strict';
 
 var compare      = _dereq_('../utils/compare');
@@ -2014,7 +2132,7 @@ module.exports = {
   hasStore        : hasStore,
   instantiateStore: instantiateStore
 };
-},{"../utils/compare":40,"event-emitter":1,"object-assign":19}],36:[function(_dereq_,module,exports){
+},{"../utils/compare":41,"event-emitter":1,"object-assign":19}],37:[function(_dereq_,module,exports){
 'use strict';
 
 var assign   = _dereq_('object-assign');
@@ -2034,7 +2152,7 @@ assign(dyna, DynaFlux);
 
 module.exports = dyna;
 
-},{"./core/core":20,"./flux/flux":33,"./providers/providers":38,"./utils/utils":42,"object-assign":19}],37:[function(_dereq_,module,exports){
+},{"./core/core":20,"./flux/flux":34,"./providers/providers":39,"./utils/utils":43,"object-assign":19}],38:[function(_dereq_,module,exports){
 'use strict';
 
 var compare = _dereq_('../utils/compare');
@@ -2088,11 +2206,11 @@ var Context = function() {
 providerManager.define('$context', Context);
 
 module.exports = Context;
-},{"../core/provider_manager":24,"../utils/compare":40}],38:[function(_dereq_,module,exports){
+},{"../core/provider_manager":24,"../utils/compare":41}],39:[function(_dereq_,module,exports){
 'use strict';
 
 _dereq_('./context');
-},{"./context":37}],39:[function(_dereq_,module,exports){
+},{"./context":38}],40:[function(_dereq_,module,exports){
 'use strict';
 
 
@@ -2119,7 +2237,7 @@ module.exports = {
     else return [obj];
   }
 };
-},{"./compare":40}],40:[function(_dereq_,module,exports){
+},{"./compare":41}],41:[function(_dereq_,module,exports){
 'use strict';
 
 /**
@@ -2185,7 +2303,7 @@ module.exports = {
     return true;
   }
 };
-},{}],41:[function(_dereq_,module,exports){
+},{}],42:[function(_dereq_,module,exports){
 module.exports = function(constructor, args) {
   'use strict';
 
@@ -2195,7 +2313,7 @@ module.exports = function(constructor, args) {
   F.prototype = constructor.prototype;
   return new F();
 };
-},{}],42:[function(_dereq_,module,exports){
+},{}],43:[function(_dereq_,module,exports){
 'use strict';
 
 var assign     = _dereq_('object-assign');
@@ -2204,5 +2322,5 @@ var ArrayUtils = _dereq_('./array_utils');
 var Compare    = _dereq_('./compare');
 
 module.exports = assign({}, ArrayUtils, Compare);
-},{"./array_utils":39,"./compare":40,"object-assign":19}]},{},[36])(36)
+},{"./array_utils":40,"./compare":41,"object-assign":19}]},{},[37])(37)
 });
