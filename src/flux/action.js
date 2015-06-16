@@ -1,5 +1,7 @@
 'use strict';
 
+var compare = require('../utils/compare');
+
 /**
  * Action object to be sent through the ActionDispatcher
  * @param {string} name    - name of the event
@@ -29,8 +31,11 @@ var Action = function(name, payload) {
   /**
    * Dispatch this Action through a ActionDispatcher
    * @param {ActionDispatcher} action_dispatcher - dispatcher through which the Action is dispatched
+   * @throws {Error} if action_dispatcher is undefined or invalid
    */
   this.dispatch = function(action_dispatcher) {
+    if (compare.isUndefined(action_dispatcher)) throw new Error('action_dispatcher is undefined. Please provide a valid ActionDispatcher instance.');
+    if (!compare.isFunction(action_dispatcher.emit)) throw new Error('Invalid ActionDispatcher. ActionDispatcher must have a emit() method.');
     action_dispatcher.emit(this.name(), this);
   };
 };

@@ -1,5 +1,7 @@
 'use strict';
 
+var compare = require('../utils/compare');
+
 /**
  * Event object to be sent through the EventDispatcher
  * @param {string} name    - name of the event
@@ -29,8 +31,11 @@ var Event = function(name, payload) {
   /**
    * Dispatch this Event through a EventDispatcher
    * @param {EventDispatcher} event_dispatcher - dispatcher through which the Event is dispatched
+   * @throws {Error} if event_dispatcher is undefined or invalid
    */
   this.dispatch = function(event_dispatcher) {
+    if (compare.isUndefined(event_dispatcher)) throw new Error('event_dispatcher is undefined. Please provide a valid EventDispatcher instance.');
+    if (!compare.isFunction(event_dispatcher.dispatch)) throw new Error('Invalid EventDispatcher. EventDispatcher must have a dispatch() method.');
     event_dispatcher.dispatch(this);
   };
 };

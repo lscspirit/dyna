@@ -1197,6 +1197,8 @@ module.exports = {
 },{"../flux/components":30,"../utils/compare":41,"object-assign":19}],27:[function(_dereq_,module,exports){
 'use strict';
 
+var compare = _dereq_('../utils/compare');
+
 /**
  * Action object to be sent through the ActionDispatcher
  * @param {string} name    - name of the event
@@ -1226,8 +1228,11 @@ var Action = function(name, payload) {
   /**
    * Dispatch this Action through a ActionDispatcher
    * @param {ActionDispatcher} action_dispatcher - dispatcher through which the Action is dispatched
+   * @throws {Error} if action_dispatcher is undefined or invalid
    */
   this.dispatch = function(action_dispatcher) {
+    if (compare.isUndefined(action_dispatcher)) throw new Error('action_dispatcher is undefined. Please provide a valid ActionDispatcher instance.');
+    if (!compare.isFunction(action_dispatcher.emit)) throw new Error('Invalid ActionDispatcher. ActionDispatcher must have a emit() method.');
     action_dispatcher.emit(this.name(), this);
   };
 };
@@ -1285,7 +1290,7 @@ function createActionFactory(action_specs) {
 //
 
 module.exports = { createActionFactory: createActionFactory };
-},{}],28:[function(_dereq_,module,exports){
+},{"../utils/compare":41}],28:[function(_dereq_,module,exports){
 'use strict';
 
 /**
@@ -1642,6 +1647,8 @@ module.exports = {
 },{"../core/injector":22,"../utils/array_utils":40,"../utils/compare":41,"../utils/create_with_args":42}],32:[function(_dereq_,module,exports){
 'use strict';
 
+var compare = _dereq_('../utils/compare');
+
 /**
  * Event object to be sent through the EventDispatcher
  * @param {string} name    - name of the event
@@ -1671,8 +1678,11 @@ var Event = function(name, payload) {
   /**
    * Dispatch this Event through a EventDispatcher
    * @param {EventDispatcher} event_dispatcher - dispatcher through which the Event is dispatched
+   * @throws {Error} if event_dispatcher is undefined or invalid
    */
   this.dispatch = function(event_dispatcher) {
+    if (compare.isUndefined(event_dispatcher)) throw new Error('event_dispatcher is undefined. Please provide a valid EventDispatcher instance.');
+    if (!compare.isFunction(event_dispatcher.dispatch)) throw new Error('Invalid EventDispatcher. EventDispatcher must have a dispatch() method.');
     event_dispatcher.dispatch(this);
   };
 };
@@ -1729,7 +1739,7 @@ function createEventFactory(event_specs) {
 //
 
 module.exports = { createEventFactory: createEventFactory };
-},{}],33:[function(_dereq_,module,exports){
+},{"../utils/compare":41}],33:[function(_dereq_,module,exports){
 'use strict';
 
 /**
