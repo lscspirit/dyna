@@ -50,6 +50,10 @@ var Flux = function(coordinators, stores) {
   // Public Methods
   //
 
+  /**
+   * Start this Flux
+   * This will initialize (by calling $initialize()) all the specified Stores and start (by calling $start()) all the Coordinators
+   */
   this.start = function() {
     if (_started == true) throw new Error('This flux is running already.');
 
@@ -60,13 +64,49 @@ var Flux = function(coordinators, stores) {
       if (compare.isFunction(s_instance.$initialize)) s_instance.$initialize();
     });
 
-    // instantiate coordinators
+    // start coordinators
     required_coordinators.forEach(function(c) {
       var c_instance = coordinator_instances[c];
+      // call $start()
       c_instance.$start();
     });
 
     _started = true;
+  };
+
+  /**
+   * Stop this Flux
+   * This will stop (by calling $stop()) all the Coordinators
+   */
+  this.stop = function() {
+    if (_started != true) throw new Error('This flux is not running.');
+
+    // stop coordinators
+    required_coordinators.forEach(function(c) {
+      var c_instance = coordinator_instances[c];
+      // call $stop()
+      if (compare.isFunction(c_instance.$stop)) c_instance.$stop();
+    });
+
+    _started = false;
+  };
+
+  /**
+   * Return the MountSpec from all the coordinators' $mountSpec() method
+   * @returns {MountSpec[]} mount specs of all the coordinators
+   */
+  this.componentMountSpecs = function() {
+    var specs = [];
+    required_coordinators.forEach(function(c) {
+      var c_instance = coordinator_instances[c];
+      // get coordinator's mount spec
+      if (compare.isFunction(c_instance.$mountSpec)) {
+        var s = c_instance.$mountSpec();
+        specs = specs.concat(s);
+      }
+    });
+
+    return specs;
   };
 
   /**

@@ -1,0 +1,118 @@
+<html>
+<head>
+  <script src="https://fb.me/JSXTransformer-0.13.3.js"></script>
+  <script src="https://fb.me/react-0.13.3.js"></script>
+  <script src="http://code.jquery.com/jquery-2.1.4.min.js"></script>
+  <script src="../../dyna.js"></script>
+  <script src="store.js"></script>
+  <script type="text/jsx">
+    'use strict';
+
+    (function(dyna, React) {
+
+      //
+      // Actions
+      //
+
+      var actions = dyna.createActionFactory({
+        buzzClick: function() {
+          return this.createAction('buzzer-clicked', 'clicked');
+        }
+      });
+
+      //
+      // Components
+      //
+
+      var BuzzerComponent = React.createClass({
+        mixins : [dyna.DynaFluxMixin(React)],
+
+        getInitialState : function() {
+          return {
+            status: this.props.status
+          }
+        },
+
+        componentDidMount : function() {
+          this.flux().store('BuzzerStore').addChangeListener(this._statusChanged);
+        },
+
+        render : function() {
+          return (
+              <div>
+                <div>Buzzer - { this.state.status }</div>
+                <button onClick={ this._buzzClick }>Buzz</button>
+              </div>
+          );
+        },
+
+        _buzzClick : function() {
+          var click_action = actions.buzzClick();
+          click_action.dispatch(this.flux().action_dispatcher);
+        },
+
+        _statusChanged : function() {
+          this.setState({
+            status: this.flux().store('BuzzerStore').getStatus()
+          });
+        }
+      });
+
+      //
+      // Events
+      //
+
+      var Events = dyna.createEventFactory({
+        statusChange : function(status) {
+          return this.createEvent('buzzer.status-change', status);
+        }
+      });
+
+      //
+      // Coordinator
+      //
+
+      var Buzzer = function() {
+        /**
+         * Specifies how components are mounted by this coordinator
+         * @returns {MountSpec[]}
+         */
+        this.$mountSpec = function() {
+          return [
+            { node: document.getElementById('buzzer'), component: BuzzerComponent, props: { status: 'unclicked' } }
+          ];
+        };
+
+        this.$start = function() {
+          this.flux.action_dispatcher.addListener('buzzer-clicked', _buzzClicked.bind(this));
+        };
+
+        //
+        // Private Method
+        //
+
+        function _buzzClicked(event) {
+          _setStatus.call(this, event.payload());
+        }
+
+        function _setStatus(status) {
+          Events.statusChange(status).dispatch(this.flux.event_dispatcher);
+        }
+      };
+
+      dyna.registerCoordinator('Buzzer', Buzzer);
+    }(dyna, dyna.React));
+
+
+    $(function() {
+      (function(dyna) {
+        var flux = dyna.flux(["Buzzer"], ["BuzzerStore"]);
+        dyna.start(flux);
+      }(dyna));
+    });
+  </script>
+</head>
+<body>
+<div id="buzzer"></div>
+</body>
+</html>

@@ -2806,7 +2806,168 @@ var Buzzer = function() {
 
     
 
-    <h4 class="name" id="mountComponents"><span class="type-signature"></span>mountComponents<span class="signature">(flux, root<span class="signature-attributes">opt</span>)</span><span class="type-signature"></span></h4>
+    <h4 class="name" id="mountComponents"><span class="type-signature"></span>mountComponents<span class="signature">(flux, specs)</span><span class="type-signature"></span></h4>
+
+    
+
+
+
+<div class="description">
+    Mounts the corresponding components as specified
+</div>
+
+
+
+
+
+
+
+
+
+    <h5>Parameters:</h5>
+    
+
+<table class="params">
+    <thead>
+    <tr>
+        
+        <th>Name</th>
+        
+
+        <th>Type</th>
+
+        
+
+        
+
+        <th class="last">Description</th>
+    </tr>
+    </thead>
+
+    <tbody>
+    
+
+        <tr>
+            
+                <td class="name"><code>flux</code></td>
+            
+
+            <td class="type">
+            
+                
+<span class="param-type">Flux</span>
+
+
+            
+            </td>
+
+            
+
+            
+
+            <td class="description last">instance of Flux</td>
+        </tr>
+
+    
+
+        <tr>
+            
+                <td class="name"><code>specs</code></td>
+            
+
+            <td class="type">
+            
+                
+<span class="param-type">Array.&lt;<a href="global.html#MountSpec">MountSpec</a>></span>
+
+
+            
+            </td>
+
+            
+
+            
+
+            <td class="description last">mounting specification</td>
+        </tr>
+
+    
+    </tbody>
+</table>
+
+
+
+
+
+
+<dl class="details">
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+    <dt class="tag-source">Source:</dt>
+    <dd class="tag-source"><ul class="dummy"><li>
+        <a href="core_ujs.js.html">core/ujs.js</a>, <a href="core_ujs.js.html#line25">line 25</a>
+    </li></ul></dd>
+    
+
+    
+
+    
+
+    
+</dl>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+    <h5>Example</h5>
+    
+    <pre class="prettyprint"><code>dyna.mountComponents(flux, [
+  { node: document.getElementById('node-one'), component: ReactClass, props: { prop_one: 'test' } }
+]);</code></pre>
+
+
+
+        
+            
+
+    
+
+    <h4 class="name" id="mountDynaComponents"><span class="type-signature"></span>mountDynaComponents<span class="signature">(flux, root<span class="signature-attributes">opt</span>)</span><span class="type-signature"></span></h4>
 
     
 
@@ -2951,7 +3112,7 @@ The value of this attribute indicates which registered component to mount
     
     <dt class="tag-source">Source:</dt>
     <dd class="tag-source"><ul class="dummy"><li>
-        <a href="core_ujs.js.html">core/ujs.js</a>, <a href="core_ujs.js.html#line15">line 15</a>
+        <a href="core_ujs.js.html">core/ujs.js</a>, <a href="core_ujs.js.html#line64">line 64</a>
     </li></ul></dd>
     
 
@@ -4087,7 +4248,285 @@ dyna.start(flux_two, $('#buzzer-two'));</code></pre>
 
     
 
-    <h4 class="name" id="unmountComponents"><span class="type-signature"></span>unmountComponents<span class="signature">(root<span class="signature-attributes">opt</span>)</span><span class="type-signature"></span></h4>
+    <h4 class="name" id="stop"><span class="type-signature"></span>stop<span class="signature">(flux)</span><span class="type-signature"></span></h4>
+
+    
+
+
+
+<div class="description">
+    Stop the app with a particular Flux
+</div>
+
+
+
+
+
+
+
+
+
+    <h5>Parameters:</h5>
+    
+
+<table class="params">
+    <thead>
+    <tr>
+        
+        <th>Name</th>
+        
+
+        <th>Type</th>
+
+        
+
+        
+
+        <th class="last">Description</th>
+    </tr>
+    </thead>
+
+    <tbody>
+    
+
+        <tr>
+            
+                <td class="name"><code>flux</code></td>
+            
+
+            <td class="type">
+            
+                
+<span class="param-type">Flux</span>
+
+
+            
+            </td>
+
+            
+
+            
+
+            <td class="description last">Flux instance</td>
+        </tr>
+
+    
+    </tbody>
+</table>
+
+
+
+
+
+
+<dl class="details">
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+    <dt class="tag-source">Source:</dt>
+    <dd class="tag-source"><ul class="dummy"><li>
+        <a href="core_lifecycle.js.html">core/lifecycle.js</a>, <a href="core_lifecycle.js.html#line58">line 58</a>
+    </li></ul></dd>
+    
+
+    
+
+    
+
+    
+</dl>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+    <h5>Example</h5>
+    
+        <p class="code-caption">Stop a running Flux</p>
+    
+    <pre class="prettyprint"><code>var flux = dyna.flux(["Buzzer"], ["BuzzerStore"]);
+dyna.start(flux);
+dyna.stop(flux);</code></pre>
+
+
+
+        
+            
+
+    
+
+    <h4 class="name" id="unmountComponents"><span class="type-signature"></span>unmountComponents<span class="signature">(specs)</span><span class="type-signature"></span></h4>
+
+    
+
+
+
+<div class="description">
+    Mounts the corresponding components as specified
+</div>
+
+
+
+
+
+
+
+
+
+    <h5>Parameters:</h5>
+    
+
+<table class="params">
+    <thead>
+    <tr>
+        
+        <th>Name</th>
+        
+
+        <th>Type</th>
+
+        
+
+        
+
+        <th class="last">Description</th>
+    </tr>
+    </thead>
+
+    <tbody>
+    
+
+        <tr>
+            
+                <td class="name"><code>specs</code></td>
+            
+
+            <td class="type">
+            
+                
+<span class="param-type">Array.&lt;<a href="global.html#MountSpec">MountSpec</a>></span>
+
+
+            
+            </td>
+
+            
+
+            
+
+            <td class="description last">mounting specification</td>
+        </tr>
+
+    
+    </tbody>
+</table>
+
+
+
+
+
+
+<dl class="details">
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+    <dt class="tag-source">Source:</dt>
+    <dd class="tag-source"><ul class="dummy"><li>
+        <a href="core_ujs.js.html">core/ujs.js</a>, <a href="core_ujs.js.html#line47">line 47</a>
+    </li></ul></dd>
+    
+
+    
+
+    
+
+    
+</dl>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+    <h5>Example</h5>
+    
+    <pre class="prettyprint"><code>dyna.unmountComponents(flux, [
+  { node: document.getElementById('node-one') }
+]);</code></pre>
+
+
+
+        
+            
+
+    
+
+    <h4 class="name" id="unmountDynaComponents"><span class="type-signature"></span>unmountDynaComponents<span class="signature">(root<span class="signature-attributes">opt</span>)</span><span class="type-signature"></span></h4>
 
     
 
@@ -4200,7 +4639,7 @@ dyna.start(flux_two, $('#buzzer-two'));</code></pre>
     
     <dt class="tag-source">Source:</dt>
     <dd class="tag-source"><ul class="dummy"><li>
-        <a href="core_ujs.js.html">core/ujs.js</a>, <a href="core_ujs.js.html#line39">line 39</a>
+        <a href="core_ujs.js.html">core/ujs.js</a>, <a href="core_ujs.js.html#line88">line 88</a>
     </li></ul></dd>
     
 
@@ -5074,6 +5513,172 @@ for <tt>React</tt> in the global scope
 
 
             
+                
+<h4 class="name" id="MountSpec">MountSpec</h4>
+
+
+
+
+
+
+    <h5>Type:</h5>
+    <ul>
+        <li>
+            
+<span class="param-type">Object</span>
+
+
+        </li>
+    </ul>
+
+
+
+
+
+    <h5 class="subsection-title">Properties:</h5>
+
+    
+
+<table class="props">
+    <thead>
+    <tr>
+        
+        <th>Name</th>
+        
+
+        <th>Type</th>
+
+        
+
+        
+
+        <th class="last">Description</th>
+    </tr>
+    </thead>
+
+    <tbody>
+    
+
+        <tr>
+            
+                <td class="name"><code>node</code></td>
+            
+
+            <td class="type">
+            
+                
+<span class="param-type">HTMLElement</span>
+
+
+            
+            </td>
+
+            
+
+            
+
+            <td class="description last">node on which the component is mounted</td>
+        </tr>
+
+    
+
+        <tr>
+            
+                <td class="name"><code>component</code></td>
+            
+
+            <td class="type">
+            
+                
+<span class="param-type">ReactClass</span>
+
+
+            
+            </td>
+
+            
+
+            
+
+            <td class="description last">ReactClass of the component</td>
+        </tr>
+
+    
+
+        <tr>
+            
+                <td class="name"><code>props</code></td>
+            
+
+            <td class="type">
+            
+                
+<span class="param-type">Object</span>
+
+
+            
+            </td>
+
+            
+
+            
+
+            <td class="description last">props to be mounted along with the component</td>
+        </tr>
+
+    
+    </tbody>
+</table>
+
+
+
+
+<dl class="details">
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+    <dt class="tag-source">Source:</dt>
+    <dd class="tag-source"><ul class="dummy"><li>
+        <a href="core_ujs.js.html">core/ujs.js</a>, <a href="core_ujs.js.html#line8">line 8</a>
+    </li></ul></dd>
+    
+
+    
+
+    
+
+    
+</dl>
+
+
+
+
+
+
+            
     
 
     
@@ -5087,13 +5692,13 @@ for <tt>React</tt> in the global scope
 </div>
 
 <nav>
-    <h2><a href="index.html">Home</a></h2><h3>Modules</h3><ul><li><a href="module-ActionDispatcher.html">ActionDispatcher</a></li><li><a href="module-core_core.html">core/core</a></li><li><a href="module-core_injector.html">core/injector</a></li><li><a href="module-core_provider_manager.html">core/provider_manager</a></li><li><a href="module-core_provider_recipes.html">core/provider_recipes</a></li><li><a href="module-EventDispatcher.html">EventDispatcher</a></li><li><a href="module-flux_flux.html">flux/flux</a></li><li><a href="module-utils_array_utils.html">utils/array_utils</a></li><li><a href="module-utils_compare.html">utils/compare</a></li></ul><h3>Classes</h3><ul><li><a href="Action.html">Action</a></li><li><a href="createActionFactory-ActionFactory.html">ActionFactory</a></li><li><a href="createEventFactory-EventFactory.html">EventFactory</a></li><li><a href="DynaFluxMixin.html">DynaFluxMixin</a></li><li><a href="Event.html">Event</a></li></ul><h3>Global</h3><ul><li><a href="global.html#_injectFlux">_injectFlux</a></li><li><a href="global.html#_provider_fns">_provider_fns</a></li><li><a href="global.html#_provider_instances">_provider_instances</a></li><li><a href="global.html#_store_specs">_store_specs</a></li><li><a href="global.html#addChangeListener">addChangeListener</a></li><li><a href="global.html#config">config</a></li><li><a href="global.html#createActionFactory">createActionFactory</a></li><li><a href="global.html#createBridge">createBridge</a></li><li><a href="global.html#createEventFactory">createEventFactory</a></li><li><a href="global.html#emitChange">emitChange</a></li><li><a href="global.html#eventDispatcherToken">eventDispatcherToken</a></li><li><a href="global.html#flux">flux</a></li><li><a href="global.html#getAllContext">getAllContext</a></li><li><a href="global.html#getComponent">getComponent</a></li><li><a href="global.html#getContext">getContext</a></li><li><a href="global.html#hasCoordinator">hasCoordinator</a></li><li><a href="global.html#hasStore">hasStore</a></li><li><a href="global.html#instantiateCoordinator">instantiateCoordinator</a></li><li><a href="global.html#instantiateStore">instantiateStore</a></li><li><a href="global.html#mountComponents">mountComponents</a></li><li><a href="global.html#registerComponent">registerComponent</a></li><li><a href="global.html#registerCoordinator">registerCoordinator</a></li><li><a href="global.html#registerStore">registerStore</a></li><li><a href="global.html#removeChangeListener">removeChangeListener</a></li><li><a href="global.html#setContext">setContext</a></li><li><a href="global.html#start">start</a></li><li><a href="global.html#unmountComponents">unmountComponents</a></li><li><a href="global.html#useBridge">useBridge</a></li><li><a href="global.html#useJQuery">useJQuery</a></li><li><a href="global.html#useReact">useReact</a></li><li><a href="global.html#waitFor">waitFor</a></li></ul>
+    <h2><a href="index.html">Home</a></h2><h3>Modules</h3><ul><li><a href="module-ActionDispatcher.html">ActionDispatcher</a></li><li><a href="module-core_core.html">core/core</a></li><li><a href="module-core_injector.html">core/injector</a></li><li><a href="module-core_provider_manager.html">core/provider_manager</a></li><li><a href="module-core_provider_recipes.html">core/provider_recipes</a></li><li><a href="module-EventDispatcher.html">EventDispatcher</a></li><li><a href="module-flux_flux.html">flux/flux</a></li><li><a href="module-utils_array_utils.html">utils/array_utils</a></li><li><a href="module-utils_compare.html">utils/compare</a></li></ul><h3>Classes</h3><ul><li><a href="Action.html">Action</a></li><li><a href="createActionFactory-ActionFactory.html">ActionFactory</a></li><li><a href="createEventFactory-EventFactory.html">EventFactory</a></li><li><a href="DynaFluxMixin.html">DynaFluxMixin</a></li><li><a href="Event.html">Event</a></li></ul><h3>Global</h3><ul><li><a href="global.html#_injectFlux">_injectFlux</a></li><li><a href="global.html#_provider_fns">_provider_fns</a></li><li><a href="global.html#_provider_instances">_provider_instances</a></li><li><a href="global.html#_store_specs">_store_specs</a></li><li><a href="global.html#addChangeListener">addChangeListener</a></li><li><a href="global.html#config">config</a></li><li><a href="global.html#createActionFactory">createActionFactory</a></li><li><a href="global.html#createBridge">createBridge</a></li><li><a href="global.html#createEventFactory">createEventFactory</a></li><li><a href="global.html#emitChange">emitChange</a></li><li><a href="global.html#eventDispatcherToken">eventDispatcherToken</a></li><li><a href="global.html#flux">flux</a></li><li><a href="global.html#getAllContext">getAllContext</a></li><li><a href="global.html#getComponent">getComponent</a></li><li><a href="global.html#getContext">getContext</a></li><li><a href="global.html#hasCoordinator">hasCoordinator</a></li><li><a href="global.html#hasStore">hasStore</a></li><li><a href="global.html#instantiateCoordinator">instantiateCoordinator</a></li><li><a href="global.html#instantiateStore">instantiateStore</a></li><li><a href="global.html#mountComponents">mountComponents</a></li><li><a href="global.html#mountDynaComponents">mountDynaComponents</a></li><li><a href="global.html#registerComponent">registerComponent</a></li><li><a href="global.html#registerCoordinator">registerCoordinator</a></li><li><a href="global.html#registerStore">registerStore</a></li><li><a href="global.html#removeChangeListener">removeChangeListener</a></li><li><a href="global.html#setContext">setContext</a></li><li><a href="global.html#start">start</a></li><li><a href="global.html#stop">stop</a></li><li><a href="global.html#unmountComponents">unmountComponents</a></li><li><a href="global.html#unmountDynaComponents">unmountDynaComponents</a></li><li><a href="global.html#useBridge">useBridge</a></li><li><a href="global.html#useJQuery">useJQuery</a></li><li><a href="global.html#useReact">useReact</a></li><li><a href="global.html#waitFor">waitFor</a></li></ul>
 </nav>
 
 <br class="clear">
 
 <footer>
-    Documentation generated by <a href="https://github.com/jsdoc3/jsdoc">JSDoc 3.3.0</a> on Tue Jun 16 2015 14:02:54 GMT+0800 (HKT)
+    Documentation generated by <a href="https://github.com/jsdoc3/jsdoc">JSDoc 3.3.0</a> on Sat Jun 20 2015 01:22:24 GMT+0800 (HKT)
 </footer>
 
 <script> prettyPrint(); </script>

@@ -42,7 +42,23 @@ function config(deps, fn) {
  */
 function start(flux, root) {
   flux.start();
-  this.mountComponents(flux, root);
+  this.mountComponents(flux, flux.componentMountSpecs());
+  this.mountDynaComponents(flux, root);
+}
+
+/**
+ * Stop the app with a particular Flux
+ * @param {Flux} flux   - Flux instance
+ *
+ * @example <caption>Stop a running Flux</caption>
+ * var flux = dyna.flux(["Buzzer"], ["BuzzerStore"]);
+ * dyna.start(flux);
+ * dyna.stop(flux);
+ */
+function stop(flux) {
+  this.unmountDynaComponents(root);
+  this.unmountComponents(flux.componentMountSpecs());
+  flux.stop();
 }
 
 //
@@ -51,7 +67,8 @@ function start(flux, root) {
 
 var Lifecycle = {
   config: config,
-  start : start
+  start : start,
+  stop  : stop
 };
 
 assign(Lifecycle, ujs);
