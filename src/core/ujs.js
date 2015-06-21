@@ -57,24 +57,21 @@ function unmountComponents(specs) {
  * Mounts corresponding components to DOM nodes that has "data-dyna-component" attribute set
  * The value of this attribute indicates which registered component to mount
  *
- * @param {Flux} flux   - instance of Flux
- * @param {*}    [root] - component root under which dyna components will be mounted.
- *                        This can either be a DOM node, jQuery object or a selector
+ * @param {Flux}        flux   - instance of Flux
+ * @param {HTMLElement} [root] - DOM Node under (and including self) which dyna components will be mounted.
  */
 function mountDynaComponents(flux, root) {
-  var $ = this.$;
+  root      = compare.isUndefined(root) ? document : root;
+  var elems = _queryAllAndSelfWithAttribute('data-dyna-component', root);
 
-  var $root  = compare.isUndefined(root) ? $(':root') : $(root);
-  var $elems = $root.find('[data-dyna-component]').addBack('[data-dyna-component]');
-
-  var specs = $elems.map(function() {
-    var component_name = $(this).data('dyna-component');
+  var specs = elems.map(function(node) {
+    var component_name = node.getAttribute('data-dyna-component');
     var component = components.getComponent(component_name);
 
-    var props = $(this).data('props') || {};
+    var props = node.hasAttribute('data-props') ? JSON.parse(node.getAttribute['data-props']) : {};
 
-    return { node: this, component: component, props: props };
-  }).get();
+    return { node: node, component: component, props: props };
+  });
 
   mountComponents.call(this, flux, specs);
 }
@@ -82,21 +79,31 @@ function mountDynaComponents(flux, root) {
 /**
  * Unmount all previously mounted components
  *
- * @param {*} [root] - component root under which dyna components will be mounted.
- *                     This can either be a DOM node, jQuery object or a selector
+ * @param {HTMLElement} [root] - DOM Node under (and including self) which dyna components will be mounted.
  */
 function unmountDynaComponents(root) {
-  var $ = this.$;
-  var React = this.React;
+  root      = compare.isUndefined(root) ? document : root;
+  var elems = _queryAllAndSelfWithAttribute('data-dyna-component', root);
 
-  var $root  = compare.isUndefined(root) ? $(':root') : $(root);
-  var $elems = $root.find('[data-dyna-component]').addBack('[data-dyna-component]');
-
-  var specs = $elems.map(function() {
-    return { node: this };
-  }).get();
+  var specs = elems.map(function(node) {
+    return { node: node };
+  });
 
   unmountComponents.call(this, specs);
+}
+
+//
+// Private Methods
+//
+
+function _queryAllAndSelfWithAttribute(attribute, root) {
+  var matched = root.querySelectorAll('[' + attribute + ']');
+  var arry    = [];
+  for (var i = 0; i < matched.length; i++) { arry.push(matched[i]); }
+
+  // check self
+  if (compare.isFunction(root.hasAttribute) && root.hasAttribute(attribute)) arry.unshift(root);
+  return arry;
 }
 
 module.exports = {

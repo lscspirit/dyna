@@ -25,20 +25,19 @@ function config(deps, fn) {
 
 /**
  * Start the app with a particular Flux
- * @param {Flux} flux   - Flux instance
- * @param {*}    [root] - component root under which dyna components will be mounted.
- *                        This can either be a DOM node, jQuery object or a selector
+ * @param {Flux}             flux   - Flux instance
+ * @param {Document|Element} [root] - component root under which dyna components will be mounted.
  *
  * @example <caption>Start a single Flux</caption>
  * var flux = dyna.flux(["Buzzer"], ["BuzzerStore"]);
  * dyna.start(flux);
  *
- * @example <caption>Start multiple Flux on different set of nodesß</caption>
+ * @example <caption>Start multiple Flux on different set of nodes</caption>
  * var flux_one = dyna.flux(["Buzzer"], ["BuzzerStore"]);
  * var flux_two = dyna.flux(["Buzzer"], ["BuzzerStore"]);
  *
- * dyna.start(flux_one, $('#buzzer-one'));
- * dyna.start(flux_two, $('#buzzer-two'));
+ * dyna.start(flux_one, document.getElementById('#buzzer-one'));
+ * dyna.start(flux_two, document.getElementById('#buzzer-two'));
  */
 function start(flux, root) {
   var self = this;
@@ -50,14 +49,15 @@ function start(flux, root) {
 
 /**
  * Stop the app with a particular Flux
- * @param {Flux} flux   - Flux instance
+ * @param {Flux}             flux   - Flux instance
+ * @param {Document|Element} [root] - component root under which dyna components were mounted.
  *
  * @example <caption>Stop a running Flux</caption>
  * var flux = dyna.flux(["Buzzer"], ["BuzzerStore"]);
  * dyna.start(flux);
  * dyna.stop(flux);
  */
-function stop(flux) {
+function stop(flux, root) {
   this.unmountDynaComponents(root);
   this.unmountComponents(flux.componentMountSpecs());
   flux.stop();

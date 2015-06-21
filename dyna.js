@@ -3316,15 +3316,6 @@ module.exports = core;
 var assign = _dereq_('object-assign');
 
 /**
- * Set the jQuery library to be used within this framework. If not specified, it will look
- * for <tt>$</tt> in the global scope
- * @param {Object} jQuery - jQuery object
- */
-function useJQuery(jQuery) {
-  this.$ = jQuery;
-}
-
-/**
  * Set the ReactJS library to be used within this framework. If not specified, it will look
  * for <tt>React</tt> in the global scope
  * @param {Object} React - ReactJS library object
@@ -3333,11 +3324,21 @@ function useReact(React) {
   this.React = React;
 }
 
+/**
+ * Store the jQuery to dyna.$ property. The dyna framework itself does not use jQuery. This method and
+ * the dyna.$ property are provided for convenience so that individual app can more easily use a consistent
+ * jQuery instance rather than relying on window.$.
+ *
+ * @param {Object} jQuery - jQuery object
+ */
+function setGlobalJQuery(jQuery) {
+  this.$ = jQuery;
+}
+
 var Libs = {
-  $        : window && window.$,
   React    : window && window.React,
-  useJQuery: useJQuery,
-  useReact : useReact
+  useReact : useReact,
+  setGlobalJQuery: setGlobalJQuery
 };
 
 module.exports = Libs;
@@ -3526,20 +3527,19 @@ function config(deps, fn) {
 
 /**
  * Start the app with a particular Flux
- * @param {Flux} flux   - Flux instance
- * @param {*}    [root] - component root under which dyna components will be mounted.
- *                        This can either be a DOM node, jQuery object or a selector
+ * @param {Flux}             flux   - Flux instance
+ * @param {Document|Element} [root] - component root under which dyna components will be mounted.
  *
  * @example <caption>Start a single Flux</caption>
  * var flux = dyna.flux(["Buzzer"], ["BuzzerStore"]);
  * dyna.start(flux);
  *
- * @example <caption>Start multiple Flux on different set of nodesß</caption>
+ * @example <caption>Start multiple Flux on different set of nodes</caption>
  * var flux_one = dyna.flux(["Buzzer"], ["BuzzerStore"]);
  * var flux_two = dyna.flux(["Buzzer"], ["BuzzerStore"]);
  *
- * dyna.start(flux_one, $('#buzzer-one'));
- * dyna.start(flux_two, $('#buzzer-two'));
+ * dyna.start(flux_one, document.getElementById('#buzzer-one'));
+ * dyna.start(flux_two, document.getElementById('#buzzer-two'));
  */
 function start(flux, root) {
   var self = this;
@@ -3551,14 +3551,15 @@ function start(flux, root) {
 
 /**
  * Stop the app with a particular Flux
- * @param {Flux} flux   - Flux instance
+ * @param {Flux}             flux   - Flux instance
+ * @param {Document|Element} [root] - component root under which dyna components were mounted.
  *
  * @example <caption>Stop a running Flux</caption>
  * var flux = dyna.flux(["Buzzer"], ["BuzzerStore"]);
  * dyna.start(flux);
  * dyna.stop(flux);
  */
-function stop(flux) {
+function stop(flux, root) {
   this.unmountDynaComponents(root);
   this.unmountComponents(flux.componentMountSpecs());
   flux.stop();
@@ -3821,24 +3822,21 @@ function unmountComponents(specs) {
  * Mounts corresponding components to DOM nodes that has "data-dyna-component" attribute set
  * The value of this attribute indicates which registered component to mount
  *
- * @param {Flux} flux   - instance of Flux
- * @param {*}    [root] - component root under which dyna components will be mounted.
- *                        This can either be a DOM node, jQuery object or a selector
+ * @param {Flux}        flux   - instance of Flux
+ * @param {HTMLElement} [root] - DOM Node under (and including self) which dyna components will be mounted.
  */
 function mountDynaComponents(flux, root) {
-  var $ = this.$;
+  root      = compare.isUndefined(root) ? document : root;
+  var elems = _queryAllAndSelfWithAttribute('data-dyna-component', root);
 
-  var $root  = compare.isUndefined(root) ? $(':root') : $(root);
-  var $elems = $root.find('[data-dyna-component]').addBack('[data-dyna-component]');
-
-  var specs = $elems.map(function() {
-    var component_name = $(this).data('dyna-component');
+  var specs = elems.map(function(node) {
+    var component_name = node.getAttribute('data-dyna-component');
     var component = components.getComponent(component_name);
 
-    var props = $(this).data('props') || {};
+    var props = node.hasAttribute('data-props') ? JSON.parse(node.getAttribute['data-props']) : {};
 
-    return { node: this, component: component, props: props };
-  }).get();
+    return { node: node, component: component, props: props };
+  });
 
   mountComponents.call(this, flux, specs);
 }
@@ -3846,21 +3844,31 @@ function mountDynaComponents(flux, root) {
 /**
  * Unmount all previously mounted components
  *
- * @param {*} [root] - component root under which dyna components will be mounted.
- *                     This can either be a DOM node, jQuery object or a selector
+ * @param {HTMLElement} [root] - DOM Node under (and including self) which dyna components will be mounted.
  */
 function unmountDynaComponents(root) {
-  var $ = this.$;
-  var React = this.React;
+  root      = compare.isUndefined(root) ? document : root;
+  var elems = _queryAllAndSelfWithAttribute('data-dyna-component', root);
 
-  var $root  = compare.isUndefined(root) ? $(':root') : $(root);
-  var $elems = $root.find('[data-dyna-component]').addBack('[data-dyna-component]');
-
-  var specs = $elems.map(function() {
-    return { node: this };
-  }).get();
+  var specs = elems.map(function(node) {
+    return { node: node };
+  });
 
   unmountComponents.call(this, specs);
+}
+
+//
+// Private Methods
+//
+
+function _queryAllAndSelfWithAttribute(attribute, root) {
+  var matched = root.querySelectorAll('[' + attribute + ']');
+  var arry    = [];
+  for (var i = 0; i < matched.length; i++) { arry.push(matched[i]); }
+
+  // check self
+  if (compare.isFunction(root.hasAttribute) && root.hasAttribute(attribute)) arry.unshift(root);
+  return arry;
 }
 
 module.exports = {
@@ -4212,7 +4220,7 @@ var _coordinator_defs = {};
  * Coordinator can have the following methods:
  *   $start - (Required) method that starts the coordinator. This will be called when parent Flux is started.
  *                       This can optionally return a {Promise} object. If so, Flux will wait for this promise to be
- *                       resolved before starting the next coordinator. 
+ *                       resolved before starting the next coordinator.
  *   $stop  - (Optional) method that stops the coordinator. This will be called when the parent Flux is stopped.
  *   $mountSpec - (Optional) method that returns a {@link MountSpec} object to specify how coordinator specific
  *                component will be mounted by Flux.

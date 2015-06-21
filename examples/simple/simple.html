@@ -58,8 +58,8 @@
         var flux_one = dyna.flux(["Buzzer"], ["BuzzerStore"]);
         var flux_two = dyna.flux(["Buzzer"], ["BuzzerStore"]);
 
-        dyna.start(flux_one, $('#buzzer-one'));
-        dyna.start(flux_two, $('#buzzer-two'));
+        dyna.start(flux_one, $('#buzzer-one')[0]);
+        dyna.start(flux_two, $('#buzzer-two')[0]);
       }(dyna));
     });
   </script>
