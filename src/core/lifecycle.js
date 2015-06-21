@@ -41,9 +41,11 @@ function config(deps, fn) {
  * dyna.start(flux_two, $('#buzzer-two'));
  */
 function start(flux, root) {
-  flux.start();
-  this.mountComponents(flux, flux.componentMountSpecs());
-  this.mountDynaComponents(flux, root);
+  var self = this;
+  flux.start().done(function() {
+    self.mountComponents(flux, flux.componentMountSpecs());
+    self.mountDynaComponents(flux, root);
+  });
 }
 
 /**

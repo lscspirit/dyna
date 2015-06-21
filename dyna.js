@@ -1,6 +1,2464 @@
 (function(f){if(typeof exports==="object"&&typeof module!=="undefined"){module.exports=f()}else if(typeof define==="function"&&define.amd){define([],f)}else{var g;if(typeof window!=="undefined"){g=window}else if(typeof global!=="undefined"){g=global}else if(typeof self!=="undefined"){g=self}else{g=this}g.dyna = f()}})(function(){var define,module,exports;return (function e(t,n,r){function s(o,u){if(!n[o]){if(!t[o]){var a=typeof require=="function"&&require;if(!u&&a)return a(o,!0);if(i)return i(o,!0);var f=new Error("Cannot find module '"+o+"'");throw f.code="MODULE_NOT_FOUND",f}var l=n[o]={exports:{}};t[o][0].call(l.exports,function(e){var n=t[o][1][e];return s(n?n:e)},l,l.exports,e,t,n,r)}return n[o].exports}var i=typeof require=="function"&&require;for(var o=0;o<r.length;o++)s(r[o]);return s})({1:[function(_dereq_,module,exports){
 'use strict';
 
+var callable   = _dereq_('es5-ext/object/valid-callable')
+  , d          = _dereq_('d')
+  , isCallable = _dereq_('es5-ext/object/is-callable')
+  , ee         = _dereq_('event-emitter')
+  , isPromise  = _dereq_('./is-promise')
+
+  , create = Object.create, defineProperty = Object.defineProperty
+  , deferred, resolve, reject;
+
+module.exports = exports = function (name, unres, onres, res) {
+	name = String(name);
+	(callable(res) && ((onres == null) || callable(onres)) && callable(unres));
+	defineProperty(exports._unresolved, name, d(unres));
+	exports._onresolve[name] = onres;
+	defineProperty(exports._resolved, name, d(res));
+	exports._names.push(name);
+};
+
+exports._names = ['done', 'then', 'valueOf'];
+
+exports._unresolved = ee(create(Function.prototype, {
+	then: d(function (win, fail) {
+		var def;
+		if (!this.pending) this.pending = [];
+		def = deferred();
+		this.pending.push('then', [win, fail, def.resolve, def.reject]);
+		return def.promise;
+	}),
+	done: d(function (win, fail) {
+		((win == null) || callable(win));
+		((fail == null) || callable(fail));
+		if (!this.pending) this.pending = [];
+		this.pending.push('done', arguments);
+	}),
+	resolved: d(false),
+	returnsPromise: d(true),
+	valueOf: d(function () { return this; })
+}));
+
+exports._onresolve = {
+	then: function (win, fail, resolve, reject) {
+		var value, cb = this.failed ? fail : win;
+		if (cb == null) {
+			if (this.failed) reject(this.value);
+			else resolve(this.value);
+			return;
+		}
+		if (isCallable(cb)) {
+			if (isPromise(cb)) {
+				if (cb.resolved) {
+					if (cb.failed) reject(cb.value);
+					else resolve(cb.value);
+					return;
+				}
+				cb.done(resolve, reject);
+				return;
+			}
+			try { value = cb(this.value); } catch (e) {
+				reject(e);
+				return;
+			}
+			resolve(value);
+			return;
+		}
+		resolve(cb);
+	},
+	done: function (win, fail) {
+		if (this.failed) {
+			if (fail) {
+				fail(this.value);
+				return;
+			}
+			throw this.value;
+		}
+		if (win) win(this.value);
+	}
+};
+
+exports._resolved = ee(create(Function.prototype, {
+	then: d(function (win, fail) {
+		var value, cb = this.failed ? fail : win;
+		if (cb == null) return this;
+		if (isCallable(cb)) {
+			if (isPromise(cb)) return cb;
+			try { value = cb(this.value); } catch (e) { return reject(e); }
+			return resolve(value);
+		}
+		return resolve(cb);
+	}),
+	done: d(function (win, fail) {
+		((win == null) || callable(win));
+		((fail == null) || callable(fail));
+		if (this.failed) {
+			if (fail) {
+				fail(this.value);
+				return;
+			}
+			throw this.value;
+		}
+		if (win) win(this.value);
+	}),
+	resolved: d(true),
+	returnsPromise: d(true),
+	valueOf: d(function () { return this.value; })
+}));
+
+deferred = _dereq_('./deferred');
+resolve = deferred.resolve;
+reject = deferred.reject;
+deferred.extend = exports;
+
+},{"./deferred":3,"./is-promise":27,"d":29,"es5-ext/object/is-callable":59,"es5-ext/object/valid-callable":66,"event-emitter":77}],2:[function(_dereq_,module,exports){
+// Assimilate eventual foreign promise
+
+'use strict';
+
+var isObject  = _dereq_('es5-ext/object/is-object')
+  , isPromise = _dereq_('./is-promise')
+  , deferred  = _dereq_('./deferred')
+  , nextTick  = _dereq_('next-tick')
+
+  , getPrototypeOf = Object.getPrototypeOf;
+
+module.exports = function self(value) {
+	var then, done, def, resolve, reject;
+	if (!value) return value;
+	try {
+		then = value.then;
+	} catch (e) {
+		return value;
+	}
+	if (typeof then !== 'function') return value;
+	if (isPromise(value)) return value;
+	if (!isObject(value)) return value;
+	if (!getPrototypeOf(value)) return value;
+	try {
+		done = value.done;
+	} catch (ignore) {}
+	def = deferred();
+	resolve = function (value) { def.resolve(self(value)); };
+	reject = function (value) { def.reject(value); };
+	if (typeof done === 'function') {
+		try {
+			done.call(value, resolve, reject);
+		} catch (e) {
+			return def.reject(e);
+		}
+		return def.promise;
+	}
+	try {
+		then.call(value, function (value) { nextTick(function () {
+			resolve(value);
+		}); }, function (value) { nextTick(function () {
+			reject(value);
+		}); });
+	} catch (e) {
+		return def.reject(e);
+	}
+	return def.promise;
+};
+
+},{"./deferred":3,"./is-promise":27,"es5-ext/object/is-object":60,"next-tick":79}],3:[function(_dereq_,module,exports){
+// Returns function that returns deferred or promise object.
+//
+// 1. If invoked without arguments then deferred object is returned
+//    Deferred object consist of promise (unresolved) function and resolve
+//    function through which we resolve promise
+// 2. If invoked with one argument then promise is returned which resolved value
+//    is given argument. Argument may be any value (even undefined),
+//    if it's promise then same promise is returned
+// 3. If invoked with more than one arguments then promise that resolves with
+//    array of all resolved arguments is returned.
+
+'use strict';
+
+var isError    = _dereq_('es5-ext/error/is-error')
+  , noop       = _dereq_('es5-ext/function/noop')
+  , isPromise  = _dereq_('./is-promise')
+
+  , every = Array.prototype.every, push = Array.prototype.push
+
+  , Deferred, createDeferred, count = 0, timeout, extendShim, ext
+  , protoSupported = Boolean(isPromise.__proto__)
+  , resolve, assimilate;
+
+extendShim = function (promise) {
+	ext._names.forEach(function (name) {
+		promise[name] = function () {
+			return promise.__proto__[name].apply(promise, arguments);
+		};
+	});
+	promise.returnsPromise = true;
+	promise.resolved = promise.__proto__.resolved;
+};
+
+resolve = function (value, failed) {
+	var promise = function (win, fail) { return promise.then(win, fail); };
+	promise.value = value;
+	promise.failed = failed;
+	promise.__proto__ = ext._resolved;
+	if (!protoSupported) { extendShim(promise); }
+	if (createDeferred._profile) createDeferred._profile(true);
+	return promise;
+};
+
+Deferred = function () {
+	var promise = function (win, fail) { return promise.then(win, fail); };
+	if (!count) timeout = setTimeout(noop, 1e9);
+	++count;
+	if (createDeferred._monitor) promise.monitor = createDeferred._monitor();
+	promise.__proto__ = ext._unresolved;
+	if (!protoSupported) extendShim(promise);
+	(createDeferred._profile && createDeferred._profile());
+	this.promise = promise;
+	this.resolve = this.resolve.bind(this);
+	this.reject = this.reject.bind(this);
+};
+
+Deferred.prototype = {
+	resolved: false,
+	_settle: function (value) {
+		var i, name, data;
+		this.promise.value = value;
+		this.promise.__proto__ = ext._resolved;
+		if (!protoSupported) this.promise.resolved = true;
+		if (this.promise.dependencies) {
+			this.promise.dependencies.forEach(function self(dPromise) {
+				dPromise.value = value;
+				dPromise.failed = this.failed;
+				dPromise.__proto__ = ext._resolved;
+				if (!protoSupported) dPromise.resolved = true;
+				delete dPromise.pending;
+				if (dPromise.dependencies) {
+					dPromise.dependencies.forEach(self, this);
+					delete dPromise.dependencies;
+				}
+			}, this.promise);
+			delete this.promise.dependencies;
+		}
+		if ((data = this.promise.pending)) {
+			for (i = 0; (name = data[i]); ++i) {
+				ext._onresolve[name].apply(this.promise, data[++i]);
+			}
+			delete this.promise.pending;
+		}
+		return this.promise;
+	},
+	resolve: function (value) {
+		if (this.resolved) return this.promise;
+		this.resolved = true;
+		if (!--count) clearTimeout(timeout);
+		if (this.promise.monitor) clearTimeout(this.promise.monitor);
+		value = assimilate(value);
+		if (isPromise(value)) {
+			if (!value.resolved) {
+				if (!value.dependencies) {
+					value.dependencies = [];
+				}
+				value.dependencies.push(this.promise);
+				if (this.promise.pending) {
+					if (value.pending) {
+						push.apply(value.pending, this.promise.pending);
+						this.promise.pending = value.pending;
+						if (this.promise.dependencies) {
+							this.promise.dependencies.forEach(function self(dPromise) {
+								dPromise.pending = value.pending;
+								if (dPromise.dependencies) {
+									dPromise.dependencies.forEach(self);
+								}
+							});
+						}
+					} else {
+						value.pending = this.promise.pending;
+					}
+				} else if (value.pending) {
+					this.promise.pending = value.pending;
+				} else {
+					this.promise.pending = value.pending = [];
+				}
+				return this.promise;
+			}
+			this.promise.failed = value.failed;
+			value = value.value;
+		}
+		return this._settle(value);
+	},
+	reject: function (error) {
+		if (this.resolved) return this.promise;
+		this.resolved = true;
+		if (!--count) clearTimeout(timeout);
+		if (this.promise.monitor) clearTimeout(this.promise.monitor);
+		this.promise.failed = true;
+		return this._settle(error);
+	}
+};
+
+module.exports = createDeferred = function (value) {
+	var l = arguments.length, d, waiting, initialized, result;
+	if (!l) return new Deferred();
+	if (l > 1) {
+		d = new Deferred();
+		waiting = 0;
+		result = new Array(l);
+		every.call(arguments, function (value, index) {
+			value = assimilate(value);
+			if (!isPromise(value)) {
+				result[index] = value;
+				return true;
+			}
+			if (value.resolved) {
+				if (value.failed) {
+					d.reject(value.value);
+					return false;
+				}
+				result[index] = value.value;
+				return true;
+			}
+			++waiting;
+			value.done(function (value) {
+				result[index] = value;
+				if (!--waiting && initialized) d.resolve(result);
+			}, d.reject);
+			return true;
+		});
+		initialized = true;
+		if (!waiting) d.resolve(result);
+		return d.promise;
+	}
+	value = assimilate(value);
+	if (isPromise(value)) return value;
+	return resolve(value, isError(value));
+};
+
+createDeferred.Deferred = Deferred;
+createDeferred.reject = function (value) { return resolve(value, true); };
+createDeferred.resolve = function (value) {
+	value = assimilate(value);
+	if (isPromise(value)) return value;
+	return resolve(value, false);
+};
+ext = _dereq_('./_ext');
+assimilate = _dereq_('./assimilate');
+
+},{"./_ext":1,"./assimilate":2,"./is-promise":27,"es5-ext/error/is-error":37,"es5-ext/function/noop":43}],4:[function(_dereq_,module,exports){
+'use strict';
+
+var arrayOf    = _dereq_('es5-ext/array/of')
+  , deferred   = _dereq_('../deferred')
+  , isPromise  = _dereq_('../is-promise')
+  , assimilate = _dereq_('../assimilate')
+
+  , push = Array.prototype.push, slice = Array.prototype.slice;
+
+module.exports = function (args, length) {
+	var i, l, arg;
+	if ((length != null) && (args.length !== length)) {
+		args = slice.call(args, 0, length);
+		if (args.length < length) {
+			push.apply(args, new Array(length - args.length));
+		}
+	}
+	for (i = 0, l = args.length; i < l; ++i) {
+		arg = assimilate(args[i]);
+		if (isPromise(arg)) {
+			if (!arg.resolved) {
+				if (l > 1) return deferred.apply(null, args);
+				return arg(arrayOf);
+			}
+			if (arg.failed) return arg;
+			args[i] = arg.value;
+		}
+	}
+	return args;
+};
+
+},{"../assimilate":2,"../deferred":3,"../is-promise":27,"es5-ext/array/of":33}],5:[function(_dereq_,module,exports){
+// Promise aware Array's map
+
+'use strict';
+
+var assign     = _dereq_('es5-ext/object/assign')
+  , value      = _dereq_('es5-ext/object/valid-value')
+  , callable   = _dereq_('es5-ext/object/valid-callable')
+  , deferred   = _dereq_('../../deferred')
+  , isPromise  = _dereq_('../../is-promise')
+  , assimilate = _dereq_('../../assimilate')
+
+  , every = Array.prototype.every
+  , call = Function.prototype.call
+
+  , DMap;
+
+DMap = function (list, cb, context) {
+	this.list = list;
+	this.cb = cb;
+	this.context = context;
+	this.result = new Array(list.length >>> 0);
+
+	assign(this, deferred());
+	every.call(list, this.process, this);
+	if (!this.waiting) return this.resolve(this.result);
+	this.initialized = true;
+
+	return this.promise;
+};
+
+DMap.prototype = {
+	waiting: 0,
+	initialized: false,
+	process: function (value, index) {
+		++this.waiting;
+		value = assimilate(value);
+		if (isPromise(value)) {
+			if (!value.resolved) {
+				value.done(this.processCb.bind(this, index), this.reject);
+				return true;
+			}
+			if (value.failed) {
+				this.reject(value.value);
+				return false;
+			}
+			value = value.value;
+		}
+		return this.processCb(index, value);
+	},
+	processCb: function (index, value) {
+		if (this.promise.resolved) return false;
+		if (this.cb) {
+			try {
+				value = call.call(this.cb, this.context, value, index, this.list);
+			} catch (e) {
+				this.reject(e);
+				return false;
+			}
+			value = assimilate(value);
+			if (isPromise(value)) {
+				if (!value.resolved) {
+					value.done(this.processValue.bind(this, index), this.reject);
+					return true;
+				}
+				if (value.failed) {
+					this.reject(value.value);
+					return false;
+				}
+				value = value.value;
+			}
+		}
+		this.processValue(index, value);
+		return true;
+	},
+	processValue: function (index, value) {
+		if (this.promise.resolved) return;
+		this.result[index] = value;
+		if (!--this.waiting && this.initialized) this.resolve(this.result);
+	}
+};
+
+module.exports = function (cb/*, thisArg*/) {
+	value(this);
+	((cb == null) || callable(cb));
+
+	return new DMap(this, cb, arguments[1]);
+};
+
+},{"../../assimilate":2,"../../deferred":3,"../../is-promise":27,"es5-ext/object/assign":55,"es5-ext/object/valid-callable":66,"es5-ext/object/valid-value":68}],6:[function(_dereq_,module,exports){
+// Promise aware Array's reduce
+
+'use strict';
+
+var assign     = _dereq_('es5-ext/object/assign')
+  , value      = _dereq_('es5-ext/object/valid-value')
+  , callable   = _dereq_('es5-ext/object/valid-callable')
+  , deferred   = _dereq_('../../deferred')
+  , isPromise  = _dereq_('../../is-promise')
+  , assimilate = _dereq_('../../assimilate')
+
+  , call = Function.prototype.call
+  , hasOwnProperty = Object.prototype.hasOwnProperty
+  , resolve = deferred.resolve
+  , Reduce;
+
+Reduce = function (list, cb, initial, initialized) {
+	this.list = list;
+	this.cb = cb;
+	this.initialized = initialized;
+	this.length = list.length >>> 0;
+
+	initial = assimilate(initial);
+	if (isPromise(initial)) {
+		if (!initial.resolved) {
+			assign(this, deferred());
+			initial.done(function (initial) {
+				this.value = initial;
+				this.init();
+			}.bind(this), this.reject);
+			return this.promise;
+		}
+		this.value = initial.value;
+		if (initial.failed) return initial;
+	} else {
+		this.value = initial;
+	}
+
+	return this.init();
+};
+
+Reduce.prototype = {
+	current: 0,
+	state: false,
+	init: function () {
+		while (this.current < this.length) {
+			if (hasOwnProperty.call(this.list, this.current)) break;
+			++this.current;
+		}
+		if (this.current === this.length) {
+			if (!this.initialized) {
+				throw new Error("Reduce of empty array with no initial value");
+			}
+			return this.resolve ? this.resolve(this.value) : resolve(this.value);
+		}
+		if (!this.promise) assign(this, deferred());
+		this.processCb = this.processCb.bind(this);
+		this.processValue = this.processValue.bind(this);
+		this.continue();
+		return this.promise;
+	},
+	continue: function () {
+		var result;
+		while (!this.state) {
+			result = this.process();
+			if (this.state !== 'cb') break;
+			result = this.processCb(result);
+			if (this.state !== 'value') break;
+			this.processValue(result);
+		}
+	},
+	process: function () {
+		var value = assimilate(this.list[this.current]);
+		if (isPromise(value)) {
+			if (!value.resolved) {
+				value.done(function (result) {
+					result = this.processCb(result);
+					if (this.state !== 'value') return;
+					this.processValue(result);
+					if (!this.state) this.continue();
+				}.bind(this), this.reject);
+				return;
+			}
+			if (value.failed) {
+				this.reject(value.value);
+				return;
+			}
+			value = value.value;
+		}
+		this.state = 'cb';
+		return value;
+	},
+	processCb: function (value) {
+		if (!this.initialized) {
+			this.initialized = true;
+			this.state = 'value';
+			return value;
+		}
+		if (this.cb) {
+			try {
+				value = call.call(this.cb, undefined, this.value, value, this.current,
+					this.list);
+			} catch (e) {
+				this.reject(e);
+				return;
+			}
+			value = assimilate(value);
+			if (isPromise(value)) {
+				if (!value.resolved) {
+					value.done(function (result) {
+						this.state = 'value';
+						this.processValue(result);
+						if (!this.state) this.continue();
+					}.bind(this), this.reject);
+					return;
+				}
+				if (value.failed) {
+					this.reject(value.value);
+					return;
+				}
+				value = value.value;
+			}
+		}
+		this.state = 'value';
+		return value;
+	},
+	processValue: function (value) {
+		this.value = value;
+		while (++this.current < this.length) {
+			if (hasOwnProperty.call(this.list, this.current)) {
+				this.state = false;
+				return;
+			}
+		}
+		this.resolve(this.value);
+	}
+};
+
+module.exports = function (cb/*, initial*/) {
+	value(this);
+	((cb == null) || callable(cb));
+
+	return new Reduce(this, cb, arguments[1], arguments.length > 1);
+};
+
+},{"../../assimilate":2,"../../deferred":3,"../../is-promise":27,"es5-ext/object/assign":55,"es5-ext/object/valid-callable":66,"es5-ext/object/valid-value":68}],7:[function(_dereq_,module,exports){
+// Promise aware Array's some
+
+'use strict';
+
+var assign     = _dereq_('es5-ext/object/assign')
+  , value      = _dereq_('es5-ext/object/valid-value')
+  , callable   = _dereq_('es5-ext/object/valid-callable')
+  , deferred   = _dereq_('../../deferred')
+  , isPromise  = _dereq_('../../is-promise')
+  , assimilate = _dereq_('../../assimilate')
+
+  , call = Function.prototype.call
+  , resolve = deferred.resolve
+  , Some;
+
+Some = function (list, cb, context) {
+	this.list = list;
+	this.cb = cb;
+	this.context = context;
+	this.length = list.length >>> 0;
+
+	while (this.current < this.length) {
+		if (this.current in list) {
+			assign(this, deferred());
+			this.processCb = this.processCb.bind(this);
+			this.processValue = this.processValue.bind(this);
+			this.process();
+			return this.promise;
+		}
+		++this.current;
+	}
+	return resolve(false);
+};
+
+Some.prototype = {
+	current: 0,
+	process: function () {
+		var value = assimilate(this.list[this.current]);
+		if (isPromise(value)) {
+			if (!value.resolved) {
+				value.done(this.processCb, this.reject);
+				return;
+			}
+			if (value.failed) {
+				this.reject(value.value);
+				return;
+			}
+			value = value.value;
+		}
+		this.processCb(value);
+	},
+	processCb: function (value) {
+		if (this.cb) {
+			try {
+				value = call.call(this.cb, this.context, value, this.current,
+					this.list);
+			} catch (e) {
+				this.reject(e);
+				return;
+			}
+			value = assimilate(value);
+			if (isPromise(value)) {
+				if (!value.resolved) {
+					value.done(this.processValue, this.reject);
+					return;
+				}
+				if (value.failed) {
+					this.reject(value.value);
+					return;
+				}
+				value = value.value;
+			}
+		}
+		this.processValue(value);
+	},
+	processValue: function (value) {
+		if (value) {
+			this.resolve(true);
+			return;
+		}
+		while (++this.current < this.length) {
+			if (this.current in this.list) {
+				this.process();
+				return;
+			}
+		}
+		this.resolve(false);
+	}
+};
+
+module.exports = function (cb/*, thisArg*/) {
+	value(this);
+	((cb == null) || callable(cb));
+
+	return new Some(this, cb, arguments[1]);
+};
+
+},{"../../assimilate":2,"../../deferred":3,"../../is-promise":27,"es5-ext/object/assign":55,"es5-ext/object/valid-callable":66,"es5-ext/object/valid-value":68}],8:[function(_dereq_,module,exports){
+// Call asynchronous function
+
+'use strict';
+
+var toArray          = _dereq_('es5-ext/array/to-array')
+  , callable         = _dereq_('es5-ext/object/valid-callable')
+  , deferred         = _dereq_('../../deferred')
+  , isPromise        = _dereq_('../../is-promise')
+  , processArguments = _dereq_('../_process-arguments')
+
+  , slice = Array.prototype.slice, apply = Function.prototype.apply
+
+  , applyFn, callAsync;
+
+applyFn = function (fn, args, def) {
+	args = toArray(args);
+	apply.call(fn,  this, args.concat(function (error, result) {
+		if (error == null) {
+			def.resolve((arguments.length > 2) ? slice.call(arguments, 1) : result);
+		} else {
+			def.reject(error);
+		}
+	}));
+};
+
+callAsync = function (fn, length, context, args) {
+	var def;
+	args = processArguments(args, length);
+	if (isPromise(args)) {
+		if (args.failed) return args;
+		def = deferred();
+		args.done(function (args) {
+			if (fn.returnsPromise) return apply.call(fn, context, args);
+			try {
+				applyFn.call(context, fn, args, def);
+			} catch (e) { def.reject(e); }
+		}, def.reject);
+		return def.promise;
+	}
+	if (fn.returnsPromise) return apply.call(fn, context, args);
+	def = deferred();
+	try {
+		applyFn.call(context, fn, args, def);
+	} catch (e) {
+		def.reject(e);
+		throw e;
+	}
+	return def.promise;
+};
+
+module.exports = exports = function (context/*, …args*/) {
+	return callAsync(callable(this), null, context, slice.call(arguments, 1));
+};
+
+Object.defineProperty(exports, '_base', { configurable: true,
+	enumerable: false, writable: true, value: callAsync });
+
+},{"../../deferred":3,"../../is-promise":27,"../_process-arguments":4,"es5-ext/array/to-array":36,"es5-ext/object/valid-callable":66}],9:[function(_dereq_,module,exports){
+// Delay function execution, return promise for delayed function result
+
+'use strict';
+
+var apply    = Function.prototype.apply
+  , callable = _dereq_('es5-ext/object/valid-callable')
+  , deferred = _dereq_('../../deferred')
+
+  , delayed;
+
+delayed = function (fn, args, resolve, reject) {
+	var value;
+	try {
+		value = apply.call(fn, this, args);
+	} catch (e) {
+		reject(e);
+		return;
+	}
+	resolve(value);
+};
+
+module.exports = function (timeout) {
+	var fn, result;
+	fn = callable(this);
+	result = function () {
+		var def = deferred();
+		setTimeout(delayed.bind(this, fn, arguments, def.resolve, def.reject),
+			timeout);
+		return def.promise;
+	};
+	result.returnsPromise = true;
+	return result;
+};
+
+},{"../../deferred":3,"es5-ext/object/valid-callable":66}],10:[function(_dereq_,module,exports){
+// Limit number of concurrent function executions (to cLimit number).
+// Limited calls are queued. Optionaly maximum queue length can also be
+// controlled with qLimit value, any calls that would reach over that limit
+// would be discarded (its promise would resolve with "Too many calls" error)
+
+'use strict';
+
+var toPosInt   = _dereq_('es5-ext/number/to-pos-integer')
+  , callable   = _dereq_('es5-ext/object/valid-callable')
+  , eeUnify    = _dereq_('event-emitter/unify')
+  , deferred   = _dereq_('../../deferred')
+  , isPromise  = _dereq_('../../is-promise')
+  , assimilate = _dereq_('../../assimilate')
+
+  , resolve = deferred.resolve, reject = deferred.reject
+  , apply = Function.prototype.apply, max = Math.max
+  , gateReject;
+
+_dereq_('../promise/finally');
+
+gateReject = function () {
+	var e = new Error("Too many calls");
+	e.type = 'deferred-gate-rejected';
+	return reject(e);
+};
+
+module.exports = function (cLimit, qLimit) {
+	var fn, count, decrement, unload, queue, run, result;
+	fn = callable(this);
+	cLimit = max(toPosInt(cLimit), 1);
+	qLimit = ((qLimit == null) || isNaN(qLimit)) ? Infinity : toPosInt(qLimit);
+	count = 0;
+	queue = [];
+
+	run = function (thisArg, args, def) {
+		var r;
+		try {
+			r = apply.call(fn, thisArg, args);
+		} catch (e) {
+			if (!def) return reject(e);
+			def.reject(e);
+			unload();
+			return;
+		}
+		r = assimilate(r);
+		if (isPromise(r)) {
+			if (def) eeUnify(def.promise, r);
+			if (!r.resolved) {
+				++count;
+				if (def) def.resolve(r);
+				return r.finally(decrement);
+			}
+			r = r.value;
+		}
+		if (!def) return resolve(r);
+		def.resolve(r);
+		unload();
+	};
+
+	decrement = function () {
+		--count;
+		unload();
+	};
+
+	unload = function () {
+		var data;
+		if ((data = queue.shift())) run.apply(null, data);
+	};
+
+	result = function () {
+		var def;
+		if (count >= cLimit) {
+			if (queue.length < qLimit) {
+				def = deferred();
+				queue.push([this, arguments, def]);
+				return def.promise;
+			}
+			return gateReject();
+		}
+		return run(this, arguments);
+	};
+	result.returnsPromise = true;
+	return result;
+};
+
+},{"../../assimilate":2,"../../deferred":3,"../../is-promise":27,"../promise/finally":17,"es5-ext/number/to-pos-integer":53,"es5-ext/object/valid-callable":66,"event-emitter/unify":78}],11:[function(_dereq_,module,exports){
+// Promisify synchronous function
+
+'use strict';
+
+var callable         = _dereq_('es5-ext/object/valid-callable')
+  , deferred         = _dereq_('../../deferred')
+  , isPromise        = _dereq_('../../is-promise')
+  , processArguments = _dereq_('../_process-arguments')
+
+  , apply = Function.prototype.apply
+
+  , applyFn;
+
+applyFn = function (fn, args, resolve, reject) {
+	var value;
+	try {
+		value = apply.call(fn, this, args);
+	} catch (e) {
+		reject(e);
+		return;
+	}
+	resolve(value);
+};
+
+module.exports = function (length) {
+	var fn, result;
+	fn = callable(this);
+	if (fn.returnsPromise) return fn;
+	if (length != null) length = length >>> 0;
+	result = function () {
+		var args, def;
+		args = processArguments(arguments, length);
+
+		if (isPromise(args)) {
+			if (args.failed) return args;
+			def = deferred();
+			args.done(function (args) {
+				applyFn.call(this, fn, args, def.resolve, def.reject);
+			}.bind(this), def.reject);
+		} else {
+			def = deferred();
+			applyFn.call(this, fn, args, def.resolve, def.reject);
+		}
+
+		return def.promise;
+	};
+	result.returnsPromise = true;
+	return result;
+};
+
+},{"../../deferred":3,"../../is-promise":27,"../_process-arguments":4,"es5-ext/object/valid-callable":66}],12:[function(_dereq_,module,exports){
+// Promisify asynchronous function
+
+'use strict';
+
+var callable  = _dereq_('es5-ext/object/valid-callable')
+  , callAsync = _dereq_('./call-async')._base;
+
+module.exports = function (length) {
+	var fn, result;
+	fn = callable(this);
+	if (fn.returnsPromise) return fn;
+	if (length != null) length = length >>> 0;
+	result = function () { return callAsync(fn, length, this, arguments); };
+	result.returnsPromise = true;
+	return result;
+};
+
+},{"./call-async":8,"es5-ext/object/valid-callable":66}],13:[function(_dereq_,module,exports){
+// Used by promise extensions that are based on array extensions.
+
+'use strict';
+
+var callable = _dereq_('es5-ext/object/valid-callable')
+  , deferred = _dereq_('../../deferred')
+
+  , reject = deferred.reject;
+
+module.exports = function (name, ext) {
+	deferred.extend(name, function (cb) {
+		var def;
+		((cb == null) || callable(cb));
+		if (!this.pending) this.pending = [];
+		def = deferred();
+		this.pending.push(name, [arguments, def.resolve, def.reject]);
+		return def.promise;
+	}, function (args, resolve, reject) {
+		var result;
+		if (this.failed) {
+			reject(this.value);
+			return;
+		}
+		try {
+			result = ext.apply(this.value, args);
+		} catch (e) {
+			reject(e);
+			return;
+		}
+		resolve(result);
+	}, function (cb) {
+		((cb == null) || callable(cb));
+		if (this.failed) return this;
+		try {
+			return ext.apply(this.value, arguments);
+		} catch (e) {
+			return reject(e);
+		}
+	});
+};
+
+},{"../../deferred":3,"es5-ext/object/valid-callable":66}],14:[function(_dereq_,module,exports){
+// 'aside' - Promise extension
+//
+// promise.aside(win, fail)
+//
+// Works in analogous way as promise function itself (or `then`)
+// but instead of adding promise to promise chain it returns context promise and
+// lets callback carry on with other processing logic
+
+'use strict';
+
+var callable = _dereq_('es5-ext/object/valid-callable')
+  , deferred = _dereq_('../../deferred');
+
+deferred.extend('aside', function (win, fail) {
+	((win == null) || callable(win));
+	((fail == null) || callable(fail));
+	if (win || fail) {
+		if (!this.pending) {
+			this.pending = [];
+		}
+		this.pending.push('aside', arguments);
+	}
+	return this;
+}, function (win, fail) {
+	var cb = this.failed ? fail : win;
+	if (cb) {
+		cb(this.value);
+	}
+}, function (win, fail) {
+	var cb;
+	((win == null) || callable(win));
+	((fail == null) || callable(fail));
+	cb = this.failed ? fail : win;
+	if (cb) {
+		cb(this.value);
+	}
+	return this;
+});
+
+},{"../../deferred":3,"es5-ext/object/valid-callable":66}],15:[function(_dereq_,module,exports){
+// 'catch' - Promise extension
+//
+// promise.catch(cb)
+//
+// Same as `then` but accepts only onFail callback
+
+'use strict';
+
+var isCallable = _dereq_('es5-ext/object/is-callable')
+  , validValue = _dereq_('es5-ext/object/valid-value')
+  , deferred   = _dereq_('../../deferred')
+  , isPromise  = _dereq_('../../is-promise')
+
+  , resolve = deferred.resolve, reject = deferred.reject;
+
+deferred.extend('catch', function (cb) {
+	var def;
+	validValue(cb);
+	if (!this.pending) this.pending = [];
+	def = deferred();
+	this.pending.push('catch', [cb, def.resolve, def.reject]);
+	return def.promise;
+}, function (cb, resolve, reject) {
+	var value;
+	if (!this.failed) {
+		resolve(this.value);
+		return;
+	}
+	if (isCallable(cb)) {
+		if (isPromise(cb)) {
+			if (cb.resolved) {
+				if (cb.failed) reject(cb.value);
+				else resolve(cb.value);
+			} else {
+				cb.done(resolve, reject);
+			}
+			return;
+		}
+		try { value = cb(this.value); } catch (e) {
+			reject(e);
+			return;
+		}
+		resolve(value);
+		return;
+	}
+	resolve(cb);
+}, function (cb) {
+	var value;
+	validValue(cb);
+	if (!this.failed) return this;
+	if (isCallable(cb)) {
+		if (isPromise(cb)) return cb;
+		try { value = cb(this.value); } catch (e) {
+			return reject(e);
+		}
+		return resolve(value);
+	}
+	return resolve(cb);
+});
+
+},{"../../deferred":3,"../../is-promise":27,"es5-ext/object/is-callable":59,"es5-ext/object/valid-value":68}],16:[function(_dereq_,module,exports){
+// 'cb' - Promise extension
+//
+// promise.cb(cb)
+//
+// Handles asynchronous function style callback (which is run in next event loop
+// the earliest). Returns self promise. Callback is optional.
+//
+// Useful when we want to configure typical asynchronous function which logic is
+// internally configured with promises.
+//
+// Extension can be used as follows:
+//
+// var foo = function (arg1, arg2, cb) {
+//     var d = deferred();
+//     // ... implementation
+//     return d.promise.cb(cb);
+// };
+//
+// `cb` extension returns promise and handles eventual callback (optional)
+
+'use strict';
+
+var callable   = _dereq_('es5-ext/object/valid-callable')
+  , nextTick   = _dereq_('next-tick')
+  , deferred   = _dereq_('../../deferred');
+
+deferred.extend('cb', function (cb) {
+	if (cb == null) return this;
+	callable(cb);
+	nextTick(function () {
+		if (this.resolved) {
+			if (this.failed) cb(this.value);
+			else cb(null, this.value);
+		} else {
+			if (!this.pending) this.pending = [];
+			this.pending.push('cb', [cb]);
+		}
+	}.bind(this));
+	return this;
+}, function (cb) {
+	if (this.failed) cb(this.value);
+	else cb(null, this.value);
+}, function (cb) {
+	if (cb == null) return this;
+	callable(cb);
+	nextTick(function () {
+		if (this.failed) cb(this.value);
+		else cb(null, this.value);
+	}.bind(this));
+	return this;
+});
+
+},{"../../deferred":3,"es5-ext/object/valid-callable":66,"next-tick":79}],17:[function(_dereq_,module,exports){
+// 'finally' - Promise extension
+//
+// promise.finally(cb)
+//
+// Called on promise resolution returns same promise, doesn't pass any values to
+// provided callback
+
+'use strict';
+
+var callable = _dereq_('es5-ext/object/valid-callable')
+  , deferred = _dereq_('../../deferred');
+
+deferred.extend('finally', function (cb) {
+	callable(cb);
+	if (!this.pending) this.pending = [];
+	this.pending.push('finally', arguments);
+	return this;
+}, function (cb) { cb(); }, function (cb) {
+	callable(cb)();
+	return this;
+});
+
+},{"../../deferred":3,"es5-ext/object/valid-callable":66}],18:[function(_dereq_,module,exports){
+// 'get' - Promise extension
+//
+// promise.get(name)
+//
+// Resolves with property of resolved object
+
+'use strict';
+
+var value    = _dereq_('es5-ext/object/valid-value')
+  , deferred = _dereq_('../../deferred')
+
+  , reduce = Array.prototype.reduce
+  , resolve = deferred.resolve, reject = deferred.reject;
+
+deferred.extend('get', function (/*…name*/) {
+	var def;
+	if (!this.pending) this.pending = [];
+	def = deferred();
+	this.pending.push('get', [arguments, def.resolve, def.reject]);
+	return def.promise;
+
+}, function (args, resolve, reject) {
+	var result;
+	if (this.failed) reject(this.value);
+	try {
+		result = reduce.call(args, function (obj, key) {
+			return value(obj)[String(key)];
+		}, this.value);
+	} catch (e) {
+		reject(e);
+		return;
+	}
+	resolve(result);
+}, function (/*…name*/) {
+	var result;
+	if (this.failed) return this;
+	try {
+		result = reduce.call(arguments, function (obj, key) {
+			return value(obj)[String(key)];
+		}, this.value);
+	} catch (e) {
+		return reject(e);
+	}
+	return resolve(result);
+});
+
+},{"../../deferred":3,"es5-ext/object/valid-value":68}],19:[function(_dereq_,module,exports){
+// 'invokeAsync' - Promise extension
+//
+// promise.invokeAsync(name[, arg0[, arg1[, ...]]])
+//
+// On resolved object calls asynchronous method that takes callback
+// (Node.js style).
+// Do not pass callback, it's handled by internal implementation.
+// 'name' can be method name or method itself.
+
+'use strict';
+
+var toArray          = _dereq_('es5-ext/array/to-array')
+  , isCallable       = _dereq_('es5-ext/object/is-callable')
+  , deferred         = _dereq_('../../deferred')
+  , isPromise        = _dereq_('../../is-promise')
+  , processArguments = _dereq_('../_process-arguments')
+
+  , slice = Array.prototype.slice, apply = Function.prototype.apply
+  , reject = deferred.reject
+
+  , applyFn;
+
+applyFn = function (fn, args, resolve, reject) {
+	var result;
+	if (fn.returnsPromise) {
+		try {
+			result = apply.call(fn, this, args);
+		} catch (e) {
+			reject(e);
+			return;
+		}
+		return resolve(result);
+	}
+	args = toArray(args).concat(function (error, result) {
+		if (error == null) {
+			resolve((arguments.length > 2) ? slice.call(arguments, 1) : result);
+		} else {
+			reject(error);
+		}
+	});
+	try {
+		apply.call(fn, this, args);
+	} catch (e2) {
+		reject(e2);
+	}
+};
+
+deferred.extend('invokeAsync', function (method/*, …args*/) {
+	var def;
+	if (!this.pending) this.pending = [];
+	def = deferred();
+	this.pending.push('invokeAsync', [arguments, def.resolve, def.reject]);
+	return def.promise;
+}, function (args, resolve, reject) {
+	var fn;
+	if (this.failed) {
+		reject(this.value);
+		return;
+	}
+
+	if (this.value == null) {
+		reject(new TypeError("Cannot use null or undefined"));
+		return;
+	}
+
+	fn = args[0];
+	if (!isCallable(fn)) {
+		fn = String(fn);
+		if (!isCallable(this.value[fn])) {
+			reject(new TypeError(fn + " is not a function"));
+			return;
+		}
+		fn = this.value[fn];
+	}
+
+	args = processArguments(slice.call(args, 1));
+	if (isPromise(args)) {
+		if (args.failed) {
+			reject(args.value);
+			return;
+		}
+		args.done(function (args) {
+			applyFn.call(this, fn, args, resolve, reject);
+		}.bind(this.value), reject);
+	} else {
+		applyFn.call(this.value, fn, args, resolve, reject);
+	}
+}, function (method/*, …args*/) {
+	var args, def;
+	if (this.failed) return this;
+
+	if (this.value == null) {
+		return reject(new TypeError("Cannot use null or undefined"));
+	}
+
+	if (!isCallable(method)) {
+		method = String(method);
+		if (!isCallable(this.value[method])) {
+			return reject(new TypeError(method + " is not a function"));
+		}
+		method = this.value[method];
+	}
+
+	args = processArguments(slice.call(arguments, 1));
+	if (isPromise(args)) {
+		if (args.failed) return args;
+		def = deferred();
+		args.done(function (args) {
+			applyFn.call(this, method, args, def.resolve, def.reject);
+		}.bind(this.value), def.reject);
+	} else if (!method.returnsPromise) {
+		def = deferred();
+		applyFn.call(this.value, method, args, def.resolve, def.reject);
+	} else {
+		return applyFn.call(this.value, method, args, deferred, reject);
+	}
+	return def.promise;
+});
+
+},{"../../deferred":3,"../../is-promise":27,"../_process-arguments":4,"es5-ext/array/to-array":36,"es5-ext/object/is-callable":59}],20:[function(_dereq_,module,exports){
+// 'invoke' - Promise extension
+//
+// promise.invoke(name[, arg0[, arg1[, ...]]])
+//
+// On resolved object calls method that returns immediately.
+// 'name' can be method name or method itself.
+
+'use strict';
+
+var isCallable       = _dereq_('es5-ext/object/is-callable')
+  , deferred         = _dereq_('../../deferred')
+  , isPromise        = _dereq_('../../is-promise')
+  , processArguments = _dereq_('../_process-arguments')
+
+  , slice = Array.prototype.slice, apply = Function.prototype.apply
+  , reject = deferred.reject
+  , applyFn;
+
+applyFn = function (fn, args, resolve, reject) {
+	var value;
+	try {
+		value = apply.call(fn, this, args);
+	} catch (e) {
+		return reject(e);
+	}
+	return resolve(value);
+};
+
+deferred.extend('invoke', function (method/*, …args*/) {
+	var def;
+	if (!this.pending) this.pending = [];
+	def = deferred();
+	this.pending.push('invoke', [arguments, def.resolve, def.reject]);
+	return def.promise;
+}, function (args, resolve, reject) {
+	var fn;
+	if (this.failed) {
+		reject(this.value);
+		return;
+	}
+
+	if (this.value == null) {
+		reject(new TypeError("Cannot use null or undefined"));
+		return;
+	}
+
+	fn = args[0];
+	if (!isCallable(fn)) {
+		fn = String(fn);
+		if (!isCallable(this.value[fn])) {
+			reject(new TypeError(fn + " is not a function"));
+			return;
+		}
+		fn = this.value[fn];
+	}
+
+	args = processArguments(slice.call(args, 1));
+	if (isPromise(args)) {
+		if (args.failed) {
+			reject(args.value);
+			return;
+		}
+		args.done(function (args) {
+			applyFn.call(this, fn, args, resolve, reject);
+		}.bind(this.value), reject);
+	} else {
+		applyFn.call(this.value, fn, args, resolve, reject);
+	}
+}, function (method/*, …args*/) {
+	var args, def;
+	if (this.failed) return this;
+
+	if (this.value == null) {
+		return reject(new TypeError("Cannot use null or undefined"));
+	}
+
+	if (!isCallable(method)) {
+		method = String(method);
+		if (!isCallable(this.value[method])) {
+			return reject(new TypeError(method + " is not a function"));
+		}
+		method = this.value[method];
+	}
+
+	args = processArguments(slice.call(arguments, 1));
+	if (isPromise(args)) {
+		if (args.failed) return args;
+		def = deferred();
+		args.done(function (args) {
+			applyFn.call(this, method, args, def.resolve, def.reject);
+		}.bind(this.value), def.reject);
+		return def.promise;
+	}
+	return applyFn.call(this.value, method, args, deferred, reject);
+});
+
+},{"../../deferred":3,"../../is-promise":27,"../_process-arguments":4,"es5-ext/object/is-callable":59}],21:[function(_dereq_,module,exports){
+// 'map' - Promise extension
+//
+// promise.map(fn[, thisArg[, concurrentLimit]])
+//
+// Promise aware map for array-like results
+
+'use strict';
+
+_dereq_('./_array')('map', _dereq_('../array/map'));
+
+},{"../array/map":5,"./_array":13}],22:[function(_dereq_,module,exports){
+// 'reduce' - Promise extension
+//
+// promise.reduce(fn[, initial])
+//
+// Promise aware reduce for array-like results
+
+'use strict';
+
+_dereq_('./_array')('reduce', _dereq_('../array/reduce'));
+
+},{"../array/reduce":6,"./_array":13}],23:[function(_dereq_,module,exports){
+// 'some' - Promise extension
+//
+// promise.some(fn[, thisArg])
+//
+// Promise aware some for array-like results
+
+'use strict';
+
+_dereq_('./_array')('some', _dereq_('../array/some'));
+
+},{"../array/some":7,"./_array":13}],24:[function(_dereq_,module,exports){
+// 'spread' - Promise extensions
+//
+// promise.spread(onsuccess, onerror)
+//
+// Matches eventual list result onto function arguments,
+// otherwise works same as 'then' (promise function itself)
+
+'use strict';
+
+var spread     = _dereq_('es5-ext/function/#/spread')
+  , callable   = _dereq_('es5-ext/object/valid-callable')
+  , isCallable = _dereq_('es5-ext/object/is-callable')
+  , isPromise  = _dereq_('../../is-promise')
+  , deferred   = _dereq_('../../deferred')
+
+  , resolve = deferred.resolve, reject = deferred.reject;
+
+deferred.extend('spread', function (win, fail) {
+	var def;
+	((win == null) || callable(win));
+	if (!win && (fail == null)) return this;
+	if (!this.pending) this.pending = [];
+	def = deferred();
+	this.pending.push('spread', [win, fail, def.resolve, def.reject]);
+	return def.promise;
+}, function (win, fail, resolve, reject) {
+	var cb, value;
+	cb = this.failed ? fail : win;
+	if (cb == null) {
+		if (this.failed) reject(this.value);
+		else resolve(this.value);
+	}
+	if (isCallable(cb)) {
+		if (isPromise(cb)) {
+			if (cb.resolved) {
+				if (cb.failed) reject(cb.value);
+				else resolve(cb.value);
+			} else {
+				cb.done(resolve, reject);
+			}
+			return;
+		}
+		if (!this.failed) cb = spread.call(cb);
+		try {
+			value = cb(this.value);
+		} catch (e) {
+			reject(e);
+			return;
+		}
+		resolve(value);
+	} else {
+		resolve(cb);
+	}
+}, function (win, fail) {
+	var cb, value;
+	cb = this.failed ? fail : win;
+	if (cb == null) return this;
+	if (isCallable(cb)) {
+		if (isPromise(cb)) return cb;
+		if (!this.failed) cb = spread.call(cb);
+		try {
+			value = cb(this.value);
+		} catch (e) {
+			return reject(e);
+		}
+		return resolve(value);
+	}
+	return resolve(cb);
+});
+
+},{"../../deferred":3,"../../is-promise":27,"es5-ext/function/#/spread":39,"es5-ext/object/is-callable":59,"es5-ext/object/valid-callable":66}],25:[function(_dereq_,module,exports){
+// This construct deferred with all needed goodies that are being exported
+// when we import 'deferred' by main name.
+// All available promise extensions are also initialized.
+
+'use strict';
+
+var call   = Function.prototype.call
+  , assign = _dereq_('es5-ext/object/assign');
+
+module.exports = assign(_dereq_('./deferred'), {
+	invokeAsync:   _dereq_('./invoke-async'),
+	isPromise:     _dereq_('./is-promise'),
+	validPromise:  _dereq_('./valid-promise'),
+	callAsync:     call.bind(_dereq_('./ext/function/call-async')),
+	delay:         call.bind(_dereq_('./ext/function/delay')),
+	gate:          call.bind(_dereq_('./ext/function/gate')),
+	monitor:       _dereq_('./monitor'),
+	promisify:     call.bind(_dereq_('./ext/function/promisify')),
+	promisifySync: call.bind(_dereq_('./ext/function/promisify-sync')),
+	map:           call.bind(_dereq_('./ext/array/map')),
+	reduce:        call.bind(_dereq_('./ext/array/reduce')),
+	some:          call.bind(_dereq_('./ext/array/some'))
+}, _dereq_('./profiler'));
+
+_dereq_('./ext/promise/aside');
+_dereq_('./ext/promise/catch');
+_dereq_('./ext/promise/cb');
+_dereq_('./ext/promise/finally');
+_dereq_('./ext/promise/get');
+_dereq_('./ext/promise/invoke');
+_dereq_('./ext/promise/invoke-async');
+_dereq_('./ext/promise/map');
+_dereq_('./ext/promise/spread');
+_dereq_('./ext/promise/some');
+_dereq_('./ext/promise/reduce');
+
+},{"./deferred":3,"./ext/array/map":5,"./ext/array/reduce":6,"./ext/array/some":7,"./ext/function/call-async":8,"./ext/function/delay":9,"./ext/function/gate":10,"./ext/function/promisify":12,"./ext/function/promisify-sync":11,"./ext/promise/aside":14,"./ext/promise/catch":15,"./ext/promise/cb":16,"./ext/promise/finally":17,"./ext/promise/get":18,"./ext/promise/invoke":20,"./ext/promise/invoke-async":19,"./ext/promise/map":21,"./ext/promise/reduce":22,"./ext/promise/some":23,"./ext/promise/spread":24,"./invoke-async":26,"./is-promise":27,"./monitor":28,"./profiler":80,"./valid-promise":81,"es5-ext/object/assign":55}],26:[function(_dereq_,module,exports){
+// Invoke asynchronous function
+
+'use strict';
+
+var isCallable = _dereq_('es5-ext/object/is-callable')
+  , callable   = _dereq_('es5-ext/object/valid-callable')
+  , value      = _dereq_('es5-ext/object/valid-value')
+  , callAsync  = _dereq_('./ext/function/call-async')._base
+
+  , slice = Array.prototype.slice;
+
+module.exports = function (obj, fn/*, …args*/) {
+	value(obj);
+	if (!isCallable(fn)) fn = callable(obj[fn]);
+	return callAsync(fn, null, obj, slice.call(arguments, 2));
+};
+
+},{"./ext/function/call-async":8,"es5-ext/object/is-callable":59,"es5-ext/object/valid-callable":66,"es5-ext/object/valid-value":68}],27:[function(_dereq_,module,exports){
+// Whether given object is a promise
+
+'use strict';
+
+module.exports = function (o) {
+	return (typeof o === 'function') && (typeof o.then === 'function') && (o.end !== o.done);
+};
+
+},{}],28:[function(_dereq_,module,exports){
+// Run if you want to monitor unresolved promises (in properly working
+// application there should be no promises that are never resolved)
+
+'use strict';
+
+var max        = Math.max
+  , callable   = _dereq_('es5-ext/object/valid-callable')
+  , isCallable = _dereq_('es5-ext/object/is-callable')
+  , toPosInt   = _dereq_('es5-ext/number/to-pos-integer')
+  , deferred   = _dereq_('./deferred');
+
+exports = module.exports = function (timeout, cb) {
+	if (timeout === false) {
+		// Cancel monitor
+		delete deferred._monitor;
+		delete exports.timeout;
+		delete exports.callback;
+		return;
+	}
+	exports.timeout = timeout = max(toPosInt(timeout) || 5000, 50);
+	if (cb == null) {
+		if ((typeof console !== 'undefined') && console &&
+				isCallable(console.error)) {
+			cb = function (e) {
+				console.error(((e.stack && e.stack.toString()) ||
+					"Unresolved promise: no stack available"));
+			};
+		}
+	} else {
+		callable(cb);
+	}
+	exports.callback = cb;
+
+	deferred._monitor = function () {
+		var e = new Error("Unresolved promise");
+		return setTimeout(function () {
+			if (cb) cb(e);
+		}, timeout);
+	};
+};
+
+},{"./deferred":3,"es5-ext/number/to-pos-integer":53,"es5-ext/object/is-callable":59,"es5-ext/object/valid-callable":66}],29:[function(_dereq_,module,exports){
+'use strict';
+
+var assign        = _dereq_('es5-ext/object/assign')
+  , normalizeOpts = _dereq_('es5-ext/object/normalize-options')
+  , isCallable    = _dereq_('es5-ext/object/is-callable')
+  , contains      = _dereq_('es5-ext/string/#/contains')
+
+  , d;
+
+d = module.exports = function (dscr, value/*, options*/) {
+	var c, e, w, options, desc;
+	if ((arguments.length < 2) || (typeof dscr !== 'string')) {
+		options = value;
+		value = dscr;
+		dscr = null;
+	} else {
+		options = arguments[2];
+	}
+	if (dscr == null) {
+		c = w = true;
+		e = false;
+	} else {
+		c = contains.call(dscr, 'c');
+		e = contains.call(dscr, 'e');
+		w = contains.call(dscr, 'w');
+	}
+
+	desc = { value: value, configurable: c, enumerable: e, writable: w };
+	return !options ? desc : assign(normalizeOpts(options), desc);
+};
+
+d.gs = function (dscr, get, set/*, options*/) {
+	var c, e, options, desc;
+	if (typeof dscr !== 'string') {
+		options = set;
+		set = get;
+		get = dscr;
+		dscr = null;
+	} else {
+		options = arguments[3];
+	}
+	if (get == null) {
+		get = undefined;
+	} else if (!isCallable(get)) {
+		options = get;
+		get = set = undefined;
+	} else if (set == null) {
+		set = undefined;
+	} else if (!isCallable(set)) {
+		options = set;
+		set = undefined;
+	}
+	if (dscr == null) {
+		c = true;
+		e = false;
+	} else {
+		c = contains.call(dscr, 'c');
+		e = contains.call(dscr, 'e');
+	}
+
+	desc = { get: get, set: set, configurable: c, enumerable: e };
+	return !options ? desc : assign(normalizeOpts(options), desc);
+};
+
+},{"es5-ext/object/assign":55,"es5-ext/object/is-callable":59,"es5-ext/object/normalize-options":65,"es5-ext/string/#/contains":69}],30:[function(_dereq_,module,exports){
+'use strict';
+
+module.exports = _dereq_('./is-implemented')()
+	? Array.from
+	: _dereq_('./shim');
+
+},{"./is-implemented":31,"./shim":32}],31:[function(_dereq_,module,exports){
+'use strict';
+
+module.exports = function () {
+	var from = Array.from, arr, result;
+	if (typeof from !== 'function') return false;
+	arr = ['raz', 'dwa'];
+	result = from(arr);
+	return Boolean(result && (result !== arr) && (result[1] === 'dwa'));
+};
+
+},{}],32:[function(_dereq_,module,exports){
+'use strict';
+
+var iteratorSymbol = _dereq_('es6-symbol').iterator
+  , isArguments    = _dereq_('../../function/is-arguments')
+  , isFunction     = _dereq_('../../function/is-function')
+  , toPosInt       = _dereq_('../../number/to-pos-integer')
+  , callable       = _dereq_('../../object/valid-callable')
+  , validValue     = _dereq_('../../object/valid-value')
+  , isString       = _dereq_('../../string/is-string')
+
+  , isArray = Array.isArray, call = Function.prototype.call
+  , desc = { configurable: true, enumerable: true, writable: true, value: null }
+  , defineProperty = Object.defineProperty;
+
+module.exports = function (arrayLike/*, mapFn, thisArg*/) {
+	var mapFn = arguments[1], thisArg = arguments[2], Constructor, i, j, arr, l, code, iterator
+	  , result, getIterator, value;
+
+	arrayLike = Object(validValue(arrayLike));
+
+	if (mapFn != null) callable(mapFn);
+	if (!this || (this === Array) || !isFunction(this)) {
+		// Result: Plain array
+		if (!mapFn) {
+			if (isArguments(arrayLike)) {
+				// Source: Arguments
+				l = arrayLike.length;
+				if (l !== 1) return Array.apply(null, arrayLike);
+				arr = new Array(1);
+				arr[0] = arrayLike[0];
+				return arr;
+			}
+			if (isArray(arrayLike)) {
+				// Source: Array
+				arr = new Array(l = arrayLike.length);
+				for (i = 0; i < l; ++i) arr[i] = arrayLike[i];
+				return arr;
+			}
+		}
+		arr = [];
+	} else {
+		// Result: Non plain array
+		Constructor = this;
+	}
+
+	if (!isArray(arrayLike)) {
+		if ((getIterator = arrayLike[iteratorSymbol]) !== undefined) {
+			// Source: Iterator
+			iterator = callable(getIterator).call(arrayLike);
+			if (Constructor) arr = new Constructor();
+			result = iterator.next();
+			i = 0;
+			while (!result.done) {
+				value = mapFn ? call.call(mapFn, thisArg, result.value, i) : result.value;
+				if (!Constructor) {
+					arr[i] = value;
+				} else {
+					desc.value = value;
+					defineProperty(arr, i, desc);
+				}
+				result = iterator.next();
+				++i;
+			}
+			l = i;
+		} else if (isString(arrayLike)) {
+			// Source: String
+			l = arrayLike.length;
+			if (Constructor) arr = new Constructor();
+			for (i = 0, j = 0; i < l; ++i) {
+				value = arrayLike[i];
+				if ((i + 1) < l) {
+					code = value.charCodeAt(0);
+					if ((code >= 0xD800) && (code <= 0xDBFF)) value += arrayLike[++i];
+				}
+				value = mapFn ? call.call(mapFn, thisArg, value, j) : value;
+				if (!Constructor) {
+					arr[j] = value;
+				} else {
+					desc.value = value;
+					defineProperty(arr, j, desc);
+				}
+				++j;
+			}
+			l = j;
+		}
+	}
+	if (l === undefined) {
+		// Source: array or array-like
+		l = toPosInt(arrayLike.length);
+		if (Constructor) arr = new Constructor(l);
+		for (i = 0; i < l; ++i) {
+			value = mapFn ? call.call(mapFn, thisArg, arrayLike[i], i) : arrayLike[i];
+			if (!Constructor) {
+				arr[i] = value;
+			} else {
+				desc.value = value;
+				defineProperty(arr, i, desc);
+			}
+		}
+	}
+	if (Constructor) {
+		desc.value = null;
+		arr.length = l;
+	}
+	return arr;
+};
+
+},{"../../function/is-arguments":41,"../../function/is-function":42,"../../number/to-pos-integer":53,"../../object/valid-callable":66,"../../object/valid-value":68,"../../string/is-string":76,"es6-symbol":47}],33:[function(_dereq_,module,exports){
+'use strict';
+
+module.exports = _dereq_('./is-implemented')()
+	? Array.of
+	: _dereq_('./shim');
+
+},{"./is-implemented":34,"./shim":35}],34:[function(_dereq_,module,exports){
+'use strict';
+
+module.exports = function () {
+	var of = Array.of, result;
+	if (typeof of !== 'function') return false;
+	result = of('foo', 'bar');
+	return Boolean(result && (result[1] === 'bar'));
+};
+
+},{}],35:[function(_dereq_,module,exports){
+'use strict';
+
+var isFunction = _dereq_('../../function/is-function')
+
+  , slice = Array.prototype.slice, defineProperty = Object.defineProperty
+  , desc = { configurable: true, enumerable: true, writable: true, value: null };
+
+module.exports = function (/*…items*/) {
+	var result, i, l;
+	if (!this || (this === Array) || !isFunction(this)) return slice.call(arguments);
+	result = new this(l = arguments.length);
+	for (i = 0; i < l; ++i) {
+		desc.value = arguments[i];
+		defineProperty(result, i, desc);
+	}
+	desc.value = null;
+	result.length = l;
+	return result;
+};
+
+},{"../../function/is-function":42}],36:[function(_dereq_,module,exports){
+'use strict';
+
+var from = _dereq_('./from')
+
+  , isArray = Array.isArray;
+
+module.exports = function (arrayLike) {
+	return isArray(arrayLike) ? arrayLike : from(arrayLike);
+};
+
+},{"./from":30}],37:[function(_dereq_,module,exports){
+'use strict';
+
+var toString = Object.prototype.toString
+
+  , id = toString.call(new Error());
+
+module.exports = function (x) {
+	return (x && ((x instanceof Error) || (toString.call(x)) === id)) || false;
+};
+
+},{}],38:[function(_dereq_,module,exports){
+'use strict';
+
+var callable     = _dereq_('../../object/valid-callable')
+  , aFrom        = _dereq_('../../array/from')
+  , defineLength = _dereq_('../_define-length')
+
+  , apply = Function.prototype.apply;
+
+module.exports = function (/*…args*/) {
+	var fn = callable(this)
+	  , args = aFrom(arguments);
+
+	return defineLength(function () {
+		return apply.call(fn, this, args.concat(aFrom(arguments)));
+	}, fn.length - args.length);
+};
+
+},{"../../array/from":30,"../../object/valid-callable":66,"../_define-length":40}],39:[function(_dereq_,module,exports){
+'use strict';
+
+var callable = _dereq_('../../object/valid-callable')
+
+  , apply = Function.prototype.apply;
+
+module.exports = function () {
+	var fn = callable(this);
+	return function (args) { return apply.call(fn, this, args); };
+};
+
+},{"../../object/valid-callable":66}],40:[function(_dereq_,module,exports){
+'use strict';
+
+var toPosInt = _dereq_('../number/to-pos-integer')
+
+  , test = function (a, b) {}, desc, defineProperty
+  , generate, mixin;
+
+try {
+	Object.defineProperty(test, 'length', { configurable: true, writable: false,
+		enumerable: false, value: 1 });
+} catch (ignore) {}
+
+if (test.length === 1) {
+	// ES6
+	desc = { configurable: true, writable: false, enumerable: false };
+	defineProperty = Object.defineProperty;
+	module.exports = function (fn, length) {
+		length = toPosInt(length);
+		if (fn.length === length) return fn;
+		desc.value = length;
+		return defineProperty(fn, 'length', desc);
+	};
+} else {
+	mixin = _dereq_('../object/mixin');
+	generate = (function () {
+		var cache = [];
+		return function (l) {
+			var args, i = 0;
+			if (cache[l]) return cache[l];
+			args = [];
+			while (l--) args.push('a' + (++i).toString(36));
+			return new Function('fn', 'return function (' + args.join(', ') +
+				') { return fn.apply(this, arguments); };');
+		};
+	}());
+	module.exports = function (src, length) {
+		var target;
+		length = toPosInt(length);
+		if (src.length === length) return src;
+		target = generate(length)(src);
+		try { mixin(target, src); } catch (ignore) {}
+		return target;
+	};
+}
+
+},{"../number/to-pos-integer":53,"../object/mixin":64}],41:[function(_dereq_,module,exports){
+'use strict';
+
+var toString = Object.prototype.toString
+
+  , id = toString.call((function () { return arguments; }()));
+
+module.exports = function (x) { return (toString.call(x) === id); };
+
+},{}],42:[function(_dereq_,module,exports){
+'use strict';
+
+var toString = Object.prototype.toString
+
+  , id = toString.call(_dereq_('./noop'));
+
+module.exports = function (f) {
+	return (typeof f === "function") && (toString.call(f) === id);
+};
+
+},{"./noop":43}],43:[function(_dereq_,module,exports){
+'use strict';
+
+module.exports = function () {};
+
+},{}],44:[function(_dereq_,module,exports){
+'use strict';
+
+module.exports = _dereq_('./is-implemented')()
+	? Math.sign
+	: _dereq_('./shim');
+
+},{"./is-implemented":45,"./shim":46}],45:[function(_dereq_,module,exports){
+'use strict';
+
+module.exports = function () {
+	var sign = Math.sign;
+	if (typeof sign !== 'function') return false;
+	return ((sign(10) === 1) && (sign(-20) === -1));
+};
+
+},{}],46:[function(_dereq_,module,exports){
+'use strict';
+
+module.exports = function (value) {
+	value = Number(value);
+	if (isNaN(value) || (value === 0)) return value;
+	return (value > 0) ? 1 : -1;
+};
+
+},{}],47:[function(_dereq_,module,exports){
+'use strict';
+
+module.exports = _dereq_('./is-implemented')() ? Symbol : _dereq_('./polyfill');
+
+},{"./is-implemented":48,"./polyfill":50}],48:[function(_dereq_,module,exports){
+'use strict';
+
+module.exports = function () {
+	var symbol;
+	if (typeof Symbol !== 'function') return false;
+	symbol = Symbol('test symbol');
+	try { String(symbol); } catch (e) { return false; }
+	if (typeof Symbol.iterator === 'symbol') return true;
+
+	// Return 'true' for polyfills
+	if (typeof Symbol.isConcatSpreadable !== 'object') return false;
+	if (typeof Symbol.iterator !== 'object') return false;
+	if (typeof Symbol.toPrimitive !== 'object') return false;
+	if (typeof Symbol.toStringTag !== 'object') return false;
+	if (typeof Symbol.unscopables !== 'object') return false;
+
+	return true;
+};
+
+},{}],49:[function(_dereq_,module,exports){
+'use strict';
+
+module.exports = function (x) {
+	return (x && ((typeof x === 'symbol') || (x['@@toStringTag'] === 'Symbol'))) || false;
+};
+
+},{}],50:[function(_dereq_,module,exports){
+'use strict';
+
+var d              = _dereq_('d')
+  , validateSymbol = _dereq_('./validate-symbol')
+
+  , create = Object.create, defineProperties = Object.defineProperties
+  , defineProperty = Object.defineProperty, objPrototype = Object.prototype
+  , Symbol, HiddenSymbol, globalSymbols = create(null);
+
+var generateName = (function () {
+	var created = create(null);
+	return function (desc) {
+		var postfix = 0, name;
+		while (created[desc + (postfix || '')]) ++postfix;
+		desc += (postfix || '');
+		created[desc] = true;
+		name = '@@' + desc;
+		defineProperty(objPrototype, name, d.gs(null, function (value) {
+			defineProperty(this, name, d(value));
+		}));
+		return name;
+	};
+}());
+
+HiddenSymbol = function Symbol(description) {
+	if (this instanceof HiddenSymbol) throw new TypeError('TypeError: Symbol is not a constructor');
+	return Symbol(description);
+};
+module.exports = Symbol = function Symbol(description) {
+	var symbol;
+	if (this instanceof Symbol) throw new TypeError('TypeError: Symbol is not a constructor');
+	symbol = create(HiddenSymbol.prototype);
+	description = (description === undefined ? '' : String(description));
+	return defineProperties(symbol, {
+		__description__: d('', description),
+		__name__: d('', generateName(description))
+	});
+};
+defineProperties(Symbol, {
+	for: d(function (key) {
+		if (globalSymbols[key]) return globalSymbols[key];
+		return (globalSymbols[key] = Symbol(String(key)));
+	}),
+	keyFor: d(function (s) {
+		var key;
+		validateSymbol(s);
+		for (key in globalSymbols) if (globalSymbols[key] === s) return key;
+	}),
+	hasInstance: d('', Symbol('hasInstance')),
+	isConcatSpreadable: d('', Symbol('isConcatSpreadable')),
+	iterator: d('', Symbol('iterator')),
+	match: d('', Symbol('match')),
+	replace: d('', Symbol('replace')),
+	search: d('', Symbol('search')),
+	species: d('', Symbol('species')),
+	split: d('', Symbol('split')),
+	toPrimitive: d('', Symbol('toPrimitive')),
+	toStringTag: d('', Symbol('toStringTag')),
+	unscopables: d('', Symbol('unscopables'))
+});
+defineProperties(HiddenSymbol.prototype, {
+	constructor: d(Symbol),
+	toString: d('', function () { return this.__name__; })
+});
+
+defineProperties(Symbol.prototype, {
+	toString: d(function () { return 'Symbol (' + validateSymbol(this).__description__ + ')'; }),
+	valueOf: d(function () { return validateSymbol(this); })
+});
+defineProperty(Symbol.prototype, Symbol.toPrimitive, d('',
+	function () { return validateSymbol(this); }));
+defineProperty(Symbol.prototype, Symbol.toStringTag, d('c', 'Symbol'));
+
+defineProperty(HiddenSymbol.prototype, Symbol.toPrimitive,
+	d('c', Symbol.prototype[Symbol.toPrimitive]));
+defineProperty(HiddenSymbol.prototype, Symbol.toStringTag,
+	d('c', Symbol.prototype[Symbol.toStringTag]));
+
+},{"./validate-symbol":51,"d":29}],51:[function(_dereq_,module,exports){
+'use strict';
+
+var isSymbol = _dereq_('./is-symbol');
+
+module.exports = function (value) {
+	if (!isSymbol(value)) throw new TypeError(value + " is not a symbol");
+	return value;
+};
+
+},{"./is-symbol":49}],52:[function(_dereq_,module,exports){
+'use strict';
+
+var sign = _dereq_('../math/sign')
+
+  , abs = Math.abs, floor = Math.floor;
+
+module.exports = function (value) {
+	if (isNaN(value)) return 0;
+	value = Number(value);
+	if ((value === 0) || !isFinite(value)) return value;
+	return sign(value) * floor(abs(value));
+};
+
+},{"../math/sign":44}],53:[function(_dereq_,module,exports){
+'use strict';
+
+var toInteger = _dereq_('./to-integer')
+
+  , max = Math.max;
+
+module.exports = function (value) { return max(0, toInteger(value)); };
+
+},{"./to-integer":52}],54:[function(_dereq_,module,exports){
+// Internal method, used by iteration functions.
+// Calls a function for each key-value pair found in object
+// Optionally takes compareFn to iterate object in specific order
+
+'use strict';
+
+var isCallable = _dereq_('./is-callable')
+  , callable   = _dereq_('./valid-callable')
+  , value      = _dereq_('./valid-value')
+
+  , call = Function.prototype.call, keys = Object.keys
+  , propertyIsEnumerable = Object.prototype.propertyIsEnumerable;
+
+module.exports = function (method, defVal) {
+	return function (obj, cb/*, thisArg, compareFn*/) {
+		var list, thisArg = arguments[2], compareFn = arguments[3];
+		obj = Object(value(obj));
+		callable(cb);
+
+		list = keys(obj);
+		if (compareFn) {
+			list.sort(isCallable(compareFn) ? compareFn.bind(obj) : undefined);
+		}
+		return list[method](function (key, index) {
+			if (!propertyIsEnumerable.call(obj, key)) return defVal;
+			return call.call(cb, thisArg, obj[key], key, obj, index);
+		});
+	};
+};
+
+},{"./is-callable":59,"./valid-callable":66,"./valid-value":68}],55:[function(_dereq_,module,exports){
+'use strict';
+
+module.exports = _dereq_('./is-implemented')()
+	? Object.assign
+	: _dereq_('./shim');
+
+},{"./is-implemented":56,"./shim":57}],56:[function(_dereq_,module,exports){
+'use strict';
+
+module.exports = function () {
+	var assign = Object.assign, obj;
+	if (typeof assign !== 'function') return false;
+	obj = { foo: 'raz' };
+	assign(obj, { bar: 'dwa' }, { trzy: 'trzy' });
+	return (obj.foo + obj.bar + obj.trzy) === 'razdwatrzy';
+};
+
+},{}],57:[function(_dereq_,module,exports){
+'use strict';
+
+var keys  = _dereq_('../keys')
+  , value = _dereq_('../valid-value')
+
+  , max = Math.max;
+
+module.exports = function (dest, src/*, …srcn*/) {
+	var error, i, l = max(arguments.length, 2), assign;
+	dest = Object(value(dest));
+	assign = function (key) {
+		try { dest[key] = src[key]; } catch (e) {
+			if (!error) error = e;
+		}
+	};
+	for (i = 1; i < l; ++i) {
+		src = arguments[i];
+		keys(src).forEach(assign);
+	}
+	if (error !== undefined) throw error;
+	return dest;
+};
+
+},{"../keys":61,"../valid-value":68}],58:[function(_dereq_,module,exports){
+'use strict';
+
+module.exports = _dereq_('./_iterate')('forEach');
+
+},{"./_iterate":54}],59:[function(_dereq_,module,exports){
+// Deprecated
+
+'use strict';
+
+module.exports = function (obj) { return typeof obj === 'function'; };
+
+},{}],60:[function(_dereq_,module,exports){
+'use strict';
+
+var map = { function: true, object: true };
+
+module.exports = function (x) {
+	return ((x != null) && map[typeof x]) || false;
+};
+
+},{}],61:[function(_dereq_,module,exports){
+'use strict';
+
+module.exports = _dereq_('./is-implemented')()
+	? Object.keys
+	: _dereq_('./shim');
+
+},{"./is-implemented":62,"./shim":63}],62:[function(_dereq_,module,exports){
+'use strict';
+
+module.exports = function () {
+	try {
+		Object.keys('primitive');
+		return true;
+	} catch (e) { return false; }
+};
+
+},{}],63:[function(_dereq_,module,exports){
+'use strict';
+
+var keys = Object.keys;
+
+module.exports = function (object) {
+	return keys(object == null ? object : Object(object));
+};
+
+},{}],64:[function(_dereq_,module,exports){
+'use strict';
+
+var value = _dereq_('./valid-value')
+
+  , defineProperty = Object.defineProperty
+  , getOwnPropertyDescriptor = Object.getOwnPropertyDescriptor
+  , getOwnPropertyNames = Object.getOwnPropertyNames;
+
+module.exports = function (target, source) {
+	var error;
+	target = Object(value(target));
+	getOwnPropertyNames(Object(value(source))).forEach(function (name) {
+		try {
+			defineProperty(target, name, getOwnPropertyDescriptor(source, name));
+		} catch (e) { error = e; }
+	});
+	if (error !== undefined) throw error;
+	return target;
+};
+
+},{"./valid-value":68}],65:[function(_dereq_,module,exports){
+'use strict';
+
+var forEach = Array.prototype.forEach, create = Object.create;
+
+var process = function (src, obj) {
+	var key;
+	for (key in src) obj[key] = src[key];
+};
+
+module.exports = function (options/*, …options*/) {
+	var result = create(null);
+	forEach.call(arguments, function (options) {
+		if (options == null) return;
+		process(Object(options), result);
+	});
+	return result;
+};
+
+},{}],66:[function(_dereq_,module,exports){
+'use strict';
+
+module.exports = function (fn) {
+	if (typeof fn !== 'function') throw new TypeError(fn + " is not a function");
+	return fn;
+};
+
+},{}],67:[function(_dereq_,module,exports){
+'use strict';
+
+var isObject = _dereq_('./is-object');
+
+module.exports = function (value) {
+	if (!isObject(value)) throw new TypeError(value + " is not an Object");
+	return value;
+};
+
+},{"./is-object":60}],68:[function(_dereq_,module,exports){
+'use strict';
+
+module.exports = function (value) {
+	if (value == null) throw new TypeError("Cannot use null or undefined");
+	return value;
+};
+
+},{}],69:[function(_dereq_,module,exports){
+'use strict';
+
+module.exports = _dereq_('./is-implemented')()
+	? String.prototype.contains
+	: _dereq_('./shim');
+
+},{"./is-implemented":70,"./shim":71}],70:[function(_dereq_,module,exports){
+'use strict';
+
+var str = 'razdwatrzy';
+
+module.exports = function () {
+	if (typeof str.contains !== 'function') return false;
+	return ((str.contains('dwa') === true) && (str.contains('foo') === false));
+};
+
+},{}],71:[function(_dereq_,module,exports){
+'use strict';
+
+var indexOf = String.prototype.indexOf;
+
+module.exports = function (searchString/*, position*/) {
+	return indexOf.call(this, searchString, arguments[1]) > -1;
+};
+
+},{}],72:[function(_dereq_,module,exports){
+'use strict';
+
+var toInteger = _dereq_('../../number/to-integer')
+  , value     = _dereq_('../../object/valid-value')
+  , repeat    = _dereq_('./repeat')
+
+  , abs = Math.abs, max = Math.max;
+
+module.exports = function (fill/*, length*/) {
+	var self = String(value(this))
+	  , sLength = self.length
+	  , length = arguments[1];
+
+	length = isNaN(length) ? 1 : toInteger(length);
+	fill = repeat.call(String(fill), abs(length));
+	if (length >= 0) return fill.slice(0, max(0, length - sLength)) + self;
+	return self + (((sLength + length) >= 0) ? '' : fill.slice(length + sLength));
+};
+
+},{"../../number/to-integer":52,"../../object/valid-value":68,"./repeat":73}],73:[function(_dereq_,module,exports){
+'use strict';
+
+module.exports = _dereq_('./is-implemented')()
+	? String.prototype.repeat
+	: _dereq_('./shim');
+
+},{"./is-implemented":74,"./shim":75}],74:[function(_dereq_,module,exports){
+'use strict';
+
+var str = 'foo';
+
+module.exports = function () {
+	if (typeof str.repeat !== 'function') return false;
+	return (str.repeat(2) === 'foofoo');
+};
+
+},{}],75:[function(_dereq_,module,exports){
+// Thanks: http://www.2ality.com/2014/01/efficient-string-repeat.html
+
+'use strict';
+
+var value     = _dereq_('../../../object/valid-value')
+  , toInteger = _dereq_('../../../number/to-integer');
+
+module.exports = function (count) {
+	var str = String(value(this)), result;
+	count = toInteger(count);
+	if (count < 0) throw new RangeError("Count must be >= 0");
+	if (!isFinite(count)) throw new RangeError("Count must be < ∞");
+	result = '';
+	if (!count) return result;
+	while (true) {
+		if (count & 1) result += str;
+		count >>>= 1;
+		if (count <= 0) break;
+		str += str;
+	}
+	return result;
+};
+
+},{"../../../number/to-integer":52,"../../../object/valid-value":68}],76:[function(_dereq_,module,exports){
+'use strict';
+
+var toString = Object.prototype.toString
+
+  , id = toString.call('');
+
+module.exports = function (x) {
+	return (typeof x === 'string') || (x && (typeof x === 'object') &&
+		((x instanceof String) || (toString.call(x) === id))) || false;
+};
+
+},{}],77:[function(_dereq_,module,exports){
+'use strict';
+
 var d        = _dereq_('d')
   , callable = _dereq_('es5-ext/object/valid-callable')
 
@@ -132,208 +2590,261 @@ module.exports = exports = function (o) {
 };
 exports.methods = methods;
 
-},{"d":2,"es5-ext/object/valid-callable":11}],2:[function(_dereq_,module,exports){
+},{"d":29,"es5-ext/object/valid-callable":66}],78:[function(_dereq_,module,exports){
 'use strict';
 
-var assign        = _dereq_('es5-ext/object/assign')
-  , normalizeOpts = _dereq_('es5-ext/object/normalize-options')
-  , isCallable    = _dereq_('es5-ext/object/is-callable')
-  , contains      = _dereq_('es5-ext/string/#/contains')
+var forEach    = _dereq_('es5-ext/object/for-each')
+  , validValue = _dereq_('es5-ext/object/valid-object')
 
-  , d;
+  , push = Array.prototype.apply, defineProperty = Object.defineProperty
+  , create = Object.create, hasOwnProperty = Object.prototype.hasOwnProperty
+  , d = { configurable: true, enumerable: false, writable: true };
 
-d = module.exports = function (dscr, value/*, options*/) {
-	var c, e, w, options, desc;
-	if ((arguments.length < 2) || (typeof dscr !== 'string')) {
-		options = value;
-		value = dscr;
-		dscr = null;
-	} else {
-		options = arguments[2];
-	}
-	if (dscr == null) {
-		c = w = true;
-		e = false;
-	} else {
-		c = contains.call(dscr, 'c');
-		e = contains.call(dscr, 'e');
-		w = contains.call(dscr, 'w');
-	}
-
-	desc = { value: value, configurable: c, enumerable: e, writable: w };
-	return !options ? desc : assign(normalizeOpts(options), desc);
-};
-
-d.gs = function (dscr, get, set/*, options*/) {
-	var c, e, options, desc;
-	if (typeof dscr !== 'string') {
-		options = set;
-		set = get;
-		get = dscr;
-		dscr = null;
-	} else {
-		options = arguments[3];
-	}
-	if (get == null) {
-		get = undefined;
-	} else if (!isCallable(get)) {
-		options = get;
-		get = set = undefined;
-	} else if (set == null) {
-		set = undefined;
-	} else if (!isCallable(set)) {
-		options = set;
-		set = undefined;
-	}
-	if (dscr == null) {
-		c = true;
-		e = false;
-	} else {
-		c = contains.call(dscr, 'c');
-		e = contains.call(dscr, 'e');
-	}
-
-	desc = { get: get, set: set, configurable: c, enumerable: e };
-	return !options ? desc : assign(normalizeOpts(options), desc);
-};
-
-},{"es5-ext/object/assign":3,"es5-ext/object/is-callable":6,"es5-ext/object/normalize-options":10,"es5-ext/string/#/contains":13}],3:[function(_dereq_,module,exports){
-'use strict';
-
-module.exports = _dereq_('./is-implemented')()
-	? Object.assign
-	: _dereq_('./shim');
-
-},{"./is-implemented":4,"./shim":5}],4:[function(_dereq_,module,exports){
-'use strict';
-
-module.exports = function () {
-	var assign = Object.assign, obj;
-	if (typeof assign !== 'function') return false;
-	obj = { foo: 'raz' };
-	assign(obj, { bar: 'dwa' }, { trzy: 'trzy' });
-	return (obj.foo + obj.bar + obj.trzy) === 'razdwatrzy';
-};
-
-},{}],5:[function(_dereq_,module,exports){
-'use strict';
-
-var keys  = _dereq_('../keys')
-  , value = _dereq_('../valid-value')
-
-  , max = Math.max;
-
-module.exports = function (dest, src/*, …srcn*/) {
-	var error, i, l = max(arguments.length, 2), assign;
-	dest = Object(value(dest));
-	assign = function (key) {
-		try { dest[key] = src[key]; } catch (e) {
-			if (!error) error = e;
+module.exports = function (e1, e2) {
+	var data;
+	(validValue(e1) && validValue(e2));
+	if (!hasOwnProperty.call(e1, '__ee__')) {
+		if (!hasOwnProperty.call(e2, '__ee__')) {
+			d.value = create(null);
+			defineProperty(e1, '__ee__', d);
+			defineProperty(e2, '__ee__', d);
+			d.value = null;
+			return;
 		}
-	};
-	for (i = 1; i < l; ++i) {
-		src = arguments[i];
-		keys(src).forEach(assign);
+		d.value = e2.__ee__;
+		defineProperty(e1, '__ee__', d);
+		d.value = null;
+		return;
 	}
-	if (error !== undefined) throw error;
-	return dest;
-};
-
-},{"../keys":7,"../valid-value":12}],6:[function(_dereq_,module,exports){
-// Deprecated
-
-'use strict';
-
-module.exports = function (obj) { return typeof obj === 'function'; };
-
-},{}],7:[function(_dereq_,module,exports){
-'use strict';
-
-module.exports = _dereq_('./is-implemented')()
-	? Object.keys
-	: _dereq_('./shim');
-
-},{"./is-implemented":8,"./shim":9}],8:[function(_dereq_,module,exports){
-'use strict';
-
-module.exports = function () {
-	try {
-		Object.keys('primitive');
-		return true;
-	} catch (e) { return false; }
-};
-
-},{}],9:[function(_dereq_,module,exports){
-'use strict';
-
-var keys = Object.keys;
-
-module.exports = function (object) {
-	return keys(object == null ? object : Object(object));
-};
-
-},{}],10:[function(_dereq_,module,exports){
-'use strict';
-
-var forEach = Array.prototype.forEach, create = Object.create;
-
-var process = function (src, obj) {
-	var key;
-	for (key in src) obj[key] = src[key];
-};
-
-module.exports = function (options/*, …options*/) {
-	var result = create(null);
-	forEach.call(arguments, function (options) {
-		if (options == null) return;
-		process(Object(options), result);
+	data = d.value = e1.__ee__;
+	if (!hasOwnProperty.call(e2, '__ee__')) {
+		defineProperty(e2, '__ee__', d);
+		d.value = null;
+		return;
+	}
+	if (data === e2.__ee__) return;
+	forEach(e2.__ee__, function (listener, name) {
+		if (!data[name]) {
+			data[name] = listener;
+			return;
+		}
+		if (typeof data[name] === 'object') {
+			if (typeof listener === 'object') push.apply(data[name], listener);
+			else data[name].push(listener);
+		} else if (typeof listener === 'object') {
+			listener.unshift(data[name]);
+			data[name] = listener;
+		} else {
+			data[name] = [data[name], listener];
+		}
 	});
-	return result;
+	defineProperty(e2, '__ee__', d);
+	d.value = null;
 };
 
-},{}],11:[function(_dereq_,module,exports){
+},{"es5-ext/object/for-each":58,"es5-ext/object/valid-object":67}],79:[function(_dereq_,module,exports){
+(function (process){
 'use strict';
 
-module.exports = function (fn) {
+var callable, byObserver;
+
+callable = function (fn) {
 	if (typeof fn !== 'function') throw new TypeError(fn + " is not a function");
 	return fn;
 };
 
-},{}],12:[function(_dereq_,module,exports){
-'use strict';
-
-module.exports = function (value) {
-	if (value == null) throw new TypeError("Cannot use null or undefined");
-	return value;
+byObserver = function (Observer) {
+	var node = document.createTextNode(''), queue, i = 0;
+	new Observer(function () {
+		var data;
+		if (!queue) return;
+		data = queue;
+		queue = null;
+		if (typeof data === 'function') {
+			data();
+			return;
+		}
+		data.forEach(function (fn) { fn(); });
+	}).observe(node, { characterData: true });
+	return function (fn) {
+		callable(fn);
+		if (queue) {
+			if (typeof queue === 'function') queue = [queue, fn];
+			else queue.push(fn);
+			return;
+		}
+		queue = fn;
+		node.data = (i = ++i % 2);
+	};
 };
 
-},{}],13:[function(_dereq_,module,exports){
+module.exports = (function () {
+	// Node.js
+	if ((typeof process !== 'undefined') && process &&
+			(typeof process.nextTick === 'function')) {
+		return process.nextTick;
+	}
+
+	// MutationObserver=
+	if ((typeof document === 'object') && document) {
+		if (typeof MutationObserver === 'function') {
+			return byObserver(MutationObserver);
+		}
+		if (typeof WebKitMutationObserver === 'function') {
+			return byObserver(WebKitMutationObserver);
+		}
+	}
+
+	// W3C Draft
+	// http://dvcs.w3.org/hg/webperf/raw-file/tip/specs/setImmediate/Overview.html
+	if (typeof setImmediate === 'function') {
+		return function (cb) { setImmediate(callable(cb)); };
+	}
+
+	// Wide available standard
+	if (typeof setTimeout === 'function') {
+		return function (cb) { setTimeout(callable(cb), 0); };
+	}
+
+	return null;
+}());
+
+}).call(this,_dereq_('_process'))
+},{"_process":100}],80:[function(_dereq_,module,exports){
 'use strict';
 
-module.exports = _dereq_('./is-implemented')()
-	? String.prototype.contains
-	: _dereq_('./shim');
+var partial  = _dereq_('es5-ext/function/#/partial')
+  , forEach  = _dereq_('es5-ext/object/for-each')
+  , pad      = _dereq_('es5-ext/string/#/pad')
+  , deferred = _dereq_('./deferred')
 
-},{"./is-implemented":14,"./shim":15}],14:[function(_dereq_,module,exports){
-'use strict';
+  , resolved, rStats, unresolved, uStats, profile;
 
-var str = 'razdwatrzy';
-
-module.exports = function () {
-	if (typeof str.contains !== 'function') return false;
-	return ((str.contains('dwa') === true) && (str.contains('foo') === false));
+exports.profile = function () {
+	resolved = 0;
+	rStats = {};
+	unresolved = 0;
+	uStats = {};
+	deferred._profile = profile;
 };
 
-},{}],15:[function(_dereq_,module,exports){
-'use strict';
+profile = function (isResolved) {
+	var stack, data;
 
-var indexOf = String.prototype.indexOf;
+	if (isResolved) {
+		++resolved;
+		data = rStats;
+	} else {
+		++unresolved;
+		data = uStats;
+	}
 
-module.exports = function (searchString/*, position*/) {
-	return indexOf.call(this, searchString, arguments[1]) > -1;
+	stack = (new Error()).stack;
+	if (!stack.split('\n').slice(3).some(function (line) {
+			if ((line.search(/[\/\\]deferred[\/\\]/) === -1) &&
+					(line.search(/[\/\\]es5-ext[\/\\]/) === -1) &&
+					(line.indexOf(' (native)') === -1)) {
+				line = line.replace(/\n/g, "\\n").trim();
+				if (!data[line]) {
+					data[line] = { count: 0 };
+				}
+				++data[line].count;
+				return true;
+			}
+		})) {
+		if (!data.unknown) {
+			data.unknown = { count: 0, stack: stack };
+		}
+		++data.unknown.count;
+	}
 };
 
-},{}],16:[function(_dereq_,module,exports){
+exports.profileEnd = function () {
+	var total, lpad, log = '';
+
+	if (!deferred._profile) {
+		throw new Error("Deferred profiler was not initialized");
+	}
+	delete deferred._profile;
+
+	log += "------------------------------------------------------------\n";
+	log += "Deferred usage statistics:\n\n";
+
+	total = String(resolved + unresolved);
+	lpad = partial.call(pad, " ", total.length);
+	log += total + " Total promises initialized\n";
+	log += lpad.call(unresolved) + " Initialized as Unresolved\n";
+	log += lpad.call(resolved) + " Initialized as Resolved\n";
+
+	if (unresolved) {
+		log += "\nUnresolved promises were initialized at:\n";
+		forEach(uStats, function (data, name) {
+			log += lpad.call(data.count) + " " + name + "\n";
+		}, null, function (a, b) {
+			return this[b].count - this[a].count;
+		});
+	}
+
+	if (resolved) {
+		log += "\nResolved promises were initialized at:\n";
+		forEach(rStats, function (data, name) {
+			log += lpad.call(data.count) + " " + name + "\n";
+		}, null, function (a, b) {
+			return this[b].count - this[a].count;
+		});
+	}
+	log += "------------------------------------------------------------\n";
+
+	return {
+		log: log,
+		resolved: { count: resolved, stats: rStats },
+		unresolved: { count: unresolved, stats: uStats }
+	};
+};
+
+},{"./deferred":3,"es5-ext/function/#/partial":38,"es5-ext/object/for-each":58,"es5-ext/string/#/pad":72}],81:[function(_dereq_,module,exports){
+'use strict';
+
+var isPromise = _dereq_('./is-promise');
+
+module.exports = function (x) {
+	if (!isPromise(x)) {
+		throw new TypeError(x + " is not a promise object");
+	}
+	return x;
+};
+
+},{"./is-promise":27}],82:[function(_dereq_,module,exports){
+arguments[4][77][0].apply(exports,arguments)
+},{"d":83,"dup":77,"es5-ext/object/valid-callable":92}],83:[function(_dereq_,module,exports){
+arguments[4][29][0].apply(exports,arguments)
+},{"dup":29,"es5-ext/object/assign":84,"es5-ext/object/is-callable":87,"es5-ext/object/normalize-options":91,"es5-ext/string/#/contains":94}],84:[function(_dereq_,module,exports){
+arguments[4][55][0].apply(exports,arguments)
+},{"./is-implemented":85,"./shim":86,"dup":55}],85:[function(_dereq_,module,exports){
+arguments[4][56][0].apply(exports,arguments)
+},{"dup":56}],86:[function(_dereq_,module,exports){
+arguments[4][57][0].apply(exports,arguments)
+},{"../keys":88,"../valid-value":93,"dup":57}],87:[function(_dereq_,module,exports){
+arguments[4][59][0].apply(exports,arguments)
+},{"dup":59}],88:[function(_dereq_,module,exports){
+arguments[4][61][0].apply(exports,arguments)
+},{"./is-implemented":89,"./shim":90,"dup":61}],89:[function(_dereq_,module,exports){
+arguments[4][62][0].apply(exports,arguments)
+},{"dup":62}],90:[function(_dereq_,module,exports){
+arguments[4][63][0].apply(exports,arguments)
+},{"dup":63}],91:[function(_dereq_,module,exports){
+arguments[4][65][0].apply(exports,arguments)
+},{"dup":65}],92:[function(_dereq_,module,exports){
+arguments[4][66][0].apply(exports,arguments)
+},{"dup":66}],93:[function(_dereq_,module,exports){
+arguments[4][68][0].apply(exports,arguments)
+},{"dup":68}],94:[function(_dereq_,module,exports){
+arguments[4][69][0].apply(exports,arguments)
+},{"./is-implemented":95,"./shim":96,"dup":69}],95:[function(_dereq_,module,exports){
+arguments[4][70][0].apply(exports,arguments)
+},{"dup":70}],96:[function(_dereq_,module,exports){
+arguments[4][71][0].apply(exports,arguments)
+},{"dup":71}],97:[function(_dereq_,module,exports){
 /**
  * Copyright (c) 2014-2015, Facebook, Inc.
  * All rights reserved.
@@ -345,7 +2856,7 @@ module.exports = function (searchString/*, position*/) {
 
 module.exports.Dispatcher = _dereq_('./lib/Dispatcher')
 
-},{"./lib/Dispatcher":17}],17:[function(_dereq_,module,exports){
+},{"./lib/Dispatcher":98}],98:[function(_dereq_,module,exports){
 /*
  * Copyright (c) 2014, Facebook, Inc.
  * All rights reserved.
@@ -597,7 +3108,7 @@ var _prefix = 'ID_';
 
 module.exports = Dispatcher;
 
-},{"./invariant":18}],18:[function(_dereq_,module,exports){
+},{"./invariant":99}],99:[function(_dereq_,module,exports){
 /**
  * Copyright (c) 2014, Facebook, Inc.
  * All rights reserved.
@@ -652,7 +3163,99 @@ var invariant = function(condition, format, a, b, c, d, e, f) {
 
 module.exports = invariant;
 
-},{}],19:[function(_dereq_,module,exports){
+},{}],100:[function(_dereq_,module,exports){
+// shim for using process in browser
+
+var process = module.exports = {};
+var queue = [];
+var draining = false;
+var currentQueue;
+var queueIndex = -1;
+
+function cleanUpNextTick() {
+    draining = false;
+    if (currentQueue.length) {
+        queue = currentQueue.concat(queue);
+    } else {
+        queueIndex = -1;
+    }
+    if (queue.length) {
+        drainQueue();
+    }
+}
+
+function drainQueue() {
+    if (draining) {
+        return;
+    }
+    var timeout = setTimeout(cleanUpNextTick);
+    draining = true;
+
+    var len = queue.length;
+    while(len) {
+        currentQueue = queue;
+        queue = [];
+        while (++queueIndex < len) {
+            currentQueue[queueIndex].run();
+        }
+        queueIndex = -1;
+        len = queue.length;
+    }
+    currentQueue = null;
+    draining = false;
+    clearTimeout(timeout);
+}
+
+process.nextTick = function (fun) {
+    var args = new Array(arguments.length - 1);
+    if (arguments.length > 1) {
+        for (var i = 1; i < arguments.length; i++) {
+            args[i - 1] = arguments[i];
+        }
+    }
+    queue.push(new Item(fun, args));
+    if (queue.length === 1 && !draining) {
+        setTimeout(drainQueue, 0);
+    }
+};
+
+// v8 likes predictible objects
+function Item(fun, array) {
+    this.fun = fun;
+    this.array = array;
+}
+Item.prototype.run = function () {
+    this.fun.apply(null, this.array);
+};
+process.title = 'browser';
+process.browser = true;
+process.env = {};
+process.argv = [];
+process.version = ''; // empty string to avoid regexp issues
+process.versions = {};
+
+function noop() {}
+
+process.on = noop;
+process.addListener = noop;
+process.once = noop;
+process.off = noop;
+process.removeListener = noop;
+process.removeAllListeners = noop;
+process.emit = noop;
+
+process.binding = function (name) {
+    throw new Error('process.binding is not supported');
+};
+
+// TODO(shtylman)
+process.cwd = function () { return '/' };
+process.chdir = function (dir) {
+    throw new Error('process.chdir is not supported');
+};
+process.umask = function() { return 0; };
+
+},{}],101:[function(_dereq_,module,exports){
 'use strict';
 
 function ToObject(val) {
@@ -680,7 +3283,7 @@ module.exports = Object.assign || function (target, source) {
 	return to;
 };
 
-},{}],20:[function(_dereq_,module,exports){
+},{}],102:[function(_dereq_,module,exports){
 'use strict';
 
 /**
@@ -707,7 +3310,7 @@ assign(core, Lifecycle);
 
 module.exports = core;
 
-},{"./external_lib":21,"./injector":22,"./lifecycle":23,"./provider_manager":24,"./provider_recipes":25,"object-assign":19}],21:[function(_dereq_,module,exports){
+},{"./external_lib":103,"./injector":104,"./lifecycle":105,"./provider_manager":106,"./provider_recipes":107,"object-assign":101}],103:[function(_dereq_,module,exports){
 'use strict';
 
 var assign = _dereq_('object-assign');
@@ -738,7 +3341,7 @@ var Libs = {
 };
 
 module.exports = Libs;
-},{"object-assign":19}],22:[function(_dereq_,module,exports){
+},{"object-assign":101}],104:[function(_dereq_,module,exports){
 'use strict';
 
 /**
@@ -895,7 +3498,7 @@ manager.define('$injector', function() {
 });
 
 module.exports = Injector;
-},{"../utils/array_utils":40,"../utils/compare":41,"./provider_manager":24}],23:[function(_dereq_,module,exports){
+},{"../utils/array_utils":122,"../utils/compare":123,"./provider_manager":106}],105:[function(_dereq_,module,exports){
 'use strict';
 
 var assign     = _dereq_('object-assign');
@@ -939,9 +3542,11 @@ function config(deps, fn) {
  * dyna.start(flux_two, $('#buzzer-two'));
  */
 function start(flux, root) {
-  flux.start();
-  this.mountComponents(flux, flux.componentMountSpecs());
-  this.mountDynaComponents(flux, root);
+  var self = this;
+  flux.start().done(function() {
+    self.mountComponents(flux, flux.componentMountSpecs());
+    self.mountDynaComponents(flux, root);
+  });
 }
 
 /**
@@ -972,7 +3577,7 @@ var Lifecycle = {
 assign(Lifecycle, ujs);
 
 module.exports = Lifecycle;
-},{"../utils/array_utils":40,"./injector":22,"./ujs":26,"object-assign":19}],24:[function(_dereq_,module,exports){
+},{"../utils/array_utils":122,"./injector":104,"./ujs":108,"object-assign":101}],106:[function(_dereq_,module,exports){
 'use strict';
 
 var compare = _dereq_('../utils/compare');
@@ -1070,7 +3675,7 @@ ProviderManager.define('$providers', function() {
 
 module.exports = ProviderManager;
 
-},{"../utils/compare":41}],25:[function(_dereq_,module,exports){
+},{"../utils/compare":123}],107:[function(_dereq_,module,exports){
 'use strict';
 
 /**
@@ -1156,7 +3761,7 @@ module.exports = {
   factory : factory,
   service : service
 };
-},{"../utils/compare":41,"../utils/create_with_args":42,"./provider_manager":24}],26:[function(_dereq_,module,exports){
+},{"../utils/compare":123,"../utils/create_with_args":124,"./provider_manager":106}],108:[function(_dereq_,module,exports){
 'use strict';
 
 var assign     = _dereq_('object-assign');
@@ -1264,7 +3869,7 @@ module.exports = {
   mountDynaComponents   : mountDynaComponents,
   unmountDynaComponents : unmountDynaComponents
 };
-},{"../flux/components":30,"../utils/array_utils":40,"../utils/compare":41,"object-assign":19}],27:[function(_dereq_,module,exports){
+},{"../flux/components":112,"../utils/array_utils":122,"../utils/compare":123,"object-assign":101}],109:[function(_dereq_,module,exports){
 'use strict';
 
 var compare = _dereq_('../utils/compare');
@@ -1360,7 +3965,7 @@ function createActionFactory(action_specs) {
 //
 
 module.exports = { createActionFactory: createActionFactory };
-},{"../utils/compare":41}],28:[function(_dereq_,module,exports){
+},{"../utils/compare":123}],110:[function(_dereq_,module,exports){
 'use strict';
 
 /**
@@ -1418,7 +4023,7 @@ var ActionDispatcher = function() {
 };
 
 module.exports = ActionDispatcher;
-},{"event-emitter":1}],29:[function(_dereq_,module,exports){
+},{"event-emitter":82}],111:[function(_dereq_,module,exports){
 'use strict';
 
 var compare = _dereq_('../utils/compare');
@@ -1527,7 +4132,7 @@ module.exports = {
   createBridge: createBridge,
   useBridge   : useBridge
 };
-},{"../utils/compare":41}],30:[function(_dereq_,module,exports){
+},{"../utils/compare":123}],112:[function(_dereq_,module,exports){
 'use strict';
 
 var compare = _dereq_('../utils/compare');
@@ -1590,7 +4195,7 @@ module.exports = {
 };
 
 
-},{"../utils/compare":41,"object-assign":19}],31:[function(_dereq_,module,exports){
+},{"../utils/compare":123,"object-assign":101}],113:[function(_dereq_,module,exports){
 'use strict';
 
 var argsCreate = _dereq_('../utils/create_with_args');
@@ -1603,6 +4208,15 @@ var _coordinator_defs = {};
 
 /**
  * Register a coordinator
+ *
+ * Coordinator can have the following methods:
+ *   $start - (Required) method that starts the coordinator. This will be called when parent Flux is started.
+ *                       This can optionally return a {Promise} object. If so, Flux will wait for this promise to be
+ *                       resolved before starting the next coordinator. 
+ *   $stop  - (Optional) method that stops the coordinator. This will be called when the parent Flux is stopped.
+ *   $mountSpec - (Optional) method that returns a {@link MountSpec} object to specify how coordinator specific
+ *                component will be mounted by Flux.
+ *
  * @param {string}   name - name of the coordinator
  * @param {function} def  - a constructor function in the <tt>Dependency Injection</tt> format
  * @throws {Error} if coordinator with the same name has already been defined
@@ -1714,7 +4328,7 @@ module.exports = {
   registerCoordinator   : registerCoordinator,
   instantiateCoordinator: instantiateCoordinator
 };
-},{"../core/injector":22,"../utils/array_utils":40,"../utils/compare":41,"../utils/create_with_args":42}],32:[function(_dereq_,module,exports){
+},{"../core/injector":104,"../utils/array_utils":122,"../utils/compare":123,"../utils/create_with_args":124}],114:[function(_dereq_,module,exports){
 'use strict';
 
 var compare = _dereq_('../utils/compare');
@@ -1809,7 +4423,7 @@ function createEventFactory(event_specs) {
 //
 
 module.exports = { createEventFactory: createEventFactory };
-},{"../utils/compare":41}],33:[function(_dereq_,module,exports){
+},{"../utils/compare":123}],115:[function(_dereq_,module,exports){
 'use strict';
 
 /**
@@ -1820,7 +4434,7 @@ module.exports = { createEventFactory: createEventFactory };
 var Flux = _dereq_('flux');
 
 module.exports = Flux.Dispatcher;
-},{"flux":16}],34:[function(_dereq_,module,exports){
+},{"flux":97}],116:[function(_dereq_,module,exports){
 'use strict';
 
 /**
@@ -1831,6 +4445,7 @@ module.exports = Flux.Dispatcher;
 var arrayUtils = _dereq_('../utils/array_utils');
 var assign     = _dereq_('object-assign');
 var compare    = _dereq_('../utils/compare');
+var deferred   = _dereq_('deferred');
 
 var Stores       = _dereq_('./stores');
 var Components   = _dereq_('./components');
@@ -1875,7 +4490,10 @@ var Flux = function(coordinators, stores) {
 
   /**
    * Start this Flux
-   * This will initialize (by calling $initialize()) all the specified Stores and start (by calling $start()) all the Coordinators
+   * This will initialize (by calling $initialize()) all the specified Stores and start (by calling $start()) all the Coordinators.
+   * If the $start() method of a coordinator returns a promise object, then this will wait until that promise is resolved before
+   * executing the next coordinator is started. This allows the $start() method to include async calls while maintaining sequentiality
+   * of the start process.
    */
   this.start = function() {
     if (_started == true) throw new Error('This flux is running already.');
@@ -1888,13 +4506,16 @@ var Flux = function(coordinators, stores) {
     });
 
     // start coordinators
+    var start_deferred = deferred();
+    var c_instances = [];
     required_coordinators.forEach(function(c) {
-      var c_instance = coordinator_instances[c];
-      // call $start()
-      c_instance.$start();
+      c_instances.push(coordinator_instances[c]);
     });
 
-    _started = true;
+    // starts coordinator sequentially
+    _startNextCoordinator(start_deferred, c_instances);
+
+    return start_deferred.promise;
   };
 
   /**
@@ -2032,6 +4653,23 @@ function _injectFluxId(obj, id) {
   obj._flux_id = id;
 }
 
+/**
+ * Sequentially execute the coordinators' $start() method. If the $start() method returns a promise, then
+ * the next coordinator won't be started until this promise is resolved.
+ *
+ * @param {Deferred} master_defer - deferred object that will be resolved when all coordinators have started
+ * @param {Object[]} list         - list of coordinator instance
+ * @private
+ */
+function _startNextCoordinator(master_defer, list) {
+  if (list.length > 0) {
+    var c_instance = list.shift();
+    deferred(c_instance.$start())(_startNextCoordinator.bind(this, master_defer, list));
+  } else {
+    master_defer.resolve();
+  }
+}
+
 //
 // Exports
 //
@@ -2050,7 +4688,7 @@ assign(DynaFlux, Actions, Events, Bridge);
 
 module.exports = DynaFlux;
 
-},{"../utils/array_utils":40,"../utils/compare":41,"./action":27,"./action_dispatcher":28,"./bridge":29,"./components":30,"./coordinators":31,"./event":32,"./event_dispatcher":33,"./mixin":35,"./stores":36,"object-assign":19}],35:[function(_dereq_,module,exports){
+},{"../utils/array_utils":122,"../utils/compare":123,"./action":109,"./action_dispatcher":110,"./bridge":111,"./components":112,"./coordinators":113,"./event":114,"./event_dispatcher":115,"./mixin":117,"./stores":118,"deferred":25,"object-assign":101}],117:[function(_dereq_,module,exports){
 'use strict';
 
 /**
@@ -2091,7 +4729,7 @@ DynaFluxMixin.componentWillMount = function() {
 };
 
 module.exports = DynaFluxMixin;
-},{}],36:[function(_dereq_,module,exports){
+},{}],118:[function(_dereq_,module,exports){
 'use strict';
 
 var compare      = _dereq_('../utils/compare');
@@ -2252,7 +4890,7 @@ module.exports = {
   hasStore        : hasStore,
   instantiateStore: instantiateStore
 };
-},{"../utils/compare":41,"event-emitter":1,"object-assign":19}],37:[function(_dereq_,module,exports){
+},{"../utils/compare":123,"event-emitter":82,"object-assign":101}],119:[function(_dereq_,module,exports){
 'use strict';
 
 var assign   = _dereq_('object-assign');
@@ -2272,7 +4910,7 @@ assign(dyna, DynaFlux);
 
 module.exports = dyna;
 
-},{"./core/core":20,"./flux/flux":34,"./providers/providers":39,"./utils/utils":43,"object-assign":19}],38:[function(_dereq_,module,exports){
+},{"./core/core":102,"./flux/flux":116,"./providers/providers":121,"./utils/utils":125,"object-assign":101}],120:[function(_dereq_,module,exports){
 'use strict';
 
 var compare = _dereq_('../utils/compare');
@@ -2326,11 +4964,11 @@ var Context = function() {
 providerManager.define('$context', Context);
 
 module.exports = Context;
-},{"../core/provider_manager":24,"../utils/compare":41}],39:[function(_dereq_,module,exports){
+},{"../core/provider_manager":106,"../utils/compare":123}],121:[function(_dereq_,module,exports){
 'use strict';
 
 _dereq_('./context');
-},{"./context":38}],40:[function(_dereq_,module,exports){
+},{"./context":120}],122:[function(_dereq_,module,exports){
 'use strict';
 
 
@@ -2357,7 +4995,7 @@ module.exports = {
     else return [obj];
   }
 };
-},{"./compare":41}],41:[function(_dereq_,module,exports){
+},{"./compare":123}],123:[function(_dereq_,module,exports){
 'use strict';
 
 /**
@@ -2423,7 +5061,7 @@ module.exports = {
     return true;
   }
 };
-},{}],42:[function(_dereq_,module,exports){
+},{}],124:[function(_dereq_,module,exports){
 module.exports = function(constructor, args) {
   'use strict';
 
@@ -2433,14 +5071,15 @@ module.exports = function(constructor, args) {
   F.prototype = constructor.prototype;
   return new F();
 };
-},{}],43:[function(_dereq_,module,exports){
+},{}],125:[function(_dereq_,module,exports){
 'use strict';
 
 var assign     = _dereq_('object-assign');
+var deferred   = _dereq_('deferred');
 
 var ArrayUtils = _dereq_('./array_utils');
 var Compare    = _dereq_('./compare');
 
-module.exports = assign({}, ArrayUtils, Compare);
-},{"./array_utils":40,"./compare":41,"object-assign":19}]},{},[37])(37)
+module.exports = assign({ deferred: deferred }, ArrayUtils, Compare);
+},{"./array_utils":122,"./compare":123,"deferred":25,"object-assign":101}]},{},[119])(119)
 });
