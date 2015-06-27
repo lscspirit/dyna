@@ -53,10 +53,12 @@ var Flux = function(coordinators, stores) {
 
   /**
    * Start this Flux
+   *
    * This will initialize (by calling $initialize()) all the specified Stores and start (by calling $start()) all the Coordinators.
-   * If the $start() method of a coordinator returns a promise object, then this will wait until that promise is resolved before
-   * executing the next coordinator is started. This allows the $start() method to include async calls while maintaining sequentiality
-   * of the start process.
+   * All coordinators will be started in the order as specified in the Flux coordinator list. You may also perform asynchronous
+   * operation within the $start() method and have it return a promise. Flux will finish the start process ONLY when all promise(s)
+   * returned from $start() are resolved. However, only the execution order of the synchronous operations within $start() are guaranteed.
+   * All asynchronous operations may be executed in any order.
    */
   this.start = function() {
     if (_started == true) throw new Error('This flux is running already.');
@@ -69,16 +71,12 @@ var Flux = function(coordinators, stores) {
     });
 
     // start coordinators
-    var start_deferred = deferred();
-    var c_instances = [];
+    var instance_returns = [];
     required_coordinators.forEach(function(c) {
-      c_instances.push(coordinator_instances[c]);
+      instance_returns.push(coordinator_instances[c].$start());
     });
 
-    // starts coordinator sequentially
-    _startNextCoordinator(start_deferred, c_instances);
-
-    return start_deferred.promise;
+    return deferred.apply(this, instance_returns);
   };
 
   /**
@@ -214,23 +212,6 @@ function _generateFluxId() {
 function _injectFluxId(obj, id) {
   if (obj.hasOwnProperty('_flux_id')) throw new Error('Cannot inject Flux Id. Object already has a _flux_id property.');
   obj._flux_id = id;
-}
-
-/**
- * Sequentially execute the coordinators' $start() method. If the $start() method returns a promise, then
- * the next coordinator won't be started until this promise is resolved.
- *
- * @param {Deferred} master_defer - deferred object that will be resolved when all coordinators have started
- * @param {Object[]} list         - list of coordinator instance
- * @private
- */
-function _startNextCoordinator(master_defer, list) {
-  if (list.length > 0) {
-    var c_instance = list.shift();
-    deferred(c_instance.$start())(_startNextCoordinator.bind(this, master_defer, list));
-  } else {
-    master_defer.resolve();
-  }
 }
 
 //

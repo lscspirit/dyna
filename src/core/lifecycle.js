@@ -2,6 +2,7 @@
 
 var assign     = require('object-assign');
 var arrayUtils = require('../utils/array_utils');
+var domReady   = require('../utils/dom_ready');
 
 var injector = require('./injector');
 var ujs      = require('./ujs');
@@ -24,7 +25,9 @@ function config(deps, fn) {
 }
 
 /**
- * Start the app with a particular Flux
+ * Start the app with a particular Flux.
+ * As part of the process, dyna components will be mounted (either through ujs or coordinator's mount spec) to the DOM
+ * elements once the DOM is ready
  * @param {Flux}             flux   - Flux instance
  * @param {Document|Element} [root] - component root under which dyna components will be mounted.
  *
@@ -42,8 +45,10 @@ function config(deps, fn) {
 function start(flux, root) {
   var self = this;
   flux.start().done(function() {
-    self.mountComponents(flux, flux.componentMountSpecs());
-    self.mountDynaComponents(flux, root);
+    domReady(function() {
+      self.mountComponents(flux, flux.componentMountSpecs());
+      self.mountDynaComponents(flux, root);
+    });
   });
 }
 

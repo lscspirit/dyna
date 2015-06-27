@@ -1,0 +1,25 @@
+<html>
+<head>
+  <script src="https://fb.me/JSXTransformer-0.13.3.js"></script>
+  <script src="https://fb.me/react-0.13.3.js"></script>
+  <script src="../../dyna.js"></script>
+  <script src="flux_logic.js"></script>
+
+  <script type="text/javascript">
+    (function(dyna) {
+      var flux = dyna.flux(['Normal'], []);
+      console.log('calling dyna.flux()');
+      dyna.start(flux);
+    }(dyna));
+  </script>
+</head>
+<body>
+<script type="text/javascript">
+  console.log('in body script');
+</script>
+<div data-dyna-component="SimpleComp"></div>
+<script type="text/javascript">
+  console.log('component div added to dom');
+</script>
+</body>
+</html>
