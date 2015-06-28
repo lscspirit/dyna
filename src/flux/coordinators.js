@@ -14,10 +14,11 @@ var _coordinator_defs = {};
  * Coordinator can have the following methods:
  *   $start - (Required) method that starts the coordinator. This will be called when parent Flux is started.
  *                       This can optionally return a {Promise} object. If so, Flux will wait for this promise to be
- *                       resolved before starting the next coordinator.
+ *                       resolved before the Flux will move onto the next phase of the starting process. Other coordinators
+ *                       will continue to be started while the promise is waiting to be resolved.
  *   $stop  - (Optional) method that stops the coordinator. This will be called when the parent Flux is stopped.
- *   $mountSpec - (Optional) method that returns a {@link MountSpec} object to specify how coordinator specific
- *                component will be mounted by Flux.
+ *   $mount - (Optional) method that will mount coordinator specific components
+ *   $unmount - (Optional) method that will unmount coordinator specific components
  *
  * @param {string}   name - name of the coordinator
  * @param {function} def  - a constructor function in the <tt>Dependency Injection</tt> format

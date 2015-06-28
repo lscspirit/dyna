@@ -74,13 +74,19 @@
 
       var Buzzer = function() {
         /**
-         * Specifies how components are mounted by this coordinator
-         * @returns {MountSpec[]}
+         * Mount coordinator specific components
+         * @param {MountFunction} mount - mount function
          */
-        this.$mountSpec = function() {
-          return [
-            { node: document.getElementById('buzzer'), component: BuzzerComponent, props: { status: 'unclicked' } }
-          ];
+        this.$mount = function(mount) {
+          mount(document.getElementById('buzzer'), BuzzerComponent, { status: 'unclicked' });
+        };
+
+        /**
+         * Un-mount coordinator specific components
+         * @param {UnmountFunction} unmount - un-mount function
+         */
+        this.$unmount = function(unmount) {
+          unmount(document.getElementById('buzzer'));
         };
 
         this.$start = function() {

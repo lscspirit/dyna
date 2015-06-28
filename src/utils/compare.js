@@ -34,6 +34,13 @@ module.exports = {
     return typeof object == "undefined";
   },
 
+  isElement : function(object) {
+    return (
+      typeof HTMLElement === "object" ? object instanceof HTMLElement : //DOM2
+      object && typeof object === "object" && object !== null && object.nodeType === 1 && typeof object.nodeName==="string"
+    );
+  },
+
   /**
    * Shallowly compare two objects and see if they are equal
    * @see {@link http://buildwithreact.com/article/optimizing-with-shouldcomponentupdate}

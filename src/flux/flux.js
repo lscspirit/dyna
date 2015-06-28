@@ -97,21 +97,27 @@ var Flux = function(coordinators, stores) {
   };
 
   /**
-   * Return the MountSpec from all the coordinators' $mountSpec() method
-   * @returns {MountSpec[]} mount specs of all the coordinators
+   * Perform $mount operation (if available) on all coordinators
+   * @param {MountFunction} mountFn - a mount function
    */
-  this.componentMountSpecs = function() {
-    var specs = [];
+  this.mountComponents = function(mountFn) {
     required_coordinators.forEach(function(c) {
       var c_instance = coordinator_instances[c];
       // get coordinator's mount spec
-      if (compare.isFunction(c_instance.$mountSpec)) {
-        var s = c_instance.$mountSpec();
-        specs = specs.concat(s);
-      }
+      if (compare.isFunction(c_instance.$mount)) c_instance.$mount(mountFn);
     });
+  };
 
-    return specs;
+  /**
+   * Perform $unmount operation (if available) on all coordinators
+   * @param {UnmountFunction} unmountFn - a unmount function
+   */
+  this.unmountComponents = function(unmountFn) {
+    required_coordinators.forEach(function(c) {
+      var c_instance = coordinator_instances[c];
+      // get coordinator's mount spec
+      if (compare.isFunction(c_instance.$unmount)) c_instance.$unmount(unmountFn);
+    });
   };
 
   /**

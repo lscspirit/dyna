@@ -46,7 +46,7 @@ function start(flux, root) {
   var self = this;
   flux.start().done(function() {
     domReady(function() {
-      self.mountComponents(flux, flux.componentMountSpecs());
+      self.mountComponents(flux);
       self.mountDynaComponents(flux, root);
     });
   });
@@ -64,7 +64,7 @@ function start(flux, root) {
  */
 function stop(flux, root) {
   this.unmountDynaComponents(root);
-  this.unmountComponents(flux.componentMountSpecs());
+  this.unmountComponents(flux);
   flux.stop();
 }
 

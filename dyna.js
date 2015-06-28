@@ -3548,7 +3548,7 @@ function start(flux, root) {
   var self = this;
   flux.start().done(function() {
     domReady(function() {
-      self.mountComponents(flux, flux.componentMountSpecs());
+      self.mountComponents(flux);
       self.mountDynaComponents(flux, root);
     });
   });
@@ -3566,7 +3566,7 @@ function start(flux, root) {
  */
 function stop(flux, root) {
   this.unmountDynaComponents(root);
-  this.unmountComponents(flux.componentMountSpecs());
+  this.unmountComponents(flux);
   flux.stop();
 }
 
@@ -3776,51 +3776,50 @@ var arrayUtils = _dereq_('../utils/array_utils');
 var components = _dereq_('../flux/components');
 
 /**
- * @typedef {Object} MountSpec
- * @property {HTMLElement} node      - node on which the component is mounted
- * @property {ReactClass}  component - ReactClass of the component
- * @property {Object}      props     - props to be mounted along with the component
+ * Un-mounting React components from nodes
+ * @callback UnmountFunction
+ * @param {HTMLElement} node - a DOM Node
+ */
+var unmountFn = function(node) {
+  this.React.unmountComponentAtNode(node);
+};
+
+/**
+ * Mount React components to DOM nodes (this is a version of the Mount function with the Flux instance already binded)
+ * @callback MountFunction
+ * @param {HTMLElement} node      - a DOM Node
+ * @param {ReactClass}  component - a React component class
+ * @param {Object}      props     - props to be passed to the component
  */
 
 /**
- * Mounts the corresponding components as specified
- * @param {Flux}        flux - instance of Flux
- * @param {MountSpec[]} specs - mounting specification
- *
- * @example
- * dyna.mountComponents(flux, [
- *   { node: document.getElementById('node-one'), component: ReactClass, props: { prop_one: 'test' } }
- * ]);
+ * Mount React components to DOM nodes
+ * @param {Flux}        flux      - flux instance within which this component is mounted
+ * @param {HTMLElement} node      - a DOM Node
+ * @param {ReactClass}  component - a React component class
+ * @param {Object}      props     - props to be passed to the component
  */
-function mountComponents(flux, specs) {
-  var React = this.React;
-  var spec_array = arrayUtils.arrayWrap(specs);
+var mountFn = function(flux, node, component, props) {
+  var React  = this.React;
+  var _props = assign(props || {}, { flux: {id: flux._id(), store: flux.store, action_dispatcher: flux.actionDispatcher()} });
 
-  spec_array.forEach(function(s) {
-    var node      = s.node;
-    var component = s.component;
-    var props     = assign(s.props || {}, { flux: {id: flux._id(), store: flux.store, action_dispatcher: flux.actionDispatcher()} });
+  React.render(React.createElement(component, _props), node);
+};
 
-    React.render(React.createElement(component, props), node);
-  });
+/**
+ * Allow each coordinator in the Flux to mount their own specific components
+ * @param {Flux} flux - instance of Flux
+ */
+function mountComponents(flux) {
+  flux.mountComponents(mountFn.bind(this, flux));
 }
 
 /**
- * Mounts the corresponding components as specified
- * @param {MountSpec[]} specs - mounting specification
- *
- * @example
- * dyna.unmountComponents(flux, [
- *   { node: document.getElementById('node-one') }
- * ]);
+ * Allow each coordinator in the Flux to unmount their own specific components
+ * @param {Flux} flux - instance of Flux
  */
-function unmountComponents(specs) {
-  var React = this.React;
-  var spec_array = arrayUtils.arrayWrap(specs);
-
-  spec_array.forEach(function(s) {
-    React.unmountComponentAtNode(s.node);
-  });
+function unmountComponents(flux) {
+  flux.unmountComponents(unmountFn.bind(this));
 }
 
 /**
@@ -3831,19 +3830,18 @@ function unmountComponents(specs) {
  * @param {HTMLElement} [root] - DOM Node under (and including self) which dyna components will be mounted.
  */
 function mountDynaComponents(flux, root) {
-  root      = compare.isUndefined(root) ? document : root;
-  var elems = _queryAllAndSelfWithAttribute('data-dyna-component', root);
+  var self  = this;
+  var _root = compare.isUndefined(root) ? document : root;
+  var elems = _queryAllAndSelfWithAttribute('data-dyna-component', _root);
 
-  var specs = elems.map(function(node) {
+  elems.forEach(function(node) {
     var component_name = node.getAttribute('data-dyna-component');
     var component = components.getComponent(component_name);
 
     var props = node.hasAttribute('data-props') ? JSON.parse(node.getAttribute['data-props']) : {};
 
-    return { node: node, component: component, props: props };
+    mountFn.call(self, flux, node, component, props);
   });
-
-  mountComponents.call(this, flux, specs);
 }
 
 /**
@@ -3852,14 +3850,13 @@ function mountDynaComponents(flux, root) {
  * @param {HTMLElement} [root] - DOM Node under (and including self) which dyna components will be mounted.
  */
 function unmountDynaComponents(root) {
-  root      = compare.isUndefined(root) ? document : root;
-  var elems = _queryAllAndSelfWithAttribute('data-dyna-component', root);
+  var self  = this;
+  var _root = compare.isUndefined(root) ? document : root;
+  var elems = _queryAllAndSelfWithAttribute('data-dyna-component', _root);
 
-  var specs = elems.map(function(node) {
-    return { node: node };
+  elems.forEach(function(node) {
+    unmountFn.call(self, node);
   });
-
-  unmountComponents.call(this, specs);
 }
 
 //
@@ -4547,21 +4544,27 @@ var Flux = function(coordinators, stores) {
   };
 
   /**
-   * Return the MountSpec from all the coordinators' $mountSpec() method
-   * @returns {MountSpec[]} mount specs of all the coordinators
+   * Perform $mount operation (if available) on all coordinators
+   * @param {MountFunction} mountFn - a mount function
    */
-  this.componentMountSpecs = function() {
-    var specs = [];
+  this.mountComponents = function(mountFn) {
     required_coordinators.forEach(function(c) {
       var c_instance = coordinator_instances[c];
       // get coordinator's mount spec
-      if (compare.isFunction(c_instance.$mountSpec)) {
-        var s = c_instance.$mountSpec();
-        specs = specs.concat(s);
-      }
+      if (compare.isFunction(c_instance.$mount)) c_instance.$mount(mountFn);
     });
+  };
 
-    return specs;
+  /**
+   * Perform $unmount operation (if available) on all coordinators
+   * @param {UnmountFunction} unmountFn - a unmount function
+   */
+  this.unmountComponents = function(unmountFn) {
+    required_coordinators.forEach(function(c) {
+      var c_instance = coordinator_instances[c];
+      // get coordinator's mount spec
+      if (compare.isFunction(c_instance.$unmount)) c_instance.$unmount(unmountFn);
+    });
   };
 
   /**
@@ -5024,6 +5027,13 @@ module.exports = {
 
   isUndefined : function(object) {
     return typeof object == "undefined";
+  },
+
+  isElement : function(object) {
+    return (
+      typeof HTMLElement === "object" ? object instanceof HTMLElement : //DOM2
+      object && typeof object === "object" && object !== null && object.nodeType === 1 && typeof object.nodeName==="string"
+    );
   },
 
   /**
