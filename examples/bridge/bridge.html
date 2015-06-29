@@ -10,9 +10,12 @@
     'use strict';
 
     (function(dyna, React) {
-      var actions = dyna.createActionFactory({
+      var action_names = {
+        CLICKED: 'buzzer-clicked'
+      };
+      window.action_factory = dyna.createActionFactory(action_names, {
         buzzClick: function() {
-          return this.createAction('buzzer-clicked', 'clicked');
+          return this.createAction(this.ACTIONS.CLICKED, 'clicked');
         }
       });
 
@@ -39,7 +42,7 @@
         },
 
         _buzzClick : function() {
-          var click_action = actions.buzzClick();
+          var click_action = action_factory.buzzClick();
           click_action.dispatch(this.flux().action_dispatcher);
         },
 

@@ -1,15 +1,9 @@
 'use strict';
 
 (function(dyna) {
-  var Events = dyna.createEventFactory({
-    statusChange : function(status) {
-      return this.createEvent('buzzer.status-change', status);
-    }
-  });
-
   var Buzzer = function() {
     this.$start = function() {
-      this.flux.action_dispatcher.addListener('buzzer-clicked', _buzzClicked.bind(this));
+      this.flux.action_dispatcher.addListener(action_factory.ACTIONS.CLICKED, _buzzClicked.bind(this));
     };
 
     //
@@ -21,7 +15,7 @@
     }
 
     function _setStatus(status) {
-      Events.statusChange(status).dispatch(this.flux.event_dispatcher);
+      event_factory.statusChange(status).dispatch(this.flux.event_dispatcher);
     }
   };
 

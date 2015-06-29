@@ -14,9 +14,12 @@
       // Actions
       //
 
-      var actions = dyna.createActionFactory({
+      var action_names = {
+        CLICKED: 'buzzer-clicked'
+      };
+      window.action_factory = dyna.createActionFactory(action_names, {
         buzzClick: function() {
-          return this.createAction('buzzer-clicked', 'clicked');
+          return this.createAction(this.ACTIONS.CLICKED, 'clicked');
         }
       });
 
@@ -47,7 +50,7 @@
         },
 
         _buzzClick : function() {
-          var click_action = actions.buzzClick();
+          var click_action = action_factory.buzzClick();
           click_action.dispatch(this.flux().action_dispatcher);
         },
 
@@ -62,9 +65,12 @@
       // Events
       //
 
-      var Events = dyna.createEventFactory({
+      var event_names   = {
+        STATUS_CHANGE: 'buzzer.status-change'
+      };
+      window.event_factory = dyna.createEventFactory(event_names, {
         statusChange : function(status) {
-          return this.createEvent('buzzer.status-change', status);
+          return this.createEvent(this.EVENTS.STATUS_CHANGE, status);
         }
       });
 
@@ -90,7 +96,7 @@
         };
 
         this.$start = function() {
-          this.flux.action_dispatcher.addListener('buzzer-clicked', _buzzClicked.bind(this));
+          this.flux.action_dispatcher.addListener(action_factory.ACTIONS.CLICKED, _buzzClicked.bind(this));
         };
 
         //
@@ -102,7 +108,7 @@
         }
 
         function _setStatus(status) {
-          Events.statusChange(status).dispatch(this.flux.event_dispatcher);
+          event_factory.statusChange(status).dispatch(this.flux.event_dispatcher);
         }
       };
 

@@ -3882,6 +3882,7 @@ module.exports = {
 },{"../flux/components":112,"../utils/array_utils":122,"../utils/compare":123,"object-assign":101}],109:[function(_dereq_,module,exports){
 'use strict';
 
+var assign  = _dereq_('object-assign');
 var compare = _dereq_('../utils/compare');
 
 /**
@@ -3924,35 +3925,44 @@ var Action = function(name, payload) {
 
 /**
  * Create a factory object that can build Action according to the <tt>action_specs</tt>
- * @param action_specs - action specifications
+ * @param {Object.<string, string>}   action_names - action name constants
+ * @param {Object.<string, function>} action_specs - action specifications
  * @returns {ActionFactory} the factory object
  *
  * @example
- * var actions = dyna.createActionFactory({
+ * var names   = {
+ *   CLICKED: 'buzzer-clicked',
+ *   SNOOZED: 'buzzer-snoozed'
+ * };
+ * var action_factory = dyna.createActionFactory(names, {
  *   buzzClick: function() {
- *     return this.createAction('buzzer-clicked', 'clicked');
+ *     return this.createAction(this.ACTIONS.CLICKED, 'clicked');
  *   },
  *   buzzSnooze: function() {
- *     return this.createAction('buzzer-snoozed', 'snoozed');
+ *     return this.createAction(this.ACTIONS.SNOOZED, 'snoozed');
  *   }
  * });
+ *
+ * // action_factory.ACTIONS.CLICKED;    => 'buzzer-clicked'
  *
  * // Component
  * var Buzzer = React.createClass({
  *   // ...
  *
  *   _buzzClick : function() {
- *     var click = actions.buzzClick();
+ *     var click = action_factory.buzzClick();
  *     click.dispatch(this.props.flux.action_dispatcher);
  *   }
  * });
  */
-function createActionFactory(action_specs) {
+function createActionFactory(action_names, action_specs) {
   /**
    * Factory class for creating Actions
    * @constructor
    */
   var ActionFactory = function() {
+    this.ACTIONS = assign({}, action_names);
+
     /**
      * Create a new Action object
      * @param {string} name    - name of the event
@@ -3975,7 +3985,7 @@ function createActionFactory(action_specs) {
 //
 
 module.exports = { createActionFactory: createActionFactory };
-},{"../utils/compare":123}],110:[function(_dereq_,module,exports){
+},{"../utils/compare":123,"object-assign":101}],110:[function(_dereq_,module,exports){
 'use strict';
 
 /**
@@ -4222,10 +4232,11 @@ var _coordinator_defs = {};
  * Coordinator can have the following methods:
  *   $start - (Required) method that starts the coordinator. This will be called when parent Flux is started.
  *                       This can optionally return a {Promise} object. If so, Flux will wait for this promise to be
- *                       resolved before starting the next coordinator.
+ *                       resolved before the Flux will move onto the next phase of the starting process. Other coordinators
+ *                       will continue to be started while the promise is waiting to be resolved.
  *   $stop  - (Optional) method that stops the coordinator. This will be called when the parent Flux is stopped.
- *   $mountSpec - (Optional) method that returns a {@link MountSpec} object to specify how coordinator specific
- *                component will be mounted by Flux.
+ *   $mount - (Optional) method that will mount coordinator specific components
+ *   $unmount - (Optional) method that will unmount coordinator specific components
  *
  * @param {string}   name - name of the coordinator
  * @param {function} def  - a constructor function in the <tt>Dependency Injection</tt> format
@@ -4341,6 +4352,7 @@ module.exports = {
 },{"../core/injector":104,"../utils/array_utils":122,"../utils/compare":123,"../utils/create_with_args":124}],114:[function(_dereq_,module,exports){
 'use strict';
 
+var assign  = _dereq_('object-assign');
 var compare = _dereq_('../utils/compare');
 
 /**
@@ -4382,35 +4394,44 @@ var Event = function(name, payload) {
 };
 
 /**
- * Create a factory object that can build Action according to the <tt>event_specs</tt>
- * @param {object} event_specs - event specifications
+ * Create a factory object that can build Event according to the <tt>event_specs</tt>
+ * @param {Object.<string, string>}   event_names - event name constants
+ * @param {Object.<string, function>} event_specs - event specifications
  * @returns {EventFactory} the factory object
  *
  * @example
- * var events = dyna.createEventFactory({
+ * var names  = {
+ *   STATUS_CHANGE: 'buzzer.status-change',
+ *   SNOOZED      : 'buzzer.snoozed'
+ * };
+ * var event_factory = dyna.createEventFactory(names, {
  *   statusChange : function(status) {
- *     return this.createEvent('buzzer.status-change', status);
+ *     return this.createEvent(this.EVENTS.STATUS_CHANGE, status);
  *   },
  *   snoozed : function() {
- *     return this.createEvent('buzzer.snoozed');
+ *     return this.createEvent(this.EVENTS.SNOOZED);
  *   }
  * });
+ *
+ * // event_factory.EVENTS.STATUS_CHANGE;   => 'buzzer.status-change'
  *
  * // Coordinator
  * var Buzzer = function() {
  *   // ...
  *
  *   function _buzzStatusChange(status) {
- *     events.statusChange(status).dispatch(this.flux.event_dispatcher);
+ *     event_factory.statusChange(status).dispatch(this.flux.event_dispatcher);
  *   }
  * }
  */
-function createEventFactory(event_specs) {
+function createEventFactory(event_names, event_specs) {
   /**
    * Factory class for creating Events.
    * @constructor
    */
   var EventFactory = function() {
+    this.EVENTS = assign({}, event_names);
+
     /**
      * Create a new Event object
      * @param {string} name    - name of the event
@@ -4433,7 +4454,7 @@ function createEventFactory(event_specs) {
 //
 
 module.exports = { createEventFactory: createEventFactory };
-},{"../utils/compare":123}],115:[function(_dereq_,module,exports){
+},{"../utils/compare":123,"object-assign":101}],115:[function(_dereq_,module,exports){
 'use strict';
 
 /**

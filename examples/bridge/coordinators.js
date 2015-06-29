@@ -1,9 +1,12 @@
 'use strict';
 
 (function(dyna) {
-  var Events = dyna.createEventFactory({
+  var event_names   = {
+    STATUS_CHANGE: 'buzzer.status-change'
+  };
+  window.event_factory = dyna.createEventFactory(event_names, {
     statusChange : function(status) {
-      return this.createEvent('buzzer.status-change', status);
+      return this.createEvent(this.EVENTS.STATUS_CHANGE, status);
     }
   });
 
@@ -32,7 +35,7 @@
     }
 
     function _setStatus(status) {
-      Events.statusChange(status).dispatch(this.flux.event_dispatcher);
+      event_factory.statusChange(status).dispatch(this.flux.event_dispatcher);
     }
   };
 
@@ -43,7 +46,7 @@
     var bridged_buzzer = dyna.useBridge(BuzzerWithBridge); // (optional) this creates a noop interface
 
     this.$start = function() {
-      this.flux.action_dispatcher.addListener('buzzer-clicked', _buzzClicked.bind(this));
+      this.flux.action_dispatcher.addListener(action_factory.ACTIONS.CLICKED, _buzzClicked.bind(this));
     };
 
     this.setBridge = function(bridge) {
@@ -63,7 +66,7 @@
     }
 
     function _setStatus(status) {
-      Events.statusChange(status).dispatch(this.flux.event_dispatcher);
+      event_factory.statusChange(status).dispatch(this.flux.event_dispatcher);
     }
   };
 

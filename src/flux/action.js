@@ -1,5 +1,6 @@
 'use strict';
 
+var assign  = require('object-assign');
 var compare = require('../utils/compare');
 
 /**
@@ -42,35 +43,44 @@ var Action = function(name, payload) {
 
 /**
  * Create a factory object that can build Action according to the <tt>action_specs</tt>
- * @param action_specs - action specifications
+ * @param {Object.<string, string>}   action_names - action name constants
+ * @param {Object.<string, function>} action_specs - action specifications
  * @returns {ActionFactory} the factory object
  *
  * @example
- * var actions = dyna.createActionFactory({
+ * var names   = {
+ *   CLICKED: 'buzzer-clicked',
+ *   SNOOZED: 'buzzer-snoozed'
+ * };
+ * var action_factory = dyna.createActionFactory(names, {
  *   buzzClick: function() {
- *     return this.createAction('buzzer-clicked', 'clicked');
+ *     return this.createAction(this.ACTIONS.CLICKED, 'clicked');
  *   },
  *   buzzSnooze: function() {
- *     return this.createAction('buzzer-snoozed', 'snoozed');
+ *     return this.createAction(this.ACTIONS.SNOOZED, 'snoozed');
  *   }
  * });
+ *
+ * // action_factory.ACTIONS.CLICKED;    => 'buzzer-clicked'
  *
  * // Component
  * var Buzzer = React.createClass({
  *   // ...
  *
  *   _buzzClick : function() {
- *     var click = actions.buzzClick();
+ *     var click = action_factory.buzzClick();
  *     click.dispatch(this.props.flux.action_dispatcher);
  *   }
  * });
  */
-function createActionFactory(action_specs) {
+function createActionFactory(action_names, action_specs) {
   /**
    * Factory class for creating Actions
    * @constructor
    */
   var ActionFactory = function() {
+    this.ACTIONS = assign({}, action_names);
+
     /**
      * Create a new Action object
      * @param {string} name    - name of the event

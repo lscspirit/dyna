@@ -1,5 +1,6 @@
 'use strict';
 
+var assign  = require('object-assign');
 var compare = require('../utils/compare');
 
 /**
@@ -41,35 +42,44 @@ var Event = function(name, payload) {
 };
 
 /**
- * Create a factory object that can build Action according to the <tt>event_specs</tt>
- * @param {object} event_specs - event specifications
+ * Create a factory object that can build Event according to the <tt>event_specs</tt>
+ * @param {Object.<string, string>}   event_names - event name constants
+ * @param {Object.<string, function>} event_specs - event specifications
  * @returns {EventFactory} the factory object
  *
  * @example
- * var events = dyna.createEventFactory({
+ * var names  = {
+ *   STATUS_CHANGE: 'buzzer.status-change',
+ *   SNOOZED      : 'buzzer.snoozed'
+ * };
+ * var event_factory = dyna.createEventFactory(names, {
  *   statusChange : function(status) {
- *     return this.createEvent('buzzer.status-change', status);
+ *     return this.createEvent(this.EVENTS.STATUS_CHANGE, status);
  *   },
  *   snoozed : function() {
- *     return this.createEvent('buzzer.snoozed');
+ *     return this.createEvent(this.EVENTS.SNOOZED);
  *   }
  * });
+ *
+ * // event_factory.EVENTS.STATUS_CHANGE;   => 'buzzer.status-change'
  *
  * // Coordinator
  * var Buzzer = function() {
  *   // ...
  *
  *   function _buzzStatusChange(status) {
- *     events.statusChange(status).dispatch(this.flux.event_dispatcher);
+ *     event_factory.statusChange(status).dispatch(this.flux.event_dispatcher);
  *   }
  * }
  */
-function createEventFactory(event_specs) {
+function createEventFactory(event_names, event_specs) {
   /**
    * Factory class for creating Events.
    * @constructor
    */
   var EventFactory = function() {
+    this.EVENTS = assign({}, event_names);
+
     /**
      * Create a new Event object
      * @param {string} name    - name of the event
