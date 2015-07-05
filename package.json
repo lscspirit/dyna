@@ -2,6 +2,10 @@
   "name": "dyna",
   "version": "0.1.0",
   "description": "A framework that incorporates Facebook's ReactJS component and Flux architecture",
+  "repository": {
+    "type": "git",
+    "url" : "https://github.com/lscspirit/dyna.git"
+  },
   "main": "dyna.js",
   "files": [
     "dyna.js",
@@ -24,5 +28,5 @@
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "author": "Derrick Yeung",
-  "license": "none"
+  "license": "UNLICENSED"
 }
