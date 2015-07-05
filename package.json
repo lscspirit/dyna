@@ -3,6 +3,10 @@
   "version": "0.1.0",
   "description": "A framework that incorporates Facebook's ReactJS component and Flux architecture",
   "main": "dyna.js",
+  "files": [
+    "dyna.js",
+    "src/"
+  ],
   "dependencies": {
     "event-emitter": "^0.3.3",
     "flux": "^2.0.3",
@@ -11,21 +15,12 @@
   "devDependencies": {
     "browserify": "^10.2.1",
     "browserify-derequire": "^0.9.4",
-    "browserify-shim": "^3.8.6",
     "grunt": "^0.4.5",
     "grunt-browserify": "^3.8.0",
     "grunt-jsdoc": "^0.6.4"
   },
-  "browserify": {
-    "transform": [
-      "browserify-shim"
-    ]
-  },
-  "browserify-shim": {
-    "jquery": "global:$_dyna",
-    "react": "global:React"
-  },
   "scripts": {
+    "build": "grunt",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "author": "Derrick Yeung",
