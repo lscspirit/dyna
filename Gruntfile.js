@@ -30,5 +30,6 @@ module.exports = function(grunt) {
 
   // Default task(s).
   grunt.registerTask('default', ['browserify', 'jsdoc']);
-
+  // 'Build' task
+  grunt.registerTask('build', ['browserify']);
 };
