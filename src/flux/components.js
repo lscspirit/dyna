@@ -50,12 +50,34 @@ function getComponent(name) {
   else throw new Error('There is no registered Component with the name "' + name + "'");
 }
 
+/**
+ * Create a new React Class that is connected to the provided Flux
+ * @param {Flux}       flux      - flux instance
+ * @param {ReactClass} component - React component to be connected
+ * @returns {ReactClass} Flux connected class
+ *
+ * @example
+ * var Connected = dyna.connectComponentToFlux(SomeComponent, flux);
+ */
+function connectComponentToFlux(flux, component) {
+  var React      = this.React;
+  var flux_props = { flux: {id: flux._id(), store: flux.store, action_dispatcher: flux.actionDispatcher()} };
+
+  return React.createClass({
+    render : function() {
+      var _props = assign({}, this.props, flux_props);
+      return React.createElement(component, _props);
+    }
+  });
+}
+
 //
 // Exports
 //
 
 module.exports = {
-  registerComponent: registerComponent,
-  getComponent     : getComponent
+  registerComponent   : registerComponent,
+  getComponent        : getComponent,
+  connectComponentToFlux: connectComponentToFlux
 };
 

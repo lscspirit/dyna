@@ -31,9 +31,9 @@ var unmountFn = function(node) {
  */
 var mountFn = function(flux, node, component, props) {
   var React  = this.React;
-  var _props = assign(props || {}, { flux: {id: flux._id(), store: flux.store, action_dispatcher: flux.actionDispatcher()} });
+  var connectedComponent = this.connectComponentToFlux(flux, component);
 
-  React.render(React.createElement(component, _props), node);
+  React.render(React.createElement(connectedComponent, props), node);
 };
 
 /**

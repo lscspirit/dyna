@@ -228,10 +228,11 @@ var DynaFlux = {
   flux : function(coordinators, stores) {
     return new Flux(coordinators, stores);
   },
-  registerStore      : Stores.registerStore,
-  registerComponent  : Components.registerComponent,
-  registerCoordinator: Coordinators.registerCoordinator,
-  DynaFluxMixin      : DynaFluxMixin
+  registerStore         : Stores.registerStore,
+  registerComponent     : Components.registerComponent,
+  connectComponentToFlux: Components.connectComponentToFlux,
+  registerCoordinator   : Coordinators.registerCoordinator,
+  DynaFluxMixin         : DynaFluxMixin
 };
 
 assign(DynaFlux, Actions, Events, Bridge);

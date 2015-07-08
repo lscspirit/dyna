@@ -1,10 +1,10 @@
 {
   "name": "dyna",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "description": "A framework that incorporates Facebook's ReactJS component and Flux architecture",
   "repository": {
     "type": "git",
-    "url" : "https://github.com/lscspirit/dyna.git"
+    "url": "https://github.com/lscspirit/dyna.git"
   },
   "main": "dyna.js",
   "files": [
@@ -12,6 +12,7 @@
     "src/"
   ],
   "dependencies": {
+    "deferred": "^0.7.2",
     "event-emitter": "^0.3.3",
     "flux": "^2.0.3",
     "object-assign": "^2.0.0"
