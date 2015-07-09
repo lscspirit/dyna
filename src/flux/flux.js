@@ -20,7 +20,7 @@ var Bridge       = require('./bridge');
 var ActionDispatcher = require('./action_dispatcher');
 var EventDispatcher  = require('./event_dispatcher');
 
-var DynaFluxMixin    = require('./mixin');
+var Mixins = require('./mixins');
 
 var next_flux_id = 1;
 
@@ -148,6 +148,23 @@ var Flux = function(coordinators, stores) {
     return c_instance.$bridge;
   };
 
+  /**
+   * Flux context for use within Dyna's component
+   * @typedef {Object} FluxComponentContext
+   * @property {number}   id                - Flux instance ID
+   * @property {function} store             - store retrieval function
+   * @property {Object}   action_dispatcher - Action Dispatcher for this Flux instance
+   */
+
+  /**
+   * Get the Flux context for use in React components
+   * This returns the minimum Flux instance properties that are needed by React component within the Dyna framework
+   * @returns {FluxComponentContext} Flux context
+   */
+  this.componentContext = function() {
+    return { id: this._id(), store: this.store, action_dispatcher: this.actionDispatcher() };
+  };
+
   //
   // Accessors
   //
@@ -231,10 +248,9 @@ var DynaFlux = {
   registerStore         : Stores.registerStore,
   registerComponent     : Components.registerComponent,
   connectComponentToFlux: Components.connectComponentToFlux,
-  registerCoordinator   : Coordinators.registerCoordinator,
-  DynaFluxMixin         : DynaFluxMixin
+  registerCoordinator   : Coordinators.registerCoordinator
 };
 
-assign(DynaFlux, Actions, Events, Bridge);
+assign(DynaFlux, Actions, Events, Bridge, Mixins);
 
 module.exports = DynaFlux;

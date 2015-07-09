@@ -4210,7 +4210,10 @@ function getComponent(name) {
 }
 
 /**
- * Create a new React Class that is connected to the provided Flux
+ * Create a new React Class that is connected to the provided Flux.
+ * Child component of this new React Class will all have access to this Flux
+ * through the 'flux' context OR by using the dyna.DyanFluxConsumerMixin()
+ *
  * @param {Flux}       flux      - flux instance
  * @param {ReactClass} component - React component to be connected
  * @returns {ReactClass} Flux connected class
@@ -4220,12 +4223,22 @@ function getComponent(name) {
  */
 function connectComponentToFlux(flux, component) {
   var React      = this.React;
-  var flux_props = { flux: {id: flux._id(), store: flux.store, action_dispatcher: flux.actionDispatcher()} };
 
   return React.createClass({
+    mixins : [this.DynaFluxMixin()],
+
+    getDefaultProps : function() {
+      return {
+        flux: flux.componentContext()
+      };
+    },
+
     render : function() {
-      var _props = assign({}, this.props, flux_props);
-      return React.createElement(component, _props);
+      // filter out the 'flux' prop that was injected by this mixin
+      var filtered_props = assign({}, this.props);
+      delete filtered_props.flux;
+
+      return React.createElement(component, filtered_props);
     }
   });
 }
@@ -4514,7 +4527,7 @@ var Bridge       = _dereq_('./bridge');
 var ActionDispatcher = _dereq_('./action_dispatcher');
 var EventDispatcher  = _dereq_('./event_dispatcher');
 
-var DynaFluxMixin    = _dereq_('./mixin');
+var Mixins = _dereq_('./mixins');
 
 var next_flux_id = 1;
 
@@ -4642,6 +4655,23 @@ var Flux = function(coordinators, stores) {
     return c_instance.$bridge;
   };
 
+  /**
+   * Flux context for use within Dyna's component
+   * @typedef {Object} FluxComponentContext
+   * @property {number}   id                - Flux instance ID
+   * @property {function} store             - store retrieval function
+   * @property {Object}   action_dispatcher - Action Dispatcher for this Flux instance
+   */
+
+  /**
+   * Get the Flux context for use in React components
+   * This returns the minimum Flux instance properties that are needed by React component within the Dyna framework
+   * @returns {FluxComponentContext} Flux context
+   */
+  this.componentContext = function() {
+    return { id: this._id(), store: this.store, action_dispatcher: this.actionDispatcher() };
+  };
+
   //
   // Accessors
   //
@@ -4725,27 +4755,27 @@ var DynaFlux = {
   registerStore         : Stores.registerStore,
   registerComponent     : Components.registerComponent,
   connectComponentToFlux: Components.connectComponentToFlux,
-  registerCoordinator   : Coordinators.registerCoordinator,
-  DynaFluxMixin         : DynaFluxMixin
+  registerCoordinator   : Coordinators.registerCoordinator
 };
 
-assign(DynaFlux, Actions, Events, Bridge);
+assign(DynaFlux, Actions, Events, Bridge, Mixins);
 
 module.exports = DynaFlux;
 
-},{"../utils/array_utils":124,"../utils/compare":125,"./action":111,"./action_dispatcher":112,"./bridge":113,"./components":114,"./coordinators":115,"./event":116,"./event_dispatcher":117,"./mixin":119,"./stores":120,"deferred":26,"object-assign":103}],119:[function(_dereq_,module,exports){
+},{"../utils/array_utils":124,"../utils/compare":125,"./action":111,"./action_dispatcher":112,"./bridge":113,"./components":114,"./coordinators":115,"./event":116,"./event_dispatcher":117,"./mixins":119,"./stores":120,"deferred":26,"object-assign":103}],119:[function(_dereq_,module,exports){
 'use strict';
 
 /**
- * Constructor for creating a DynaFluxMixin that will pass the Flux instance to child components
- *
- * @param {React} React - instance of React
- * @returns {Object} mixin definition
- * @constructor
+ * Function for creating a DynaFluxMixin that will pass the Flux instance to child components
+ * through childContext. With the DynaFluxMixin, the Flux instance will be available through the flux()
+ * method within the component.
+ * @returns {Object} mixin
  *
  * @see {@link https://github.com/BinaryMuse/fluxxor/blob/master/lib/flux_mixin.js}
  */
-var DynaFluxMixin = function(React) {
+var DynaFluxMixin = function() {
+  var React = this.React;
+
   return {
     componentWillMount : function() {
       if (!this.props.flux && (!this.context || !this.context.flux)) {
@@ -4764,16 +4794,92 @@ var DynaFluxMixin = function(React) {
     },
 
     flux : function() {
-      return this.props.flux || (this.context && this.context.flux)
+      return this.props.flux || (this.context && this.context.flux);
     }
   };
 };
-
 DynaFluxMixin.componentWillMount = function() {
-  throw new Error('DynaFluxMixin must be created through dyna.DynaFluxMixin(React), instead of being used directly.');
+  throw new Error('DynaFluxMixin must be created through dyna.DynaFluxMixin(), instead of being used directly.');
 };
 
-module.exports = DynaFluxMixin;
+/**
+ * Function for creating a DynaFluxConsumerMixin that will consume the Flux instance provided by
+ * the component's owner through owner's context. With the DynaFluxConsumerMixin, the Flux instance
+ * will be available through the flux() method within the component.
+ * @returns {Object} mixin
+ */
+var DynaFluxConsumerMixin = function() {
+  var React = this.React;
+
+  return {
+    componentWillMount : function() {
+      if (!this.context || !this.context.flux) {
+        throw new Error('Could not find flux in component\'s context');
+      }
+    },
+
+    contextTypes : {
+      flux: React.PropTypes.object.isRequired
+    },
+
+    flux : function() {
+      return this.context && this.context.flux;
+    }
+  };
+};
+DynaFluxConsumerMixin.componentWillMount = function() {
+  throw new Error('DynaFluxConsumerMixin must be created through dyna.DynaFluxConsumerMixin(), instead of being used directly.');
+};
+
+/**
+ * Function for create a ComponentFluxMixin that will automatically creates a Flux instance upon mounting of the
+ * component.
+ * @param {string|string[]} coordinators - names of the coordinators to be used within this Flux
+ * @param {string|string[]} stores       - names of the stores to be used within this Flux
+ * @returns {Object} mixin
+ */
+var ComponentFluxMixin = function(coordinators, stores) {
+  var dyna  = this;
+  var React = dyna.React;
+
+  return {
+    componentWillMount : function() {
+      var flux = new dyna.flux(coordinators, stores);
+      dyna.start(flux);
+
+      this.setState({
+        flux: flux.componentContext()
+      });
+    },
+
+    componentDidUnmount : function() {
+      dyna.stop(this.state.flux);
+    },
+
+    childContextTypes : {
+      flux: React.PropTypes.object.isRequired
+    },
+
+    getChildContext : function() {
+      return {
+        flux: this.flux()
+      };
+    },
+
+    flux : function() {
+      return this.state.flux;
+    }
+  };
+};
+ComponentFluxMixin.componentWillMount = function() {
+  throw new Error('ComponentFluxMixin must be created through dyna.ComponentFluxMixin(coordinators, stores), instead of being used directly.');
+};
+
+module.exports = {
+  ComponentFluxMixin   : ComponentFluxMixin,
+  DynaFluxMixin        : DynaFluxMixin,
+  DynaFluxConsumerMixin: DynaFluxConsumerMixin
+};
 },{}],120:[function(_dereq_,module,exports){
 'use strict';
 
