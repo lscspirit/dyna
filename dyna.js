@@ -4545,6 +4545,7 @@ var Flux = function(coordinators, stores) {
 
   var required_coordinators = [], required_stores = [];
   var coordinator_instances = {}, store_instances = {};
+  var coordinator_action_listeners = {};
 
   //
   // Accessors
@@ -4580,7 +4581,24 @@ var Flux = function(coordinators, stores) {
     // start coordinators
     var instance_returns = [];
     required_coordinators.forEach(function(c) {
-      instance_returns.push(coordinator_instances[c].$start());
+      var c_instance = coordinator_instances[c];
+      instance_returns.push(c_instance.$start());
+
+      // automatically listen for actions from action_dispatcher IF
+      // handlers are provided by $listen()
+      if (compare.isFunction(c_instance.$listen)) {
+        var listeners = c_instance.$listen();
+        listeners.forEach(function(l) {
+          // check listener
+          if (!compare.isString(l.action)) {
+            throw new Error(c + ' $listen(): Action listener event name must be a String');
+          } else if (!compare.isFunction(l.handler)) {
+            throw new Error(c + ' $listen(): Action listener handler must be a Function');
+          }
+
+          c_instance.flux.action_dispatcher.addListener(l.action, l.handler);
+        });
+      }
     });
 
     return deferred.apply(this, instance_returns);
@@ -4596,6 +4614,15 @@ var Flux = function(coordinators, stores) {
     // stop coordinators
     required_coordinators.forEach(function(c) {
       var c_instance = coordinator_instances[c];
+      var listeners  = coordinator_action_listeners[c];
+
+      // remove all listener that were added automatically during the flux's start process
+      if (compare.isArray(listeners)) {
+        listeners.forEach(function(l) {
+          c_instance.flux.action_dispatcher.removeListener(l.action, l.handler);
+        });
+      }
+
       // call $stop()
       if (compare.isFunction(c_instance.$stop)) c_instance.$stop();
     });

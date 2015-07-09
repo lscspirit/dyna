@@ -30,7 +30,7 @@
       });
 
       var Buzzer = React.createClass({
-        mixins : [dyna.DynaFluxMixin()],
+        mixins : [dyna.DynaFluxConsumerMixin()],
 
         getInitialState : function() {
           return {

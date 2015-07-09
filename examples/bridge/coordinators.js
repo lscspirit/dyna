@@ -11,8 +11,13 @@
   });
 
   var BuzzerWithBridge = function() {
+    this.$listen = function() {
+      return [
+        { action: 'buzzer-clicked', handler: _buzzClicked.bind(this) }
+      ];
+    };
+
     this.$start = function() {
-      this.flux.action_dispatcher.addListener('buzzer-clicked', _buzzClicked.bind(this));
     };
 
     //
@@ -45,8 +50,13 @@
   var BuzzerUsesBridge = function() {
     var bridged_buzzer = dyna.useBridge(BuzzerWithBridge); // (optional) this creates a noop interface
 
+    this.$listen = function() {
+      return [
+        { action: action_factory.ACTIONS.CLICKED, handler: _buzzClicked.bind(this) }
+      ];
+    };
+
     this.$start = function() {
-      this.flux.action_dispatcher.addListener(action_factory.ACTIONS.CLICKED, _buzzClicked.bind(this));
     };
 
     this.setBridge = function(bridge) {

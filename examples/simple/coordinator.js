@@ -2,8 +2,13 @@
 
 (function(dyna) {
   var Buzzer = function() {
+    this.$listen = function() {
+      return [
+        { action: action_factory.ACTIONS.CLICKED, handler: _buzzClicked.bind(this) }
+      ];
+    };
+
     this.$start = function() {
-      this.flux.action_dispatcher.addListener(action_factory.ACTIONS.CLICKED, _buzzClicked.bind(this));
     };
 
     //
