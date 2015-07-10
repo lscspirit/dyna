@@ -66,7 +66,7 @@ function connectComponentToFlux(flux, component) {
   var React      = this.React;
 
   return React.createClass({
-    mixins : [this.DynaFluxMixin()],
+    mixins : [this.DynaFluxProviderMixin()],
 
     getDefaultProps : function() {
       return {

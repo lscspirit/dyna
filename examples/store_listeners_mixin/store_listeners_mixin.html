@@ -4,8 +4,6 @@
   <script src="https://fb.me/react-0.13.3.js"></script>
   <script src="http://code.jquery.com/jquery-2.1.4.min.js"></script>
   <script src="../../dyna.js"></script>
-  <script src="coordinator.js"></script>
-  <script src="store.js"></script>
   <script type="text/jsx">
     'use strict';
 
@@ -29,8 +27,52 @@
         }
       });
 
+      dyna.registerStore('BuzzerStore', {
+        $initialize : function() {
+          this.buzzer_status = 'waiting';
+        },
+
+        $processEvent : function(event) {
+          if (event.name() == event_factory.EVENTS.STATUS_CHANGE) {
+            this.changeStatus(event.payload());
+          }
+        },
+
+        changeStatus : function(status) {
+          this.buzzer_status = status;
+          this.emitChange();
+        },
+
+        getStatus : function() {
+          return this.buzzer_status;
+        }
+      });
+
+      dyna.registerCoordinator('Buzzer', function() {
+        this.$listen = function() {
+          return [
+            { action: action_factory.ACTIONS.CLICKED, handler: _buzzClicked.bind(this) }
+          ];
+        };
+
+        this.$start = function() {
+        };
+
+        //
+        // Private Method
+        //
+
+        function _buzzClicked(event) {
+          _setStatus.call(this, event.payload());
+        }
+
+        function _setStatus(status) {
+          event_factory.statusChange(status).dispatch(this.flux.event_dispatcher);
+        }
+      });
+
       var Buzzer = React.createClass({
-        mixins : [dyna.DynaFluxMixin()],
+        mixins : [dyna.DynaFluxMixin(), dyna.StoreChangeListenersMixin],
 
         getInitialState : function() {
           return {
@@ -38,8 +80,10 @@
           }
         },
 
-        componentDidMount : function() {
-          this.flux().store('BuzzerStore').addChangeListener(this._statusChanged);
+        getStoreListeners : function() {
+          return [
+            { store: 'BuzzerStore', listener: this._statusChanged }
+          ];
         },
 
         render : function() {
@@ -68,17 +112,14 @@
 
     $(function() {
       (function(dyna) {
-        var flux_one = dyna.flux(["Buzzer"], ["BuzzerStore"]);
-        var flux_two = dyna.flux(["Buzzer"], ["BuzzerStore"]);
+        var flux = dyna.flux(["Buzzer"], ["BuzzerStore"]);
 
-        dyna.start(flux_one, $('#buzzer-one')[0]);
-        dyna.start(flux_two, $('#buzzer-two')[0]);
+        dyna.start(flux, $('#buzzer-one')[0]);
       }(dyna));
     });
   </script>
 </head>
 <body>
-  <div id="buzzer-one" data-dyna-component="Buzzer"></div>
-  <div id="buzzer-two" data-dyna-component="Buzzer"></div>
+<div id="buzzer-one" data-dyna-component="Buzzer"></div>
 </body>
 </html>

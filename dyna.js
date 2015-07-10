@@ -4225,7 +4225,7 @@ function connectComponentToFlux(flux, component) {
   var React      = this.React;
 
   return React.createClass({
-    mixins : [this.DynaFluxMixin()],
+    mixins : [this.DynaFluxProviderMixin()],
 
     getDefaultProps : function() {
       return {
@@ -4792,15 +4792,17 @@ module.exports = DynaFlux;
 },{"../utils/array_utils":124,"../utils/compare":125,"./action":111,"./action_dispatcher":112,"./bridge":113,"./components":114,"./coordinators":115,"./event":116,"./event_dispatcher":117,"./mixins":119,"./stores":120,"deferred":26,"object-assign":103}],119:[function(_dereq_,module,exports){
 'use strict';
 
+var compare = _dereq_('../utils/compare');
+
 /**
- * Function for creating a DynaFluxMixin that will pass the Flux instance to child components
- * through childContext. With the DynaFluxMixin, the Flux instance will be available through the flux()
+ * Function for creating a DynaFluxProviderMixin that will pass the Flux instance to child components
+ * through childContext. With the DynaFluxProviderMixin, the Flux instance will be available through the flux()
  * method within the component.
  * @returns {Object} mixin
  *
  * @see {@link https://github.com/BinaryMuse/fluxxor/blob/master/lib/flux_mixin.js}
  */
-var DynaFluxMixin = function() {
+var DynaFluxProviderMixin = function() {
   var React = this.React;
 
   return {
@@ -4825,17 +4827,17 @@ var DynaFluxMixin = function() {
     }
   };
 };
-DynaFluxMixin.componentWillMount = function() {
-  throw new Error('DynaFluxMixin must be created through dyna.DynaFluxMixin(), instead of being used directly.');
+DynaFluxProviderMixin.componentWillMount = function() {
+  throw new Error('DynaFluxProviderMixin must be created through dyna.DynaFluxProviderMixin(), instead of being used directly.');
 };
 
 /**
- * Function for creating a DynaFluxConsumerMixin that will consume the Flux instance provided by
- * the component's owner through owner's context. With the DynaFluxConsumerMixin, the Flux instance
+ * Function for creating a DynaFluxMixin that will consume the Flux instance provided by
+ * the component's owner through owner's context. With the DynaFluxMixin, the Flux instance
  * will be available through the flux() method within the component.
  * @returns {Object} mixin
  */
-var DynaFluxConsumerMixin = function() {
+var DynaFluxMixin = function() {
   var React = this.React;
 
   return {
@@ -4854,60 +4856,70 @@ var DynaFluxConsumerMixin = function() {
     }
   };
 };
-DynaFluxConsumerMixin.componentWillMount = function() {
-  throw new Error('DynaFluxConsumerMixin must be created through dyna.DynaFluxConsumerMixin(), instead of being used directly.');
+DynaFluxMixin.componentWillMount = function() {
+  throw new Error('DynaFluxMixin must be created through dyna.DynaFluxMixin(), instead of being used directly.');
 };
 
 /**
- * Function for create a ComponentFluxMixin that will automatically creates a Flux instance upon mounting of the
- * component.
- * @param {string|string[]} coordinators - names of the coordinators to be used within this Flux
- * @param {string|string[]} stores       - names of the stores to be used within this Flux
- * @returns {Object} mixin
+ * Store change listener specification
+ * @typedef {Object} StoreChangeListenerSpec
+ * @property {string}   store    - Flux store name
+ * @property {function} listener - listener function
  */
-var ComponentFluxMixin = function(coordinators, stores) {
-  var dyna  = this;
-  var React = dyna.React;
 
-  return {
-    componentWillMount : function() {
-      var flux = new dyna.flux(coordinators, stores);
-      dyna.start(flux);
+/**
+ * Get a list of stores this component will need to listen to
+ * @callback getStoreListeners
+ * @return {StoreChangeListenerSpec[]} an array of store change listener specification
+ */
 
-      this.setState({
-        flux: flux.componentContext()
-      });
-    },
-
-    componentDidUnmount : function() {
-      dyna.stop(this.state.flux);
-    },
-
-    childContextTypes : {
-      flux: React.PropTypes.object.isRequired
-    },
-
-    getChildContext : function() {
-      return {
-        flux: this.flux()
-      };
-    },
-
-    flux : function() {
-      return this.state.flux;
+/**
+ * A React Mixin that will make the component automatically listen and un-listen to Flux's store changes.
+ * The component must implement a getStoreListeners() {@link getStoreListeners} method that returns
+ * a list of store names and listener functions {@link StoreChangeListenerSpec}
+ * @type {Object}
+ */
+var StoreChangeListenersMixin = {
+  componentWillMount : function() {
+    var self = this;
+    if (!compare.isFunction(this.flux)) {
+      throw new Error('Flux is not available in this component. Please use dyna.DynaFluxMixin() mixin to make the parent Flux instance available here.');
+    } else if (!compare.isFunction(this.getStoreListeners)) {
+      throw new Error('Component must have a getStoreListeners() method that returns a list of store to listen to and their corresponding handler.');
     }
-  };
-};
-ComponentFluxMixin.componentWillMount = function() {
-  throw new Error('ComponentFluxMixin must be created through dyna.ComponentFluxMixin(coordinators, stores), instead of being used directly.');
+
+    // add listeners
+    var listeners = this.getStoreListeners();
+    listeners.forEach(function(l) {
+      if (!compare.isString(l.store)) {
+        throw new Error('Store name in store listener definition must be a String');
+      } else if (!compare.isFunction(l.listener)) {
+        throw new Error('Store listener must be a Function');
+      }
+
+      self.flux().store(l.store).addChangeListener(l.listener);
+    });
+
+    // keeps a reference to the listeners for use in componentDidUnmount
+    this._listeners = listeners;
+  },
+
+  componentDidUnmount : function() {
+    var self = this;
+
+    // remove listeners
+    (this._listeners || []).forEach(function(l) {
+      self.flux().store(l.store).removeChangeListener(l.listener);
+    });
+  }
 };
 
 module.exports = {
-  ComponentFluxMixin   : ComponentFluxMixin,
   DynaFluxMixin        : DynaFluxMixin,
-  DynaFluxConsumerMixin: DynaFluxConsumerMixin
+  DynaFluxProviderMixin: DynaFluxProviderMixin,
+  StoreChangeListenersMixin: StoreChangeListenersMixin
 };
-},{}],120:[function(_dereq_,module,exports){
+},{"../utils/compare":125}],120:[function(_dereq_,module,exports){
 'use strict';
 
 var compare      = _dereq_('../utils/compare');
