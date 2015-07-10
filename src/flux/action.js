@@ -3,6 +3,8 @@
 var assign  = require('object-assign');
 var compare = require('../utils/compare');
 
+var action_ids = 1;
+
 /**
  * Action object to be sent through the ActionDispatcher
  * @param {string} name    - name of the event
@@ -10,8 +12,13 @@ var compare = require('../utils/compare');
  * @constructor
  */
 var Action = function(name, payload) {
+  var _id      = action_ids++;
   var _name    = name;
   var _payload = payload;
+
+  this.id = function() {
+    return _id;
+  };
 
   /**
    * Return the name of the Action

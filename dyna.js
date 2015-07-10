@@ -3290,6 +3290,146 @@ module.exports = Object.assign || function (target, source) {
 },{}],104:[function(_dereq_,module,exports){
 'use strict';
 
+var assign = _dereq_('object-assign');
+
+var ActionStatus = function(action_id) {
+  var _in_progess = true;
+  var _data       = null;
+  var _error      = null;
+
+  /**
+   * Change the status to completed
+   * @param {*} data - extra data to be associated with this completed status
+   */
+  this.complete = function(data) {
+    _in_progess = false;
+    _data       = data;
+  };
+
+  /**
+   * Change the status to failed
+   * @param {*} error - error message or data to be associated with this failed status
+   */
+  this.reject = function(error) {
+    _in_progess = false;
+    _error      = error || true;
+  };
+
+  /**
+   * Id of the action that this status is tracking
+   * @returns {number} action id
+   */
+  this.actionId = function() {
+    return action_id;
+  };
+
+  /**
+   * Whether the action being tracked is still in progress
+   * @returns {boolean} true if action is still in progress
+   */
+  this.inProgress = function() {
+    return _in_progess;
+  };
+
+  /**
+   * Whether the action being tracked has failed
+   * @returns {boolean} true if action failed
+   */
+  this.failed = function() {
+    return _in_progess === false && _error;
+  };
+
+  /**
+   * Whether the action being tracked has completed successfully
+   * @returns {boolean} true if action has completed
+   */
+  this.succeed = function() {
+    return _in_progess === false && !_error;
+  };
+
+  /**
+   * The error message/data
+   * @returns {*} error message if available
+   */
+  this.error = function() {
+    return _error === true ? null : _error;
+  };
+
+  /**
+   * The status data
+   * @returns {*} status data if available
+   */
+  this.data = function() {
+    return _data;
+  };
+};
+
+/**
+ * Extend the Flux store specification with action tracking logic and functions
+ * @param {Object} store - store specification
+ * @returns {Object} store specification with action tracking extension
+ */
+var createActionTrackingStore = function(store) {
+  return assign({}, store, {
+    $initialize : function() {
+      this._action_status = {};
+      store.$initialize();
+    },
+
+    /**
+     * Begin tracking an action
+     * @param {number} action_id - id of the action
+     */
+    trackAction : function(action_id) {
+      this._action_status[action_id] = new ActionStatus(action_id);
+    },
+
+    /**
+     * Finish tracking an action
+     * @param {number} action_id - id of the action
+     * @param {*}      data      - data to be associated with the completion status
+     */
+    completeAction : function(action_id, data) {
+      var status = this._action_status[action_id];
+      if (status) status.complete(data);
+    },
+
+    /**
+     * Finish tracking an action with error
+     * @param {number} action_id - id of the action
+     * @param {*}      error     - error data to be associated with the failed status
+     */
+    rejectAction : function(action_id, error) {
+      var status = this._action_status[action_id];
+      if (status) status.reject(error);
+    },
+
+    /**
+     * Retrieve an status for a particular action
+     * @param {number} action_id - id of the action
+     * @returns {ActionStatus} action status
+     */
+    actionStatus : function(action_id) {
+      return this._action_status[action_id];
+    }
+  });
+};
+
+module.exports = {
+  createActionTrackingStore: createActionTrackingStore
+};
+},{"object-assign":103}],105:[function(_dereq_,module,exports){
+'use strict';
+
+var assign = _dereq_('object-assign');
+
+module.exports = assign(
+  {},
+  _dereq_('./action_tracking_store')
+);
+},{"./action_tracking_store":104,"object-assign":103}],106:[function(_dereq_,module,exports){
+'use strict';
+
 /**
  * Dyna Core
  * @exports core/core
@@ -3314,7 +3454,7 @@ assign(core, Lifecycle);
 
 module.exports = core;
 
-},{"./external_lib":105,"./injector":106,"./lifecycle":107,"./provider_manager":108,"./provider_recipes":109,"object-assign":103}],105:[function(_dereq_,module,exports){
+},{"./external_lib":107,"./injector":108,"./lifecycle":109,"./provider_manager":110,"./provider_recipes":111,"object-assign":103}],107:[function(_dereq_,module,exports){
 'use strict';
 
 var assign = _dereq_('object-assign');
@@ -3346,7 +3486,7 @@ var Libs = {
 };
 
 module.exports = Libs;
-},{"object-assign":103}],106:[function(_dereq_,module,exports){
+},{"object-assign":103}],108:[function(_dereq_,module,exports){
 'use strict';
 
 /**
@@ -3503,7 +3643,7 @@ manager.define('$injector', function() {
 });
 
 module.exports = Injector;
-},{"../utils/array_utils":124,"../utils/compare":125,"./provider_manager":108}],107:[function(_dereq_,module,exports){
+},{"../utils/array_utils":126,"../utils/compare":127,"./provider_manager":110}],109:[function(_dereq_,module,exports){
 'use strict';
 
 var assign     = _dereq_('object-assign');
@@ -3587,7 +3727,7 @@ var Lifecycle = {
 assign(Lifecycle, ujs);
 
 module.exports = Lifecycle;
-},{"../utils/array_utils":124,"../utils/dom_ready":127,"./injector":106,"./ujs":110,"object-assign":103}],108:[function(_dereq_,module,exports){
+},{"../utils/array_utils":126,"../utils/dom_ready":129,"./injector":108,"./ujs":112,"object-assign":103}],110:[function(_dereq_,module,exports){
 'use strict';
 
 var compare = _dereq_('../utils/compare');
@@ -3685,7 +3825,7 @@ ProviderManager.define('$providers', function() {
 
 module.exports = ProviderManager;
 
-},{"../utils/compare":125}],109:[function(_dereq_,module,exports){
+},{"../utils/compare":127}],111:[function(_dereq_,module,exports){
 'use strict';
 
 /**
@@ -3771,7 +3911,7 @@ module.exports = {
   factory : factory,
   service : service
 };
-},{"../utils/compare":125,"../utils/create_with_args":126,"./provider_manager":108}],110:[function(_dereq_,module,exports){
+},{"../utils/compare":127,"../utils/create_with_args":128,"./provider_manager":110}],112:[function(_dereq_,module,exports){
 'use strict';
 
 var assign     = _dereq_('object-assign');
@@ -3883,11 +4023,13 @@ module.exports = {
   mountDynaComponents   : mountDynaComponents,
   unmountDynaComponents : unmountDynaComponents
 };
-},{"../flux/components":114,"../utils/array_utils":124,"../utils/compare":125,"object-assign":103}],111:[function(_dereq_,module,exports){
+},{"../flux/components":116,"../utils/array_utils":126,"../utils/compare":127,"object-assign":103}],113:[function(_dereq_,module,exports){
 'use strict';
 
 var assign  = _dereq_('object-assign');
 var compare = _dereq_('../utils/compare');
+
+var action_ids = 1;
 
 /**
  * Action object to be sent through the ActionDispatcher
@@ -3896,8 +4038,13 @@ var compare = _dereq_('../utils/compare');
  * @constructor
  */
 var Action = function(name, payload) {
+  var _id      = action_ids++;
   var _name    = name;
   var _payload = payload;
+
+  this.id = function() {
+    return _id;
+  };
 
   /**
    * Return the name of the Action
@@ -3989,7 +4136,7 @@ function createActionFactory(action_names, action_specs) {
 //
 
 module.exports = { createActionFactory: createActionFactory };
-},{"../utils/compare":125,"object-assign":103}],112:[function(_dereq_,module,exports){
+},{"../utils/compare":127,"object-assign":103}],114:[function(_dereq_,module,exports){
 'use strict';
 
 /**
@@ -4047,7 +4194,7 @@ var ActionDispatcher = function() {
 };
 
 module.exports = ActionDispatcher;
-},{"event-emitter":80}],113:[function(_dereq_,module,exports){
+},{"event-emitter":80}],115:[function(_dereq_,module,exports){
 'use strict';
 
 var compare = _dereq_('../utils/compare');
@@ -4156,7 +4303,7 @@ module.exports = {
   createBridge: createBridge,
   useBridge   : useBridge
 };
-},{"../utils/compare":125}],114:[function(_dereq_,module,exports){
+},{"../utils/compare":127}],116:[function(_dereq_,module,exports){
 'use strict';
 
 var compare = _dereq_('../utils/compare');
@@ -4254,7 +4401,7 @@ module.exports = {
 };
 
 
-},{"../utils/compare":125,"object-assign":103}],115:[function(_dereq_,module,exports){
+},{"../utils/compare":127,"object-assign":103}],117:[function(_dereq_,module,exports){
 'use strict';
 
 var argsCreate = _dereq_('../utils/create_with_args');
@@ -4388,7 +4535,7 @@ module.exports = {
   registerCoordinator   : registerCoordinator,
   instantiateCoordinator: instantiateCoordinator
 };
-},{"../core/injector":106,"../utils/array_utils":124,"../utils/compare":125,"../utils/create_with_args":126}],116:[function(_dereq_,module,exports){
+},{"../core/injector":108,"../utils/array_utils":126,"../utils/compare":127,"../utils/create_with_args":128}],118:[function(_dereq_,module,exports){
 'use strict';
 
 var assign  = _dereq_('object-assign');
@@ -4493,7 +4640,7 @@ function createEventFactory(event_names, event_specs) {
 //
 
 module.exports = { createEventFactory: createEventFactory };
-},{"../utils/compare":125,"object-assign":103}],117:[function(_dereq_,module,exports){
+},{"../utils/compare":127,"object-assign":103}],119:[function(_dereq_,module,exports){
 'use strict';
 
 /**
@@ -4504,7 +4651,7 @@ module.exports = { createEventFactory: createEventFactory };
 var Flux = _dereq_('flux');
 
 module.exports = Flux.Dispatcher;
-},{"flux":100}],118:[function(_dereq_,module,exports){
+},{"flux":100}],120:[function(_dereq_,module,exports){
 'use strict';
 
 /**
@@ -4789,7 +4936,7 @@ assign(DynaFlux, Actions, Events, Bridge, Mixins);
 
 module.exports = DynaFlux;
 
-},{"../utils/array_utils":124,"../utils/compare":125,"./action":111,"./action_dispatcher":112,"./bridge":113,"./components":114,"./coordinators":115,"./event":116,"./event_dispatcher":117,"./mixins":119,"./stores":120,"deferred":26,"object-assign":103}],119:[function(_dereq_,module,exports){
+},{"../utils/array_utils":126,"../utils/compare":127,"./action":113,"./action_dispatcher":114,"./bridge":115,"./components":116,"./coordinators":117,"./event":118,"./event_dispatcher":119,"./mixins":121,"./stores":122,"deferred":26,"object-assign":103}],121:[function(_dereq_,module,exports){
 'use strict';
 
 var compare = _dereq_('../utils/compare');
@@ -4880,7 +5027,7 @@ DynaFluxMixin.componentWillMount = function() {
  * @type {Object}
  */
 var StoreChangeListenersMixin = {
-  componentWillMount : function() {
+  componentDidMount : function() {
     var self = this;
     if (!compare.isFunction(this.flux)) {
       throw new Error('Flux is not available in this component. Please use dyna.DynaFluxMixin() mixin to make the parent Flux instance available here.');
@@ -4904,7 +5051,7 @@ var StoreChangeListenersMixin = {
     this._listeners = listeners;
   },
 
-  componentDidUnmount : function() {
+  componentWillUnmount : function() {
     var self = this;
 
     // remove listeners
@@ -4919,7 +5066,7 @@ module.exports = {
   DynaFluxProviderMixin: DynaFluxProviderMixin,
   StoreChangeListenersMixin: StoreChangeListenersMixin
 };
-},{"../utils/compare":125}],120:[function(_dereq_,module,exports){
+},{"../utils/compare":127}],122:[function(_dereq_,module,exports){
 'use strict';
 
 var compare      = _dereq_('../utils/compare');
@@ -5080,19 +5227,21 @@ module.exports = {
   hasStore        : hasStore,
   instantiateStore: instantiateStore
 };
-},{"../utils/compare":125,"event-emitter":80,"object-assign":103}],121:[function(_dereq_,module,exports){
+},{"../utils/compare":127,"event-emitter":80,"object-assign":103}],123:[function(_dereq_,module,exports){
 'use strict';
 
 var assign   = _dereq_('object-assign');
 var DynaCore = _dereq_('./core/core');
 var DynaFlux = _dereq_('./flux/flux');
 var Utils    = _dereq_('./utils/utils');
+var Addons   = _dereq_('./addons/addons');
 
 _dereq_('./providers/providers');
 
 var dyna = {
   version: '0.1.0',
-  utils  : Utils
+  utils  : Utils,
+  addons : Addons
 };
 
 assign(dyna, DynaCore);
@@ -5100,7 +5249,7 @@ assign(dyna, DynaFlux);
 
 module.exports = dyna;
 
-},{"./core/core":104,"./flux/flux":118,"./providers/providers":123,"./utils/utils":128,"object-assign":103}],122:[function(_dereq_,module,exports){
+},{"./addons/addons":105,"./core/core":106,"./flux/flux":120,"./providers/providers":125,"./utils/utils":130,"object-assign":103}],124:[function(_dereq_,module,exports){
 'use strict';
 
 var compare = _dereq_('../utils/compare');
@@ -5154,11 +5303,11 @@ var Context = function() {
 providerManager.define('$context', Context);
 
 module.exports = Context;
-},{"../core/provider_manager":108,"../utils/compare":125}],123:[function(_dereq_,module,exports){
+},{"../core/provider_manager":110,"../utils/compare":127}],125:[function(_dereq_,module,exports){
 'use strict';
 
 _dereq_('./context');
-},{"./context":122}],124:[function(_dereq_,module,exports){
+},{"./context":124}],126:[function(_dereq_,module,exports){
 'use strict';
 
 
@@ -5185,7 +5334,7 @@ module.exports = {
     else return [obj];
   }
 };
-},{"./compare":125}],125:[function(_dereq_,module,exports){
+},{"./compare":127}],127:[function(_dereq_,module,exports){
 'use strict';
 
 /**
@@ -5258,7 +5407,7 @@ module.exports = {
     return true;
   }
 };
-},{}],126:[function(_dereq_,module,exports){
+},{}],128:[function(_dereq_,module,exports){
 module.exports = function(constructor, args) {
   'use strict';
 
@@ -5268,7 +5417,7 @@ module.exports = function(constructor, args) {
   F.prototype = constructor.prototype;
   return new F();
 };
-},{}],127:[function(_dereq_,module,exports){
+},{}],129:[function(_dereq_,module,exports){
 'use strict';
 
 var deferred = _dereq_('deferred');
@@ -5328,7 +5477,7 @@ function waitForDomReady() {
 //
 
 module.exports = domReady;
-},{"./compare":125,"deferred":26}],128:[function(_dereq_,module,exports){
+},{"./compare":127,"deferred":26}],130:[function(_dereq_,module,exports){
 'use strict';
 
 var assign     = _dereq_('object-assign');
@@ -5338,5 +5487,5 @@ var ArrayUtils = _dereq_('./array_utils');
 var Compare    = _dereq_('./compare');
 
 module.exports = assign({ deferred: deferred }, ArrayUtils, Compare);
-},{"./array_utils":124,"./compare":125,"deferred":26,"object-assign":103}]},{},[121])(121)
+},{"./array_utils":126,"./compare":127,"deferred":26,"object-assign":103}]},{},[123])(123)
 });

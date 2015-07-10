@@ -88,7 +88,7 @@ DynaFluxMixin.componentWillMount = function() {
  * @type {Object}
  */
 var StoreChangeListenersMixin = {
-  componentWillMount : function() {
+  componentDidMount : function() {
     var self = this;
     if (!compare.isFunction(this.flux)) {
       throw new Error('Flux is not available in this component. Please use dyna.DynaFluxMixin() mixin to make the parent Flux instance available here.');
@@ -112,7 +112,7 @@ var StoreChangeListenersMixin = {
     this._listeners = listeners;
   },
 
-  componentDidUnmount : function() {
+  componentWillUnmount : function() {
     var self = this;
 
     // remove listeners
