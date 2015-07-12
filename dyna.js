@@ -3373,7 +3373,7 @@ var createActionTrackingStore = function(store) {
   return assign({}, store, {
     $initialize : function() {
       this._action_status = {};
-      store.$initialize();
+      store.$initialize.call(this);
     },
 
     /**
@@ -4748,7 +4748,11 @@ var Flux = function(coordinators, stores) {
       }
     });
 
-    return deferred.apply(this, instance_returns);
+    var promise = deferred.apply(this, instance_returns);
+    promise.done(function() {
+      _started = true;
+    });
+    return promise;
   };
 
   /**
@@ -4909,8 +4913,8 @@ function _generateFluxId() {
 
 /**
  * Inject the Flux instance id as the <tt>_flux_id</tt> property to an Object
- * @param {Object}  obj - any object
- * @param {Integer} id  - Flux instance id
+ * @param {Object} obj - any object
+ * @param {number} id  - Flux instance id
  * @private
  */
 function _injectFluxId(obj, id) {

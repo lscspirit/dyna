@@ -83,7 +83,7 @@ var createActionTrackingStore = function(store) {
   return assign({}, store, {
     $initialize : function() {
       this._action_status = {};
-      store.$initialize();
+      store.$initialize.call(this);
     },
 
     /**
