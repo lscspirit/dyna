@@ -10,8 +10,12 @@ var compare = require('../utils/compare');
  * @constructor
  */
 var Event = function(name, payload) {
-  var _name    = name;
+  var _name    = name || '*';
   var _payload = payload;
+
+  var _action_id      = null;
+  var _action_data    = null;
+  var _tracking_state = null;
 
   /**
    * Return the name of the Event
@@ -88,7 +92,7 @@ function createEventFactory(event_names, event_specs) {
      */
     this.createEvent = function(name, payload) {
       return new Event(name, payload);
-    }
+    };
   };
 
   EventFactory.prototype = Object.create(event_specs);

@@ -3291,143 +3291,98 @@ module.exports = Object.assign || function (target, source) {
 'use strict';
 
 var assign = _dereq_('object-assign');
+var compare = _dereq_('../utils/compare');
 
-var ActionStatus = function(action_id) {
-  var _in_progess = true;
-  var _data       = null;
-  var _error      = null;
+/**
+ * An object for tracking action status
+ * @param {number} action_id - action id
+ * @param {string} state     - action state ('tracking', 'resolved', 'rejected')
+ * @param {*}      [data]    - action data
+ * @constructor
+ */
+var ActionStatus = function(action_id, state, data) {
+  //
+  // Accessors
+  //
 
-  /**
-   * Change the status to completed
-   * @param {*} data - extra data to be associated with this completed status
-   */
-  this.complete = function(data) {
-    _in_progess = false;
-    _data       = data;
-  };
-
-  /**
-   * Change the status to failed
-   * @param {*} error - error message or data to be associated with this failed status
-   */
-  this.reject = function(error) {
-    _in_progess = false;
-    _error      = error || true;
-  };
-
-  /**
-   * Id of the action that this status is tracking
-   * @returns {number} action id
-   */
   this.actionId = function() {
     return action_id;
   };
 
-  /**
-   * Whether the action being tracked is still in progress
-   * @returns {boolean} true if action is still in progress
-   */
-  this.inProgress = function() {
-    return _in_progess;
-  };
-
-  /**
-   * Whether the action being tracked has failed
-   * @returns {boolean} true if action failed
-   */
-  this.failed = function() {
-    return _in_progess === false && _error;
-  };
-
-  /**
-   * Whether the action being tracked has completed successfully
-   * @returns {boolean} true if action has completed
-   */
-  this.succeed = function() {
-    return _in_progess === false && !_error;
-  };
-
-  /**
-   * The error message/data
-   * @returns {*} error message if available
-   */
-  this.error = function() {
-    return _error === true ? null : _error;
-  };
-
-  /**
-   * The status data
-   * @returns {*} status data if available
-   */
   this.data = function() {
-    return _data;
+    return data;
+  };
+
+  this.inProgress = function() {
+    return state == 'tracking';
+  };
+
+  this.isResolved = function() {
+    return state == 'resolved';
+  };
+
+  this.isRejected = function() {
+    return state == 'rejected';
   };
 };
 
-/**
- * Extend the Flux store specification with action tracking logic and functions
- * @param {Object} store - store specification
- * @returns {Object} store specification with action tracking extension
- */
-var createActionTrackingStore = function(store) {
+var ActionTrackingStoreExt = function(store) {
   return assign({}, store, {
-    $initialize : function() {
-      this._action_status = {};
-      store.$initialize.call(this);
-    },
+    getActionStatus : function(event) {
+      var tracking_payload = event.__tracking_payload;
 
-    /**
-     * Begin tracking an action
-     * @param {number} action_id - id of the action
-     */
-    trackAction : function(action_id) {
-      this._action_status[action_id] = new ActionStatus(action_id);
-    },
+      if (!compare.isUndefined(tracking_payload)) {
+        var action_id = tracking_payload.action_id;
+        switch (tracking_payload.state) {
+          case 'track':
+            return new ActionStatus(action_id, 'tracking');
+          case 'resolve':
+            return new ActionStatus(action_id, 'resolved', tracking_payload.data);
+          case 'reject':
+            return new ActionStatus(action_id, 'rejected', tracking_payload.data);
+        }
+      }
 
-    /**
-     * Finish tracking an action
-     * @param {number} action_id - id of the action
-     * @param {*}      data      - data to be associated with the completion status
-     */
-    completeAction : function(action_id, data) {
-      var status = this._action_status[action_id];
-      if (status) status.complete(data);
-    },
-
-    /**
-     * Finish tracking an action with error
-     * @param {number} action_id - id of the action
-     * @param {*}      error     - error data to be associated with the failed status
-     */
-    rejectAction : function(action_id, error) {
-      var status = this._action_status[action_id];
-      if (status) status.reject(error);
-    },
-
-    /**
-     * Retrieve an status for a particular action
-     * @param {number} action_id - id of the action
-     * @returns {ActionStatus} action status
-     */
-    actionStatus : function(action_id) {
-      return this._action_status[action_id];
+      return null;
     }
   });
 };
 
-module.exports = {
-  createActionTrackingStore: createActionTrackingStore
+var ActionTrackingEvent = function(event) {
+  event.__tracking_payload = null;
+
+  event.trackAction = function(action) {
+    event.__tracking_payload = { action_id: action.id(), state: 'track' };
+    return this;
+  };
+
+  event.resolveAction = function(action, data) {
+    event.__tracking_payload = { action_id: action.id(), state: 'resolve', data: data };
+    return this;
+  };
+
+  event.rejectAction = function(action, error) {
+    event.__tracking_payload = { action_id: action.id(), state: 'reject', data: error };
+    return this;
+  };
+
+  return event;
 };
-},{"object-assign":103}],105:[function(_dereq_,module,exports){
+
+module.exports = {
+  ActionTrackingEvent   : ActionTrackingEvent,
+  ActionTrackingStoreExt: ActionTrackingStoreExt
+};
+},{"../utils/compare":127,"object-assign":103}],105:[function(_dereq_,module,exports){
 'use strict';
 
 var assign = _dereq_('object-assign');
 
 module.exports = assign(
   {},
-  _dereq_('./action_tracking_store')
+  _dereq_('./action_tracking')
 );
-},{"./action_tracking_store":104,"object-assign":103}],106:[function(_dereq_,module,exports){
+},{"./action_tracking":104,"object-assign":103}],106:[function(_dereq_,module,exports){
 'use strict';
 
 /**
@@ -4548,8 +4503,12 @@ var compare = _dereq_('../utils/compare');
  * @constructor
  */
 var Event = function(name, payload) {
-  var _name    = name;
+  var _name    = name || '*';
   var _payload = payload;
+
+  var _action_id      = null;
+  var _action_data    = null;
+  var _tracking_state = null;
 
   /**
    * Return the name of the Event
@@ -4626,7 +4585,7 @@ function createEventFactory(event_names, event_specs) {
      */
     this.createEvent = function(name, payload) {
       return new Event(name, payload);
-    }
+    };
   };
 
   EventFactory.prototype = Object.create(event_specs);
