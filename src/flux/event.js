@@ -13,10 +13,6 @@ var Event = function(name, payload) {
   var _name    = name || '*';
   var _payload = payload;
 
-  var _action_id      = null;
-  var _action_data    = null;
-  var _tracking_state = null;
-
   /**
    * Return the name of the Event
    * @returns {string} event name
