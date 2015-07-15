@@ -70,13 +70,17 @@ var ActionStatus = function(action_id, state, data) {
  * });
  */
 var ActionTrackingStoreExt = function(store) {
+  if (!compare.isUndefined(store.parseActionStatus)) {
+    throw new Error('"parseActionStatus" is a reserved method for ActionTrackingStoreExt');
+  }
+
   return assign({}, store, {
     /**
      * Get the ActionStatus from tracking data piggybacked in the Event object if available
      * @param {Event} event - the Flux Event object
      * @returns {ActionStatus|null} the ActionStatus if available
      */
-    getActionStatus : function(event) {
+    parseActionStatus : function(event) {
       var tracking_payload = event.__tracking_payload;
 
       if (!compare.isUndefined(tracking_payload)) {
