@@ -1,0 +1,140 @@
+<html>
+<head>
+  <script src="https://fb.me/JSXTransformer-0.13.3.js"></script>
+  <script src="https://fb.me/react-0.13.3.js"></script>
+  <script src="http://code.jquery.com/jquery-2.1.4.min.js"></script>
+  <script src="../../dyna.js"></script>
+  <script type="text/jsx">
+    'use strict';
+
+    (function(dyna, React) {
+      var event_names  = {
+        TIMESTAMP_CHANGE: 'buzzer.timestamp-change'
+      };
+
+      window.event_factory = dyna.createEventFactory(event_names, {
+        timestampChange : function(timestamp) {
+          return this.createEvent(this.EVENTS.TIMESTAMP_CHANGE, timestamp);
+        }
+      });
+
+      var action_names = {
+        CLICKED: 'buzzer-clicked'
+      };
+      window.action_factory = dyna.createActionFactory(action_names, {
+        buzzClick: function() {
+          return this.createAction(this.ACTIONS.CLICKED, 'clicked');
+        }
+      });
+
+      dyna.registerStore('BuzzerStore', {
+        $initialize : function() {
+          this.timestamp = null;
+        },
+
+        $processEvent : function(event) {
+          if (event.name() == event_factory.EVENTS.TIMESTAMP_CHANGE) {
+            this.timestampChange(event.payload());
+          }
+        },
+
+        timestampChange : function(timestamp) {
+          this.timestamp = timestamp;
+          this.emitChange();
+        },
+
+        getTimestamp : function() {
+          return this.timestamp;
+        }
+      });
+
+      dyna.registerCoordinator('Buzzer', function() {
+        this.$listen = function() {
+          return [
+            { action: action_factory.ACTIONS.CLICKED, handler: _buzzClicked.bind(this) }
+          ];
+        };
+
+        this.$start = function() {
+        };
+
+        //
+        // Private Method
+        //
+
+        function _buzzClicked(action) {
+          var self = this;
+          var ActionMonitor = new dyna.addons.ActionMonitor(this.flux.event_dispatcher);
+
+          ActionMonitor.start(action);
+          setTimeout(function() {
+            event_factory.timestampChange((new Date()).getTime()).dispatch(self.flux.event_dispatcher);
+            ActionMonitor.resolve(action);
+          }, 3000);
+          event_factory.timestampChange((new Date()).getTime()).dispatch(this.flux.event_dispatcher);
+        }
+      });
+
+      var Buzzer = React.createClass({
+        mixins : [dyna.DynaFluxMixin(), dyna.StoreChangeListenersMixin, dyna.addons.ActionMonitorMixin],
+
+        getInitialState : function() {
+          return {
+            timestamp: this.flux().store('BuzzerStore').getTimestamp()
+          }
+        },
+
+        getStoreListeners : function() {
+          return [
+            { store: 'BuzzerStore', listener: this._timestampChanged }
+          ];
+        },
+
+        render : function() {
+          console.log("rendering");
+          return (
+              <div>
+                <div>Buzzer - { this.state.action_state || 'not clicked' }</div>
+                <div>Timestamp = { this.state.timestamp }</div>
+                <button onClick={ this._buzzClick }>Buzz</button>
+              </div>
+          );
+        },
+
+        _buzzClick : function() {
+          var click_action = action_factory.buzzClick();
+          this.monitorAction(click_action, this._actionUpdate);
+          click_action.dispatch(this.flux().action_dispatcher);
+        },
+
+        _timestampChanged : function() {
+          console.log("timestamp changed");
+          this.setState({
+            timestamp: this.flux().store('BuzzerStore').getTimestamp()
+          });
+        },
+
+        _actionUpdate : function(action_status) {
+          console.log("action state updated: " + action_status.state());
+          this.setState({
+            action_state : action_status.inProgress() ? 'processing' : 'clicked'
+          });
+        }
+      });
+
+      dyna.registerComponent('Buzzer', Buzzer);
+    }(dyna, dyna.React));
+
+    $(function() {
+      (function(dyna) {
+        var flux = dyna.flux(["Buzzer"], ["$ActionMonitorStore", "BuzzerStore"]);
+
+        dyna.start(flux, $('#buzzer-one')[0]);
+      }(dyna));
+    });
+  </script>
+</head>
+<body>
+<div id="buzzer-one" data-dyna-component="Buzzer"></div>
+</body>
+</html>
