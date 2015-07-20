@@ -3453,7 +3453,7 @@ var ActionMonitorStore = {
  * });
  */
 var ActionMonitorMixin = {
-  componentDidMount : function() {
+  componentWillMount : function() {
     this.__action_listeners = [];
     this.flux().store(ACTION_MONITOR_STORE_NAME).addChangeListener(this.__processActionChange);
   },
