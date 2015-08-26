@@ -5248,7 +5248,12 @@ var Store = function(flux) {
    * Emit a change event signalling a data change within the Store
    */
   this.emitChange = function() {
-    emitter.emit('CHANGE');
+    if (event_dispatcher.isDispatching()) {
+      // Emit change OUTSIDE of the event dispatch cycle if the EventDispatcher is dispatching
+      setTimeout(function() { emitter.emit('CHANGE'); }, 0);
+    } else {
+      emitter.emit('CHANGE');
+    }
   };
 
   /**
