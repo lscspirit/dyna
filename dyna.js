@@ -3732,12 +3732,15 @@ function inject(name) {
  * @private
  */
 function _loadProviderValue(provider_name) {
+  // check if the value has been load before
   var cache = _provider_value_cache[provider_name];
   if (cache) return cache;
 
   var provider = manager.provider(provider_name);
   if (provider.$get) {
-    return invoke(this, provider.$get);
+    var value = invoke(this, provider.$get);        // get the value from provider's $get method
+    _provider_value_cache[provider_name] = value;   // cache the value
+    return value;
   } else {
     throw new Error("Provider '" + provider_name + "' does not have a $get method");
   }
