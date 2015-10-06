@@ -94,7 +94,7 @@ var Flux = function(coordinators, stores) {
       }
     });
 
-    var promise = deferred.apply(this, instance_returns);
+    var promise = instance_returns.length > 0 ? deferred.apply(this, instance_returns) : deferred.call(this, 1);
     promise.done(function() {
       _started = true;
     });
