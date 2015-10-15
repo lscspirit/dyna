@@ -3,21 +3,24 @@
 var compare = require('../utils/compare');
 
 /**
- * Function for creating a DynaFluxProviderMixin that will pass the Flux instance to child components
- * through childContext. With the DynaFluxProviderMixin, the Flux instance will be available through the flux()
- * method within the component.
+ * Function for creating a DynaFluxMixin that will consume the Flux instance provided by
+ * the component's 'flux' prop. This will also pass the flux instance to its child through
+ * child context. With the DynaFluxMixin, the Flux instance
+ * will be available through the flux() method within the component.
  * @returns {Object} mixin
- *
- * @see {@link https://github.com/BinaryMuse/fluxxor/blob/master/lib/flux_mixin.js}
  */
-var DynaFluxProviderMixin = function() {
+var DynaFluxMixin = function() {
   var React = this.React;
 
   return {
     componentWillMount : function() {
       if (!this.props.flux && (!this.context || !this.context.flux)) {
-        throw new Error('Could not find flux in component\'s props or context');
+        throw new Error('Could not find flux in component\'s context');
       }
+    },
+
+    contextTypes : {
+      flux: React.PropTypes.object
     },
 
     childContextTypes : {
@@ -32,35 +35,6 @@ var DynaFluxProviderMixin = function() {
 
     flux : function() {
       return this.props.flux || (this.context && this.context.flux);
-    }
-  };
-};
-DynaFluxProviderMixin.componentWillMount = function() {
-  throw new Error('DynaFluxProviderMixin must be created through dyna.DynaFluxProviderMixin(), instead of being used directly.');
-};
-
-/**
- * Function for creating a DynaFluxMixin that will consume the Flux instance provided by
- * the component's owner through owner's context. With the DynaFluxMixin, the Flux instance
- * will be available through the flux() method within the component.
- * @returns {Object} mixin
- */
-var DynaFluxMixin = function() {
-  var React = this.React;
-
-  return {
-    componentWillMount : function() {
-      if (!this.context || !this.context.flux) {
-        throw new Error('Could not find flux in component\'s context');
-      }
-    },
-
-    contextTypes : {
-      flux: React.PropTypes.object.isRequired
-    },
-
-    flux : function() {
-      return this.context && this.context.flux;
     }
   };
 };
@@ -123,7 +97,6 @@ var StoreChangeListenersMixin = {
 };
 
 module.exports = {
-  DynaFluxMixin        : DynaFluxMixin,
-  DynaFluxProviderMixin: DynaFluxProviderMixin,
+  DynaFluxMixin : DynaFluxMixin,
   StoreChangeListenersMixin: StoreChangeListenersMixin
 };

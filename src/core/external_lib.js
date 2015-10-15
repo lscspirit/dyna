@@ -6,9 +6,11 @@ var assign = require('object-assign');
  * Set the ReactJS library to be used within this framework. If not specified, it will look
  * for <tt>React</tt> in the global scope
  * @param {Object} React - ReactJS library object
+ * @param {Object} ReactDOM - React DOM Object
  */
-function useReact(React) {
-  this.React = React;
+function useReact(React, ReactDOM) {
+  this.React    = React;
+  this.ReactDOM = ReactDOM;
 }
 
 /**

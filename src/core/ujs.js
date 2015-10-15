@@ -30,10 +30,11 @@ var unmountFn = function(node) {
  * @param {Object}      props     - props to be passed to the component
  */
 var mountFn = function(flux, node, component, props) {
-  var React  = this.React;
+  var React    = this.React;
+  var ReactDOM = this.ReactDOM;
   var connectedComponent = this.connectComponentToFlux(flux, component);
 
-  React.render(React.createElement(connectedComponent, props), node);
+  ReactDOM.render(React.createElement(connectedComponent, props), node);
 };
 
 /**
