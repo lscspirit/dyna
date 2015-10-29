@@ -5478,11 +5478,11 @@ module.exports = {
 
 module.exports = {
   isArray : function(object) {
-    return object && object.constructor === Array;
+    return object && object.constructor === Array ? true : false;
   },
 
   isObject : function(object) {
-    return object && object.constructor === Object;
+    return object && object.constructor === Object ? true : false;
   },
 
   isFunction : function(object) {
