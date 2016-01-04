@@ -25,9 +25,9 @@
   },
   "scripts": {
     "build": "grunt build",
-    "prepublish": "grunt build",
+    "prepublish": "npm run build",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "author": "Derrick Yeung",
-  "license": "UNLICENSED"
+  "license": "MIT"
 }
