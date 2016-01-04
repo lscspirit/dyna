@@ -5,7 +5,7 @@ module.exports = function(grunt) {
     browserify: {
       dyna: {
         src : ['src/main.js'],
-        dest: 'dyna.js',
+        dest: 'lib/dyna.js',
         options: {
           browserifyOptions: {
             standalone: 'dyna'
