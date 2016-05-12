@@ -1,22 +1,20 @@
 <html>
 <head>
   <script src="https://fb.me/JSXTransformer-0.13.3.js"></script>
-  <script src="https://fb.me/react-0.13.3.js"></script>
+  <script src="https://fb.me/react-15.0.2.js"></script>
+  <script src="https://fb.me/react-dom-15.0.2.js"></script>
   <script src="http://code.jquery.com/jquery-2.1.4.min.js"></script>
-  <script src="../../dyna.js"></script>
+  <script src="../../lib/dyna.js"></script>
   <script src="coordinators.js"></script>
   <script src="store.js"></script>
   <script type="text/jsx">
     'use strict';
 
+    dyna.useReact(React, ReactDOM);
+
     (function(dyna, React) {
-      var action_names = {
-        CLICKED: 'buzzer-clicked'
-      };
-      window.action_factory = dyna.createActionFactory(action_names, {
-        buzzClick: function() {
-          return this.createAction(this.ACTIONS.CLICKED, 'clicked');
-        }
+      window.buzz_action_creator = dyna.createActionCreator('buzz', {
+        click: function() { return 'clicked'; }
       });
 
       var Buzzer = React.createClass({
@@ -42,8 +40,7 @@
         },
 
         _buzzClick : function() {
-          var click_action = action_factory.buzzClick();
-          click_action.dispatch(this.flux().action_dispatcher);
+          buzz_action_creator.instance(this.flux()).click();
         },
 
         _statusChanged : function() {

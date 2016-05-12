@@ -1,19 +1,14 @@
 'use strict';
 
 (function(dyna) {
-  var event_names   = {
-    STATUS_CHANGE: 'buzzer.status-change'
-  };
-  window.event_factory = dyna.createEventFactory(event_names, {
-    statusChange : function(status) {
-      return this.createEvent(this.EVENTS.STATUS_CHANGE, status);
-    }
+  window.buzz_event_creator = dyna.createEventCreator('buzz', {
+    statusChange : function(status) { return status; }
   });
 
   var BuzzerWithBridge = function() {
     this.$listen = function() {
       return [
-        { action: 'buzzer-clicked', handler: _buzzClicked.bind(this) }
+        { action: buzz_action_creator.ACTIONS.CLICK, handler: _buzzClicked.bind(this) }
       ];
     };
 
@@ -40,7 +35,7 @@
     }
 
     function _setStatus(status) {
-      event_factory.statusChange(status).dispatch(this.flux.event_dispatcher);
+      buzz_event_creator.instance(this.flux).statusChange(status);
     }
   };
 
@@ -52,7 +47,7 @@
 
     this.$listen = function() {
       return [
-        { action: action_factory.ACTIONS.CLICKED, handler: _buzzClicked.bind(this) }
+        { action: buzz_action_creator.ACTIONS.CLICK, handler: _buzzClicked.bind(this) }
       ];
     };
 
@@ -76,7 +71,7 @@
     }
 
     function _setStatus(status) {
-      event_factory.statusChange(status).dispatch(this.flux.event_dispatcher);
+      buzz_event_creator.instance(this.flux).statusChange(status);
     }
   };
 

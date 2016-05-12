@@ -1,5 +1,6 @@
 'use strict';
 
+var str     = require('underscore.string');
 var assign  = require('object-assign');
 var compare = require('../utils/compare');
 
@@ -42,6 +43,72 @@ var Event = function(name, payload) {
 };
 
 /**
+ * Create a event creator
+ *
+ * @param {string} namespace - a namespace string to distinguish this creator from others
+ * @param {Object.<string,function>} events - a map of event to payload function that converts arguments to payload object
+ *
+ * @example
+ * var chat_event_creator = dyna.createEventCreator('chat', {
+ *   messageReceived: function(new_message) { return { message: new_message }; }
+ * });
+*
+ * // Coordinator
+ * var ChatRoom = function() {
+ *   // ...
+ *
+ *   function _newMessageReceived(message) {
+ *     chat_event_creator.instance(this.flux).messageReceived(message);
+ *   }
+ * }
+ *
+ * // In Store
+ * var ChatMessageStore = {
+ *   $processEvent : function(event) {
+ *     if (event.name() == chat_event_creator.EVENTS.MESSAGE_RECEIVED) {
+ *       this.receivedMessage(event.payload());
+ *     }
+ *   }
+ * }
+ */
+function createEventCreator(namespace, events) {
+  if (!compare.isString(namespace) || namespace.length == 0) throw new Error('namespace must not be an empty string');
+  if (!compare.isObject(events)) throw new Error('events must be a plain javascript object');
+
+  var self = this;
+
+  // event functions
+  var _events = {};
+  // event name constants
+  var _event_names = {};
+
+  // creates the event dispatch function
+  for (var key in events) {
+    var name = str(key).underscored().toUpperCase().value();
+    var payloadFn = events[key];
+
+    var ns_name = namespace + "." + key;
+    _event_names[name] = ns_name;
+
+    _events[key] = function(evt_name, fn) {
+      return function() {
+        var payload = compare.isFunction(fn) ? fn.apply(null, arguments) : null;
+        return (new Event(evt_name, payload)).dispatch(this._flux.event_dispatcher);
+      };
+    }(ns_name, payloadFn);
+  }
+
+  return {
+    EVENTS: _event_names,
+    instance: function(flux) {
+      return assign({ _flux: flux }, _events);
+    }
+  };
+}
+
+/**
+ * @deprecated since 0.1.4; use event creator instead
+ *
  * Create a factory object that can build Event according to the <tt>event_specs</tt>
  * @param {Object.<string, string>}   event_names - event name constants
  * @param {Object.<string, function>} event_specs - event specifications
@@ -101,4 +168,7 @@ function createEventFactory(event_names, event_specs) {
 // Exports
 //
 
-module.exports = { createEventFactory: createEventFactory };
+module.exports = {
+  createEventFactory: createEventFactory,
+  createEventCreator: createEventCreator
+};

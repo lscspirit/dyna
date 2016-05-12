@@ -1,5 +1,6 @@
 'use strict';
 
+var str     = require('underscore.string');
 var assign  = require('object-assign');
 var compare = require('../utils/compare');
 
@@ -39,16 +40,83 @@ var Action = function(name, payload) {
   /**
    * Dispatch this Action through a ActionDispatcher
    * @param {ActionDispatcher} action_dispatcher - dispatcher through which the Action is dispatched
+   * @returns {Action} the action object dispatched
    * @throws {Error} if action_dispatcher is undefined or invalid
    */
   this.dispatch = function(action_dispatcher) {
     if (compare.isUndefined(action_dispatcher)) throw new Error('action_dispatcher is undefined. Please provide a valid ActionDispatcher instance.');
     if (!compare.isFunction(action_dispatcher.emit)) throw new Error('Invalid ActionDispatcher. ActionDispatcher must have a emit() method.');
     action_dispatcher.emit(this.name(), this);
+
+    return this;
   };
 };
 
 /**
+ * Create a new action creator
+ *
+ * @param {string} namespace - a namespace string to distinguish this creator from others
+ * @param {Object.<string,function>} actions - a map of action to payload function that converts arguments to payload object
+ * @example
+ * // setup the action creator
+ * var chat_action_creator = createActionCreator('chat', {
+ *   sendMessage: function(recipient, message_txt) {
+ *     // turn arguments into a payload object
+ *     return { recipient_id: recipient.id, msg: message_txt };
+ *   },
+ *   fetchMessage: function(user) {
+ *     return { user_id: user.id };
+ *   }
+ * });
+ *
+ * // dispatch a sendMessage action
+ * chat_action_creator.instance(this.flux()).sendMessage(target_user, 'test message');
+ *
+ * // use chat_action_creator.ACTIONS.SEND_MESSAGE to listen for this action in the coordinator
+ * var coordinator = function() {
+ *   this.$listen = function() {
+ *     return [{ action: chat_action_creator.ACTIONS.SEND_MESSAGE, handler: someHandlerFn }];
+ *   };
+ * }
+ */
+function createActionCreator(namespace, actions) {
+  if (!compare.isString(namespace) || namespace.length == 0) throw new Error('namespace must not be an empty string');
+  if (!compare.isObject(actions)) throw new Error('actions must be a plain javascript object');
+
+  var self = this;
+
+  // action functions
+  var _actions = {};
+  // action name constants
+  var _action_names = {};
+
+  // creates the action dispatch function
+  for (var key in actions) {
+    var name = str(key).underscored().toUpperCase().value();
+    var payloadFn = actions[key];
+
+    var ns_name = namespace + "." + key;
+    _action_names[name] = ns_name;
+
+    _actions[key] = function(act_name, fn) {
+      return function() {
+        var payload = compare.isFunction(fn) ? fn.apply(null, arguments) : null;
+        return (new Action(act_name, payload)).dispatch(this._flux.action_dispatcher);
+      };
+    }(ns_name, payloadFn);
+  }
+
+  return {
+    ACTIONS: _action_names,
+    instance: function(flux) {
+      return assign({ _flux: flux }, _actions);
+    }
+  };
+}
+
+/**
+ * @deprecated since v0.1.4; use ActionCreator instead
+ *
  * Create a factory object that can build Action according to the <tt>action_specs</tt>
  * @param {Object.<string, string>}   action_names - action name constants
  * @param {Object.<string, function>} action_specs - action specifications
@@ -109,4 +177,7 @@ function createActionFactory(action_names, action_specs) {
 // Exports
 //
 
-module.exports = { createActionFactory: createActionFactory };
+module.exports = {
+  createActionFactory: createActionFactory,
+  createActionCreator: createActionCreator
+};

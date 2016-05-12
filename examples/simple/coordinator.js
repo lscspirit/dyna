@@ -4,7 +4,7 @@
   var Buzzer = function() {
     this.$listen = function() {
       return [
-        { action: action_factory.ACTIONS.CLICKED, handler: _buzzClicked.bind(this) }
+        { action: buzz_action_creator.ACTIONS.CLICK, handler: _buzzClicked.bind(this) }
       ];
     };
 
@@ -20,7 +20,7 @@
     }
 
     function _setStatus(status) {
-      event_factory.statusChange(status).dispatch(this.flux.event_dispatcher);
+      buzz_event_creator.instance(this.flux).statusChange(status);
     }
   };
 

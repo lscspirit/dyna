@@ -1,26 +1,23 @@
 <html>
 <head>
   <script src="https://fb.me/JSXTransformer-0.13.3.js"></script>
-  <script src="https://fb.me/react-0.13.3.js"></script>
+  <script src="https://fb.me/react-15.0.2.js"></script>
+  <script src="https://fb.me/react-dom-15.0.2.js"></script>
   <script src="http://code.jquery.com/jquery-2.1.4.min.js"></script>
-  <script src="../../dyna.js"></script>
+  <script src="../../lib/dyna.js"></script>
   <script src="store.js"></script>
   <script type="text/jsx">
     'use strict';
 
-    (function(dyna, React) {
+    dyna.useReact(React, ReactDOM);
 
+    (function(dyna, React) {
       //
       // Actions
       //
 
-      var action_names = {
-        CLICKED: 'buzzer-clicked'
-      };
-      window.action_factory = dyna.createActionFactory(action_names, {
-        buzzClick: function() {
-          return this.createAction(this.ACTIONS.CLICKED, 'clicked');
-        }
+      window.buzz_action_creator = dyna.createActionCreator('buzz', {
+        click: function() { return 'clicked' }
       });
 
       //
@@ -50,8 +47,7 @@
         },
 
         _buzzClick : function() {
-          var click_action = action_factory.buzzClick();
-          click_action.dispatch(this.flux().action_dispatcher);
+          buzz_action_creator.instance(this.flux()).click();
         },
 
         _statusChanged : function() {
@@ -65,13 +61,8 @@
       // Events
       //
 
-      var event_names   = {
-        STATUS_CHANGE: 'buzzer.status-change'
-      };
-      window.event_factory = dyna.createEventFactory(event_names, {
-        statusChange : function(status) {
-          return this.createEvent(this.EVENTS.STATUS_CHANGE, status);
-        }
+      window.buzz_event_creator = dyna.createEventCreator('buzz', {
+        statusChange : function(status) { return status; }
       });
 
       //
@@ -97,7 +88,7 @@
 
         this.$listen = function() {
           return [
-            { action: action_factory.ACTIONS.CLICKED, handler: _buzzClicked.bind(this) }
+            { action: buzz_action_creator.ACTIONS.CLICK, handler: _buzzClicked.bind(this) }
           ];
         };
 
@@ -113,7 +104,7 @@
         }
 
         function _setStatus(status) {
-          event_factory.statusChange(status).dispatch(this.flux.event_dispatcher);
+          buzz_event_creator.instance(this.flux).statusChange(status);
         }
       };
 

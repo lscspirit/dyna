@@ -1,5 +1,7 @@
 'use strict';
 
+dyna.useReact(React, ReactDOM);
+
 (function(dyna, React) {
   //
   // Component
