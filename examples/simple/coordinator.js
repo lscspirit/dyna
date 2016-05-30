@@ -4,7 +4,7 @@
   var Buzzer = function() {
     this.$listen = function() {
       return [
-        { action: buzz_action_creator.ACTIONS.CLICK, handler: _buzzClicked.bind(this) }
+        { action: buzz_action_creator.ACTIONS.click, handler: _buzzClicked.bind(this) }
       ];
     };
 

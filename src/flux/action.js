@@ -1,6 +1,5 @@
 'use strict';
 
-var str     = require('underscore.string');
 var assign  = require('object-assign');
 var compare = require('../utils/compare');
 
@@ -92,11 +91,10 @@ function createActionCreator(namespace, actions) {
 
   // creates the action dispatch function
   for (var key in actions) {
-    var name = str(key).underscored().toUpperCase().value();
     var payloadFn = actions[key];
 
     var ns_name = namespace + "." + key;
-    _action_names[name] = ns_name;
+    _action_names[key] = ns_name;
 
     _actions[key] = function(act_name, fn) {
       return function() {

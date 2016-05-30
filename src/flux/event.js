@@ -1,6 +1,5 @@
 'use strict';
 
-var str     = require('underscore.string');
 var assign  = require('object-assign');
 var compare = require('../utils/compare');
 
@@ -84,11 +83,10 @@ function createEventCreator(namespace, events) {
 
   // creates the event dispatch function
   for (var key in events) {
-    var name = str(key).underscored().toUpperCase().value();
     var payloadFn = events[key];
 
     var ns_name = namespace + "." + key;
-    _event_names[name] = ns_name;
+    _event_names[key] = ns_name;
 
     _events[key] = function(evt_name, fn) {
       return function() {
