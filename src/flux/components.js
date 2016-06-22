@@ -75,8 +75,10 @@ function connectComponentToFlux(flux, component) {
     },
 
     render : function() {
+      var self = this;
+
       // filter out the 'flux' prop that was injected by this mixin
-      var filtered_props = assign({}, this.props);
+      var filtered_props = assign({}, this.props, { ref: function(r) { self.wrappedInstance = r; } });
       delete filtered_props.flux;
 
       return React.createElement(component, filtered_props);

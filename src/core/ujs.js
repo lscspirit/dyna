@@ -28,13 +28,15 @@ var unmountFn = function(node) {
  * @param {HTMLElement} node      - a DOM Node
  * @param {ReactClass}  component - a React component class
  * @param {Object}      props     - props to be passed to the component
+ *
+ * @return {ReactElement} the rendered react element
  */
 var mountFn = function(flux, node, component, props) {
   var React    = this.React;
   var ReactDOM = this.ReactDOM;
   var connectedComponent = this.connectComponentToFlux(flux, component);
 
-  ReactDOM.render(React.createElement(connectedComponent, props), node);
+  return ReactDOM.render(React.createElement(connectedComponent, props), node).wrappedInstance;
 };
 
 /**
