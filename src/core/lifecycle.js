@@ -3,6 +3,7 @@
 var assign     = require('object-assign');
 var arrayUtils = require('../utils/array_utils');
 var domReady   = require('../utils/dom_ready');
+var deferred   = require('deferred');
 
 var injector = require('./injector');
 var ujs      = require('./ujs');
@@ -30,6 +31,7 @@ function config(deps, fn) {
  * elements once the DOM is ready
  * @param {Flux}             flux   - Flux instance
  * @param {Document|Element} [root] - component root under which dyna components will be mounted.
+ * @returns {Promise} a promise that will be resolved when the start process is completed
  *
  * @example <caption>Start a single Flux</caption>
  * var flux = dyna.flux(["Buzzer"], ["BuzzerStore"]);
@@ -43,13 +45,19 @@ function config(deps, fn) {
  * dyna.start(flux_two, document.getElementById('#buzzer-two'));
  */
 function start(flux, root) {
-  var self = this;
+  var self  = this;
+  var defer = deferred();
+
   flux.start().done(function() {
     domReady(function() {
       self.mountComponents(flux);
       self.mountDynaComponents(flux, root);
+
+      defer.resolve();
     });
   });
+
+  return defer.promise;
 }
 
 /**

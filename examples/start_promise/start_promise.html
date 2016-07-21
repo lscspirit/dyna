@@ -1,0 +1,59 @@
+<html>
+<head>
+  <script src="https://fb.me/JSXTransformer-0.13.3.js"></script>
+  <script src="https://fb.me/react-15.0.2.js"></script>
+  <script src="https://fb.me/react-dom-15.0.2.js"></script>
+  <script src="http://code.jquery.com/jquery-2.1.4.min.js"></script>
+  <script src="../../lib/dyna.js"></script>
+  <script type="text/jsx">
+    'use strict';
+
+    dyna.useReact(React, ReactDOM);
+
+    (function(dyna, React) {
+      //
+      // Component
+      //
+      var SimpleComp = React.createClass({
+        render : function() {
+          console.log("rendering SimpleComp");
+          return <div>All coordinators started!!</div>;
+        }
+      });
+      dyna.registerComponent('SimpleComp', SimpleComp);
+
+      //
+      // Coordinator
+      //
+
+      var WaitStart = function() {
+        this.$start = function() {
+          var deferred = dyna.utils.deferred();
+          console.log('starting coordinator with 3 second wait.');
+
+          setTimeout(function() {
+            console.log('timeout completed. coordinator started.');
+            deferred.resolve();
+          }, 3000);
+          return deferred.promise;
+        };
+      };
+
+      dyna.registerCoordinator('WaitStart', WaitStart);
+    }(dyna, dyna.React));
+
+
+    $(function() {
+      (function(dyna) {
+        var flux = dyna.flux(['WaitStart'], []);
+        dyna.start(flux).done(function() {
+          console.log("flux fully started");
+        });
+      }(dyna));
+    });
+  </script>
+</head>
+<body>
+<div data-dyna-component="SimpleComp"></div>
+</body>
+</html>
