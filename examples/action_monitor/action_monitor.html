@@ -8,9 +8,7 @@
   <script type="text/jsx">
     'use strict';
 
-    dyna.useReact(React, ReactDOM);
-
-    (function(dyna, React) {
+    (function(dyna) {
       window.buzz_event_creator = dyna.createEventCreator('buzz', {
         timestampChange : function(timestamp) { return timestamp; }
       });
@@ -25,7 +23,7 @@
         },
 
         $processEvent : function(event) {
-          if (event.name() == buzz_event_creator.EVENTS.TIMESTAMP_CHANGE) {
+          if (event.name() == buzz_event_creator.EVENTS.timestampChange) {
             this.timestampChange(event.payload());
           }
         },
@@ -43,7 +41,7 @@
       dyna.registerCoordinator('Buzzer', function() {
         this.$listen = function() {
           return [
-            { action: buzz_action_creator.ACTIONS.CLICK, handler: _buzzClicked.bind(this) }
+            { action: buzz_action_creator.ACTIONS.click, handler: _buzzClicked.bind(this) }
           ];
         };
 
@@ -114,7 +112,7 @@
       });
 
       dyna.registerComponent('Buzzer', Buzzer);
-    }(dyna, dyna.React));
+    }(dyna));
 
     $(function() {
       (function(dyna) {

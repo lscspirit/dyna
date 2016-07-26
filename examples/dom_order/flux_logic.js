@@ -1,8 +1,6 @@
 'use strict';
 
-dyna.useReact(React, ReactDOM);
-
-(function(dyna, React) {
+(function(dyna) {
   //
   // Component
   //
@@ -28,4 +26,4 @@ dyna.useReact(React, ReactDOM);
   };
 
   dyna.registerCoordinator('Normal', Normal);
-}(dyna, dyna.React));
+}(dyna));

@@ -1,5 +1,7 @@
 'use strict';
 
+var React = require('react');
+
 var compare = require('../utils/compare');
 
 /**
@@ -10,8 +12,6 @@ var compare = require('../utils/compare');
  * @returns {Object} mixin
  */
 var DynaFluxMixin = function() {
-  var React = this.React;
-
   return {
     componentWillMount : function() {
       if (!this.props.flux && (!this.context || !this.context.flux)) {

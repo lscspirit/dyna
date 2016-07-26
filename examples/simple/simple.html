@@ -10,9 +10,7 @@
   <script type="text/jsx">
     'use strict';
 
-    dyna.useReact(React, ReactDOM);
-
-    (function(dyna, React) {
+    (function(dyna) {
       window.buzz_event_creator = dyna.createEventCreator('buzz', {
         statusChange : function(status) { return status; }
       });
@@ -55,7 +53,7 @@
       });
 
       dyna.registerComponent('Buzzer', Buzzer);
-    }(dyna, dyna.React));
+    }(dyna));
 
     $(function() {
       (function(dyna) {

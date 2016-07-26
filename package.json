@@ -1,14 +1,14 @@
 {
   "name": "dyna",
-  "version": "0.1.7",
+  "version": "0.2.0",
   "description": "A framework that incorporates Facebook's ReactJS component and Flux architecture",
   "repository": {
     "type": "git",
     "url": "https://github.com/lscspirit/dyna.git"
   },
-  "main": "lib/dyna.js",
+  "main": "src/main.js",
   "files": [
-    "lib/dyna.js",
+    "dist/dyna.js",
     "src/"
   ],
   "dependencies": {
@@ -17,9 +17,14 @@
     "flux": "^2.0.3",
     "object-assign": "^2.0.0"
   },
+  "peerDependencies": {
+    "react": "^0.14.0 || ^15.0.0",
+    "react-dom": "^0.14.0 || ^15.0.0"
+  },
   "devDependencies": {
     "browserify": "^10.2.1",
     "browserify-derequire": "^0.9.4",
+    "browserify-shim": "^3.8.12",
     "grunt": "^0.4.5",
     "grunt-browserify": "^3.8.0",
     "grunt-jsdoc": "^0.6.4"
@@ -37,5 +42,10 @@
     "flux",
     "framework",
     "javascript"
-  ]
+  ],
+
+  "browserify-shim": {
+    "react": "global:React",
+    "react-dom": "global:ReactDOM"
+  }
 }

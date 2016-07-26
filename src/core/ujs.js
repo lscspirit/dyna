@@ -1,5 +1,8 @@
 'use strict';
 
+var React = require('react');
+var ReactDOM = require('react-dom');
+
 var assign     = require('object-assign');
 var compare    = require('../utils/compare');
 var arrayUtils = require('../utils/array_utils');
@@ -11,7 +14,7 @@ var components = require('../flux/components');
  * @param {HTMLElement} node - a DOM Node
  */
 var unmountFn = function(node) {
-  this.React.unmountComponentAtNode(node);
+  React.unmountComponentAtNode(node);
 };
 
 /**
@@ -32,8 +35,6 @@ var unmountFn = function(node) {
  * @return {ReactElement} the rendered react element
  */
 var mountFn = function(flux, node, component, props) {
-  var React    = this.React;
-  var ReactDOM = this.ReactDOM;
   var connectedComponent = this.connectComponentToFlux(flux, component);
 
   return ReactDOM.render(React.createElement(connectedComponent, props), node).wrappedInstance;

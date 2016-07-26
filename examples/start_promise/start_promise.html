@@ -8,9 +8,7 @@
   <script type="text/jsx">
     'use strict';
 
-    dyna.useReact(React, ReactDOM);
-
-    (function(dyna, React) {
+    (function(dyna) {
       //
       // Component
       //
@@ -40,7 +38,7 @@
       };
 
       dyna.registerCoordinator('WaitStart', WaitStart);
-    }(dyna, dyna.React));
+    }(dyna));
 
 
     $(function() {

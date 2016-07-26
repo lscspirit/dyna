@@ -1,19 +1,11 @@
 'use strict';
 
+var React = require('react');
+
 var compare = require('../utils/compare');
 var assign  = require('object-assign');
 
 var _components = {};
-
-/**
- * Component definition context callback
- * @callback componentDefCallback
- * @param {{}}      $components - with registerComponent() and getComponent() methods
- * @param {{}}      $stores     - with getStore(), requireStores() and releaseStores() methods
- * @param {*}       $Action     - Action constructor
- * @param {Object}  React       - React JS library
- * @param {Object}  $           - jQuery Library
- */
 
 /**
  * Register a React Component
@@ -21,7 +13,6 @@ var _components = {};
  * @param {ReactClass} react_component - react component class
  *
  * @example
- * var React = dyna.React;
  * var SomeComponent = React.createClass({
  *   //...
  * });
@@ -63,8 +54,6 @@ function getComponent(name) {
  * var Connected = dyna.connectComponentToFlux(SomeComponent, flux);
  */
 function connectComponentToFlux(flux, component) {
-  var React      = this.React;
-
   return React.createClass({
     mixins : [this.DynaFluxMixin()],
 
