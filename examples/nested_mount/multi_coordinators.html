@@ -1,0 +1,132 @@
+<html>
+<head>
+  <script src="https://fb.me/JSXTransformer-0.13.3.js"></script>
+  <script src="https://fb.me/react-15.0.2.js"></script>
+  <script src="https://fb.me/react-dom-15.0.2.js"></script>
+  <script src="http://code.jquery.com/jquery-2.1.4.min.js"></script>
+  <script src="../../dist/dyna.js"></script>
+  <script type="text/jsx">
+    'use strict';
+
+    (function(dyna) {
+      //
+      // Component
+      //
+      var ParentComp = React.createClass({
+        propTypes : {
+          child_list: React.PropTypes.arrayOf(React.PropTypes.element).isRequired
+        },
+
+        render : function() {
+          return (
+            <div>
+              Parent
+              <div style={ { paddingLeft: 40 } }>
+                { this.props.child_list }
+              </div>
+            </div>);
+        }
+      });
+
+      var FirstLevelComp = React.createClass({
+        propTypes : {
+          div_id: React.PropTypes.string.isRequired,
+          child_list: React.PropTypes.arrayOf(React.PropTypes.element).isRequired
+        },
+
+        render : function() {
+          return (
+            <div>
+              First Level
+              <div style={ { paddingLeft: 40 } }>
+                { this.props.div_id } { this.props.child_list }
+              </div>
+            </div>);
+        }
+      });
+
+      var LeafComp = React.createClass({
+        propTypes : {
+          div_id: React.PropTypes.number.isRequired,
+          index: React.PropTypes.number.isRequired
+        },
+
+        render : function() {
+          return <div>{ this.props.div_id } ({ this.props.index }) Leaf</div>
+        }
+      });
+
+      //
+      // Coordinator
+      //
+
+      var TopLevelMount = function() {
+        this.$mount = function(mountFn) {
+          var parent_node = document.getElementById('parent-comp');
+          mountFn(parent_node, ParentComp, {}, function(props, child_list) {
+            var list = child_list.map(function(c, index) {
+              var ChildClass = c.component;
+              var child_props = $.extend({}, c.props, { key: index });
+              return React.createElement(ChildClass, child_props);
+            });
+
+            return { child_list: list };
+          });
+        };
+
+        this.$start = function() {
+          console.log('starting top level nested mount coordinator');
+        };
+      };
+
+      var ChildMount = function() {
+        this.$mount = function(mountFn) {
+          $('.first-level-comp').each(function() {
+            mountFn(this, FirstLevelComp, { div_id: $(this).data('div-id') }, function(props, child_list) {
+              var list = child_list.map(function(c, index) {
+                var ChildClass = c.component;
+                var child_props = $.extend({}, c.props, { key: index, index: index });
+                return React.createElement(ChildClass, child_props);
+              });
+
+              return $.extend({}, props, { child_list: list });
+            });
+          });
+
+          $(".leaf-comp").each(function() {
+            mountFn(this, LeafComp, { div_id: $(this).data('div-id') });
+          });
+        };
+
+        this.$start = function() {
+          console.log('starting sub levels nested mount coordinator');
+        };
+      };
+
+      dyna.registerCoordinator('ChildMount', ChildMount);
+      dyna.registerCoordinator('TopLevelMount', TopLevelMount);
+    }(dyna));
+
+    $(function() {
+      (function(dyna) {
+        var flux = dyna.flux(['TopLevelMount', 'ChildMount'], []);
+        dyna.start(flux);
+      }(dyna));
+    });
+  </script>
+</head>
+<body>
+  <div id="parent-comp">
+    <div class="first-level-comp" data-div-id="a">
+      <div class="leaf-comp" data-div-id="1"></div>
+      <div class="leaf-comp" data-div-id="2"></div>
+      <div class="leaf-comp" data-div-id="3"></div>
+      <div class="leaf-comp" data-div-id="4"></div>
+    </div>
+    <div class="first-level-comp" data-div-id="b">
+      <div class="leaf-comp" data-div-id="5"></div>
+      <div class="leaf-comp" data-div-id="6"></div>
+    </div>
+  </div>
+</body>
+</html>

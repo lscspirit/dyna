@@ -1,0 +1,110 @@
+<html>
+<head>
+  <script src="https://fb.me/JSXTransformer-0.13.3.js"></script>
+  <script src="https://fb.me/react-15.0.2.js"></script>
+  <script src="https://fb.me/react-dom-15.0.2.js"></script>
+  <script src="http://code.jquery.com/jquery-2.1.4.min.js"></script>
+  <script src="../../dist/dyna.js"></script>
+  <script type="text/jsx">
+    'use strict';
+
+    (function(dyna) {
+      //
+      // Component
+      //
+      var ParentComp = React.createClass({
+        propTypes : {
+          child: React.PropTypes.element.isRequired
+        },
+
+        render : function() {
+          return (
+            <div>
+              Parent
+              <div style={ { paddingLeft: 40 } }>
+                { this.props.child }
+              </div>
+            </div>);
+        }
+      });
+
+      var FirstLevelComp = React.createClass({
+        propTypes : {
+          child_list: React.PropTypes.arrayOf(React.PropTypes.element).isRequired
+        },
+
+        render : function() {
+          return (
+            <div>
+              First Level
+              <div style={ { paddingLeft: 40 } }>
+                { this.props.child_list }
+              </div>
+            </div>);
+        }
+      });
+
+      var LeafComp = React.createClass({
+        propTypes : {
+          index: React.PropTypes.number.isRequired
+        },
+
+        render : function() {
+          return <div>({ this.props.index }) Leaf</div>
+        }
+      });
+
+      //
+      // Coordinator
+      //
+
+      var NestingMount = function() {
+        this.$mount = function(mountFn) {
+          var parent_node = document.getElementById('parent-comp');
+          mountFn(parent_node, ParentComp, {}, function(props, child_list) {
+            var ChildClass = child_list[0].component;
+            return { child: React.createElement(ChildClass, child_list[0].props) };
+          });
+
+          var first_level_node = document.getElementById('first-level-comp');
+          mountFn(first_level_node, FirstLevelComp, {}, function(props, child_list) {
+            var list = child_list.map(function(c, index) {
+              var ChildClass = c.component;
+              return <ChildClass key={ index } index={ index }/>;
+            });
+
+            return { child_list: list };
+          });
+
+          $(".leaf-comp").each(function() {
+            mountFn(this, LeafComp);
+          });
+        };
+
+        this.$start = function() {
+          console.log('starting nested mount coordinator');
+        };
+      };
+
+      dyna.registerCoordinator('NestingMount', NestingMount);
+    }(dyna));
+
+
+    $(function() {
+      (function(dyna) {
+        var flux = dyna.flux(['NestingMount'], []);
+        dyna.start(flux);
+      }(dyna));
+    });
+  </script>
+</head>
+<body>
+  <div id="parent-comp">
+    <div id="first-level-comp">
+      <div class="leaf-comp"></div>
+      <div class="leaf-comp"></div>
+      <div class="leaf-comp"></div>
+    </div>
+  </div>
+</body>
+</html>

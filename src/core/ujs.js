@@ -9,24 +9,16 @@ var arrayUtils = require('../utils/array_utils');
 var components = require('../flux/components');
 
 /**
- * Un-mounting React components from nodes
+ * Unmounts the React component at the DOM node
  * @callback UnmountFunction
  * @param {HTMLElement} node - a DOM Node
  */
-var unmountFn = function(node) {
+function domUnmountFn(node) {
   React.unmountComponentAtNode(node);
 };
 
 /**
- * Mount React components to DOM nodes (this is a version of the Mount function with the Flux instance already binded)
- * @callback MountFunction
- * @param {HTMLElement} node      - a DOM Node
- * @param {ReactClass}  component - a React component class
- * @param {Object}      props     - props to be passed to the component
- */
-
-/**
- * Mount React components to DOM nodes
+ * Connects a React components to the flux and mount it to a DOM node
  * @param {Flux}        flux      - flux instance within which this component is mounted
  * @param {HTMLElement} node      - a DOM Node
  * @param {ReactClass}  component - a React component class
@@ -34,7 +26,7 @@ var unmountFn = function(node) {
  *
  * @return {ReactElement} the rendered react element
  */
-var mountFn = function(flux, node, component, props) {
+function domMountFn(flux, node, component, props) {
   var connectedComponent = this.connectComponentToFlux(flux, component);
 
   return ReactDOM.render(React.createElement(connectedComponent, props), node).wrappedInstance;
@@ -45,7 +37,7 @@ var mountFn = function(flux, node, component, props) {
  * @param {Flux} flux - instance of Flux
  */
 function mountComponents(flux) {
-  flux.mountComponents(mountFn.bind(this, flux));
+  flux.mountComponents(domMountFn.bind(this, flux));
 }
 
 /**
@@ -53,7 +45,7 @@ function mountComponents(flux) {
  * @param {Flux} flux - instance of Flux
  */
 function unmountComponents(flux) {
-  flux.unmountComponents(unmountFn.bind(this));
+  flux.unmountComponents(domUnmountFn.bind(this));
 }
 
 /**

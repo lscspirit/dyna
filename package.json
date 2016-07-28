@@ -1,6 +1,6 @@
 {
   "name": "dyna",
-  "version": "0.2.0",
+  "version": "0.2.1",
   "description": "A framework that incorporates Facebook's ReactJS component and Flux architecture",
   "repository": {
     "type": "git",
@@ -15,6 +15,7 @@
     "deferred": "^0.7.2",
     "event-emitter": "^0.3.3",
     "flux": "^2.0.3",
+    "invariant": "^2.2.1",
     "object-assign": "^2.0.0"
   },
   "peerDependencies": {
@@ -43,7 +44,6 @@
     "framework",
     "javascript"
   ],
-
   "browserify-shim": {
     "react": "global:React",
     "react-dom": "global:ReactDOM"

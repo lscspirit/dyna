@@ -9,6 +9,7 @@ var arrayUtils = require('../utils/array_utils');
 var assign     = require('object-assign');
 var compare    = require('../utils/compare');
 var deferred   = require('deferred');
+var invariant  = require('invariant');
 
 var Stores       = require('./stores');
 var Components   = require('./components');
@@ -28,6 +29,8 @@ var Flux = function(coordinators, stores) {
   var self = this;
   var _id  = _generateFluxId();
   var _started = false;
+
+  var _mount_tree = new MountTree();
 
   var action_dispatcher = new ActionDispatcher();
   var event_dispatcher  = new EventDispatcher();
@@ -128,26 +131,121 @@ var Flux = function(coordinators, stores) {
   };
 
   /**
-   * Perform $mount operation (if available) on all coordinators
-   * @param {MountFunction} mountFn - a mount function
+   * Details of a component mount
+   * @typedef {Object} MountDefinition
+   * @property {HTMLElement} node      - the DOM node that is associated with the mount
+   * @property {ReactClass}  component - the React component class to be mounted
+   * @property {Object}      props     - the properties to used when mounting
    */
-  this.mountComponents = function(mountFn) {
+
+  /**
+   * Callback that returns all components that needs to be mounted within the current component.
+   * Since only top level React component can be mounted directly to the DOM, any nested component
+   * must be passed in as props to the parent React component. This callback provides an opportunities
+   * for the coordinators to inject the nested components into the parents any way they want.
+   *
+   * @callback NestedMountCallback
+   * @param {Object} props - the current props to be used to mount the current (parent) component
+   * @param {MountDefinition[]} children - a list of children component mount definitions
+   * @return {Object} the updated props to be used to mount the current (parent) component. If nothing is
+   * returned from the callback, then the original props will be used.
+   */
+
+  /**
+   * Performs $mount operation (if available) on all coordinators, and mount the React components to the DOM
+   * @param {domMountFn} domMount - function to mount a react component to the DOM (with first parameter binded to the current flux)
+   */
+  this.mountComponents = function(domMount) {
+    /**
+     * Registers the React component for mount to a DOM node.
+     * This does not mount the component to the DOM immediately. Instead, this will only add the component
+     * to the mount list, and all components in the mount list will be mounted at the end of the mountComponets phase.
+     * That means all coordinators' $mount() would be executed before any components will be mounted to the DOM.
+     *
+     * The example below shows how you can pass any nested components into the parent through the use of props. However,
+     * that is just one way of mounting a nested component. The callback allows you to achieve the same result any way you like.
+     * For instance, an alternative would be to store the child components in a flux store in the callback, and then have the
+     * parent component gets the children from the store.
+     *
+     * @param {HTMLElement} node      - a DOM Node
+     * @param {ReactClass}  component - a React component class
+     * @param {Object}      [props]     - props to be passed to the component
+     * @param {NestedMountCallback} [nestedCb] - a callback that gives the coordinator a chance to handle components nested with the current component
+     *
+     * @example
+     * // let say the DOM looks like this
+     * <div id="parent-comp">
+     *   <div class="child-comp" data-child-index="1"></div>
+     *   <div class="child-comp" data-child-index="2"></div>
+     * </div>
+     *
+     * // inside a coordinator $mount function
+     * this.$mount = function(mountFn) {
+     *   // mounts the ParentComponent React class to the 'parent-comp' DOM node.
+     *   // Also, passes along the ChildComponents to the callback so that the coordinator
+     *   // can inject them into the ParentComponent
+     *   mountFn(document.getElementById('parent-comp'), ParentComponent, { name: 'parent' }, function(props, children) {
+     *     // first create each of the child React elements
+     *     var child_elems = children.map(function(child, index) {
+     *       // adds a 'key' to the child properties because React expects a 'key' prop when
+     *       // React elements are passed as an array. This is not necessary if there is only one child.
+     *       var child_props = $.extend({}, child.props, { key: index });
+     *       return React.createElement(child.component, child_props);
+     *     });
+     *
+     *     // now inject the list of child elements into the ParentComponent through the ParentComponent props.
+     *     // In this case, the ParentComponent takes in a 'nested' props. The object returned by this callback
+     *     // will be used to mount the ParentComponent.
+     *     //
+     *     // Originally, the ParentComponent's prop is { name: 'parent' }. Here we are extending the props with
+     *     // { nested: child_elems }.
+     *     return $.extend({}, props, { nested: child_elems });
+     *   });
+     *
+     *   // mounts the ChildComponent React class to the 'child-comp' DOM nodes
+     *   // Note that this does not actually mount the component to the DOM because
+     *   // these child components are nested within the ParentComponent according to
+     *   // the DOM structure (i.e. they cannot be mounted to the DOM as a react root component).
+     *   // Instead, the creation/mounting of the ChildComponent will be handled within the ParentComponent's
+     *   // NestedMountCallback function above.
+     *   $('.child-comp').each(function() {
+     *     mountFn(this, ChildComponent, { child_index: $(this).data('child-index') });
+     *   });
+     * };
+     */
+    function mountNodeFn(node, component, props, nestedCb) {
+      _mount_tree.addMount(node, component, props, nestedCb);
+    };
+
+    // Loops through all coordinators and adds all mount to the mount tree
     required_coordinators.forEach(function(c) {
       var c_instance = coordinator_instances[c];
       // get coordinator's mount spec
-      if (compare.isFunction(c_instance.$mount)) c_instance.$mount(mountFn);
+      if (compare.isFunction(c_instance.$mount)) c_instance.$mount(mountNodeFn);
+    });
+
+    // Mounts all nodes under the mount tree
+    _mount_tree.forEach(function(top_level_node) {
+      // executes all non-top-level parent mounts' callbacks
+      // and updates the mounts' props accordingly
+      top_level_node.traverseParents(function(sub_parent) {
+        // updates the non-top-level parant mount's props using values returned by
+        // running the callback
+        sub_parent.setProps(_runMountNodeNestedCallback(sub_parent));
+      });
+
+      // mount top level node directly to the DOM using the mountFn
+      domMount(top_level_node.node(), top_level_node.component(), _runMountNodeNestedCallback(top_level_node));
     });
   };
 
   /**
-   * Perform $unmount operation (if available) on all coordinators
-   * @param {UnmountFunction} unmountFn - a unmount function
+   * Unmounts all React components mounted during the mountComponents phase
+   * @param {domUnmountFn} domUnmount - function to unmount a react component from a DOM
    */
-  this.unmountComponents = function(unmountFn) {
-    required_coordinators.forEach(function(c) {
-      var c_instance = coordinator_instances[c];
-      // get coordinator's mount spec
-      if (compare.isFunction(c_instance.$unmount)) c_instance.$unmount(unmountFn);
+  this.unmountComponents = function(domUnmount) {
+    _mount_tree.forEach(function(top_level_node) {
+      domUnmount(top_level_node.node());
     });
   };
 
@@ -246,6 +344,138 @@ var Flux = function(coordinators, stores) {
 };
 
 //
+// Private class
+//
+
+function MountTree() {
+  var mounts = [];
+
+  /**
+   * Adds a new mount entry to the mount tree
+   *
+   * @param {HTMLElement} node      - the DOM node associated with this mount
+   * @param {ReactClass}  component - the React class of the component
+   * @param {Object}      [props]   - props to create the React element with
+   * @param {NestedMountCallback} [nestedCb] - a nested mount callback function
+   */
+  this.addMount = function(node, component, props, nestedCb) {
+    invariant(node != null && node != undefined, 'Mount node cannot be null or undefined');
+
+    var target_node = new MountNode(node, component, props, nestedCb);
+
+    for (var i = 0; i < mounts.length; i++) {
+      invariant(mounts[i].node() != node, 'Conflicting mount node. Node has already been mounted');
+
+      if (mounts[i].node().contains(node)) {
+        // adds the target node to the current mount node
+        mounts[i].addDescendant(target_node);
+        return;
+      } else if (node.contains(mounts[i].node())) {
+        // adds the current mount node as a child of the target node
+        target_node.addDescendant(mounts[i]);
+        // replace the current mount node with the target node
+        mounts[i] = target_node;
+        return;
+      }
+    }
+
+    // if the target node is not a child or a parent of other nodes,
+    // then simply add it to the mount list
+    mounts.push(target_node);
+  };
+
+  /**
+   * Loops through each of the top level MountNode
+   */
+  this.forEach = function(cb) {
+    mounts.forEach(cb);
+  };
+}
+
+function MountNode(node, component, props, nestedCb) {
+  var _node = node;
+  var _comp = component;
+  var _props    = props;
+  var _nestedCb = nestedCb;
+
+  var _child_mounts = [];
+
+  this.node = function() { return _node; };
+  this.component = function() { return _comp; };
+  this.props     = function() { return _props; };
+  this.nestedCb  = function()  { return _nestedCb; };
+
+  /**
+   * Adds a descendant MountNode to the current MountNode.
+   *
+   * @param {MountNode} mount_node - node to be added
+   */
+  this.addDescendant = function(mount_node) {
+    for (var i = 0; i < _child_mounts.length; i++) {
+      invariant(_child_mounts[i].node() != mount_node.node(), 'Conflicting mount node. Node has already been mounted');
+
+      if (_child_mounts[i].node().contains(mount_node.node())) {
+        // adds the target node to the current mount node
+        _child_mounts[i].addDescendant(mount_node);
+        return;
+      } else if (mount_node.node().contains(_child_mounts[i].node())) {
+        // adds the current mount node as a child of the target node
+        mount_node.addDescendant(_child_mounts[i]);
+        // replace the current mount node with the target node
+        _child_mounts[i] = mount_node;
+        return;
+      }
+    }
+
+    // if the target node is not a child or a parent of other nodes,
+    // then simply add it to the mount list
+    _child_mounts.push(mount_node);
+  };
+
+  /**
+   * Returns whether this node has any direct child
+   */
+  this.hasChild = function() {
+    return _child_mounts.length > 0;
+  };
+
+  /**
+   * Returns all the direct child MountNode
+   */
+  this.children = function() {
+    return _child_mounts;
+  };
+
+  /**
+   * Sets the mount properties
+   */
+  this.setProps = function(new_props) {
+    _props = new_props;
+  };
+
+  /**
+   * Traverses down the current node and loops through all descendant MountNodes
+   * that are also parent node themselves (i.e. has child).
+   */
+  this.traverseParents = function(cb) {
+    var self = this;
+
+    // traverses all children and executes the callback
+    // if this node has at least one child
+    if (this.hasChild()) {
+      _child_mounts.forEach(function(m) {
+        invariant(
+          m.node().parentNode === self.node(),
+          "'" + m.component().displayName + "' is indirectly nested under '" + self.component().displayName + "'. Please make sure your nested mount is a direct child of the parent in the DOM."
+        );
+        m.traverseParents(cb);
+      });
+      cb(this);
+    }
+  };
+}
+
+//
 // Private Methods
 //
 
@@ -266,6 +496,21 @@ function _generateFluxId() {
 function _injectFluxId(obj, id) {
   if (obj.hasOwnProperty('_flux_id')) throw new Error('Cannot inject Flux Id. Object already has a _flux_id property.');
   obj._flux_id = id;
+}
+
+/**
+*/
+function _runMountNodeNestedCallback(parent_mount_node) {
+  var parent_props = parent_mount_node.props();
+
+  if (parent_mount_node.nestedCb()) {
+    var child_list = parent_mount_node.children().map(function(c) {
+      return { node: c.node(), component: c.component(), props: c.props() };
+    });
+    parent_props = parent_mount_node.nestedCb()(parent_props, child_list) || parent_props;
+  }
+
+  return parent_props;
 }
 
 //
