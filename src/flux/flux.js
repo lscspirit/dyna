@@ -10,6 +10,7 @@ var assign     = require('object-assign');
 var compare    = require('../utils/compare');
 var deferred   = require('deferred');
 var invariant  = require('invariant');
+var warning    = require('warning');
 
 var Stores       = require('./stores');
 var Components   = require('./components');
@@ -30,7 +31,8 @@ var Flux = function(coordinators, stores) {
   var _id  = _generateFluxId();
   var _started = false;
 
-  var _mount_tree = new MountTree();
+  var _mount_tree        = null;
+  var _unmount_callbacks = null;
 
   var action_dispatcher = new ActionDispatcher();
   var event_dispatcher  = new EventDispatcher();
@@ -156,6 +158,38 @@ var Flux = function(coordinators, stores) {
    * @param {domMountFn} domMount - function to mount a react component to the DOM (with first parameter binded to the current flux)
    */
   this.mountComponents = function(domMount) {
+    _mount_tree = new MountTree();
+
+    // Loops through all coordinators and adds all mount to the mount tree
+    required_coordinators.forEach(function(c) {
+      var c_instance = coordinator_instances[c];
+      // call coordinator $mount
+      if (compare.isFunction(c_instance.$mount)) c_instance.$mount(mountNodeFn);
+    });
+
+    // Mounts all nodes under the mount tree
+    _mount_tree.forEach(function(top_level_node) {
+      top_level_node.validate();
+
+      // executes all non-top-level parent mounts' callbacks
+      // and updates the mounts' props accordingly
+      top_level_node.eachSubParents(function(sub_parent) {
+        // make sure the parent and its children are valid
+        sub_parent.validate();
+
+        // updates the non-top-level parant mount's props using values returned by
+        // running the callback
+        sub_parent.setProps(_runMountNodeNestedCallback(sub_parent));
+      });
+
+      // mount top level node directly to the DOM using the mountFn
+      domMount(top_level_node.node(), top_level_node.component(), _runMountNodeNestedCallback(top_level_node));
+    });
+
+    //
+    // Helper
+    //
+
     /**
      * Registers the React component for mount to a DOM node.
      * This does not mount the component to the DOM immediately. Instead, this will only add the component
@@ -217,36 +251,95 @@ var Flux = function(coordinators, stores) {
       _mount_tree.addMount(node, component, props, nestedCb);
     };
 
-    // Loops through all coordinators and adds all mount to the mount tree
-    required_coordinators.forEach(function(c) {
-      var c_instance = coordinator_instances[c];
-      // get coordinator's mount spec
-      if (compare.isFunction(c_instance.$mount)) c_instance.$mount(mountNodeFn);
-    });
+    function _runMountNodeNestedCallback(parent_mount_node) {
+      var parent_props = parent_mount_node.props();
 
-    // Mounts all nodes under the mount tree
-    _mount_tree.forEach(function(top_level_node) {
-      // executes all non-top-level parent mounts' callbacks
-      // and updates the mounts' props accordingly
-      top_level_node.traverseParents(function(sub_parent) {
-        // updates the non-top-level parant mount's props using values returned by
-        // running the callback
-        sub_parent.setProps(_runMountNodeNestedCallback(sub_parent));
-      });
+      if (parent_mount_node.nestedCb()) {
+        var child_list = parent_mount_node.children().map(function(c) {
+          return { node: c.node(), component: c.component(), props: c.props() };
+        });
+        parent_props = parent_mount_node.nestedCb()(parent_props, child_list) || parent_props;
+      }
 
-      // mount top level node directly to the DOM using the mountFn
-      domMount(top_level_node.node(), top_level_node.component(), _runMountNodeNestedCallback(top_level_node));
-    });
+      return parent_props;
+    }
   };
+
+  /**
+   * Details of a component being unmount
+   * @typedef {Object} UnmountDefinition
+   * @property {HTMLElement} node      - the DOM node that is associated with the mount
+   */
+
+  /**
+   * Callback that returns all components that needs to be mounted within the current component.
+   * Since only top level React component can be mounted directly to the DOM, any nested component
+   * must be passed in as props to the parent React component. This callback provides an opportunities
+   * for the coordinators to inject the nested components into the parents any way they want.
+   *
+   * @callback NestedUnmountCallback
+   * @param {UnmountDefinition[]} children - a array of node being unmount
+   */
+
 
   /**
    * Unmounts all React components mounted during the mountComponents phase
    * @param {domUnmountFn} domUnmount - function to unmount a react component from a DOM
    */
   this.unmountComponents = function(domUnmount) {
+    _unmount_callbacks = [];
+
+    // Loops through all coordinators and adds all unmount callback to a list
+    required_coordinators.forEach(function(c) {
+      var c_instance = coordinator_instances[c];
+      // call coordinator $unmount
+      if (compare.isFunction(c_instance.$unmount)) c_instance.$unmount(unmountNodeFn);
+    });
+
     _mount_tree.forEach(function(top_level_node) {
+      top_level_node.eachSubParents(function(sub_parent) {
+        _runUnmountCallback(sub_parent);
+      });
+
+      _runUnmountCallback(top_level_node);
       domUnmount(top_level_node.node());
     });
+
+    //
+    // Helper
+    //
+
+    /**
+     * Registers a callback for when component associated with the node will get unmounted.
+     * This does not unmount the component immediately, but instead register a callback to
+     * be called when the component is unmounted.
+     *
+     * All root mount nodes are unmount automatically without the need of calll this unmountNodeFn().
+     * Only call this function if there are custom clear up logic for unmounting any of the nested component.
+     *
+     * @param {HTMLElement} node - the dom node associated with the component
+     * @param {NestedUnmountCallback} cb - custom logic to unmount nested components
+     */
+    function unmountNodeFn(node, cb) {
+      warning(cb, 'unmountNodeFn() called without a nested unmount callback function. It is not necessary to call unmountNodeFn() if no custom logic is needed to unmount nested components.');
+      _unmount_callbacks.push({ node: node, cb: cb });
+    }
+
+    function _runUnmountCallback(parent_mount_node) {
+      for (var i = 0; i < _unmount_callbacks.length; i++) {
+        if (_unmount_callbacks[i].node === parent_mount_node.node()) {
+          if (_unmount_callbacks[i].cb) {
+            var child_list = parent_mount_node.children().map(function(c) {
+              return { node: c.node() };
+            });
+
+            _unmount_callbacks[i].cb(child_list);
+          }
+
+          return;
+        }
+      }
+    }
   };
 
   /**
@@ -457,21 +550,24 @@ function MountNode(node, component, props, nestedCb) {
    * Traverses down the current node and loops through all descendant MountNodes
    * that are also parent node themselves (i.e. has child).
    */
-  this.traverseParents = function(cb) {
-    var self = this;
-
+  this.eachSubParents = function(cb) {
     // traverses all children and executes the callback
     // if this node has at least one child
-    if (this.hasChild()) {
-      _child_mounts.forEach(function(m) {
-        invariant(
-          m.node().parentNode === self.node(),
-          "'" + m.component().displayName + "' is indirectly nested under '" + self.component().displayName + "'. Please make sure your nested mount is a direct child of the parent in the DOM."
-        );
-        m.traverseParents(cb);
-      });
-      cb(this);
-    }
+    _child_mounts.forEach(function(m) {
+      m.eachSubParents(cb);
+      if(m.hasChild()) cb(m);
+    });
+  };
+
+  this.validate = function() {
+    var self = this;
+
+    _child_mounts.forEach(function(m) {
+      invariant(
+        m.node().parentNode === self.node(),
+        "'" + m.component().displayName + "' is indirectly nested under '" + self.component().displayName + "'. Please make sure your nested mount is a direct child of another mounted component in the DOM."
+      );
+    });
   };
 }
 
@@ -496,21 +592,6 @@ function _generateFluxId() {
 function _injectFluxId(obj, id) {
   if (obj.hasOwnProperty('_flux_id')) throw new Error('Cannot inject Flux Id. Object already has a _flux_id property.');
   obj._flux_id = id;
-}
-
-/**
-*/
-function _runMountNodeNestedCallback(parent_mount_node) {
-  var parent_props = parent_mount_node.props();
-
-  if (parent_mount_node.nestedCb()) {
-    var child_list = parent_mount_node.children().map(function(c) {
-      return { node: c.node(), component: c.component(), props: c.props() };
-    });
-    parent_props = parent_mount_node.nestedCb()(parent_props, child_list) || parent_props;
-  }
-
-  return parent_props;
 }
 
 //

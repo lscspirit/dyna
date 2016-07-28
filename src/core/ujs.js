@@ -14,7 +14,7 @@ var components = require('../flux/components');
  * @param {HTMLElement} node - a DOM Node
  */
 function domUnmountFn(node) {
-  React.unmountComponentAtNode(node);
+  ReactDOM.unmountComponentAtNode(node);
 };
 
 /**
