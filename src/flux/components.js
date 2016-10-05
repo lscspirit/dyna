@@ -42,22 +42,24 @@ function getComponent(name) {
 }
 
 /**
- * Create a new React Class that is connected to the provided Flux.
- * Child component of this new React Class will all have access to this Flux
- * through the 'flux' context OR by using the dyna.DyanFluxConsumerMixin()
+ * This higher-order component creates a new React Class that is connected to
+ * the provided Flux. This will add flux to the component's context. The wrapped
+ * component can access the Flux instance through the 'flux' property in the context.
  *
  * @param {Flux}       flux      - flux instance
  * @param {ReactClass} component - React component to be connected
  * @returns {ReactClass} Flux connected class
  *
  * @example
- * var Connected = dyna.connectComponentToFlux(SomeComponent, flux);
+ * var Connected = dyna.connectComponentToFlux(flux, SomeComponent);
  */
 function connectComponentToFlux(flux, component) {
   return React.createClass({
-    mixins : [this.DynaFluxMixin()],
+    childContextTypes : {
+      flux: React.PropTypes.object.isRequired
+    },
 
-    getDefaultProps : function() {
+    getChildContext : function() {
       return {
         flux: flux.componentContext()
       };
@@ -68,8 +70,6 @@ function connectComponentToFlux(flux, component) {
 
       // filter out the 'flux' prop that was injected by this mixin
       var filtered_props = assign({}, this.props, { ref: function(r) { self.wrappedInstance = r; } });
-      delete filtered_props.flux;
-
       return React.createElement(component, filtered_props);
     }
   });

@@ -147,7 +147,7 @@ var ActionMonitorStore = {
  * @type {*}
  * @example
  * React.createClass({
- *   mixins: [dyna.DynaFluxMixin(), dyna.addons.ActionMonitorMixin],
+ *   mixins: [dyna.DynaFluxMixin, dyna.addons.ActionMonitorMixin],
  *
  *   // ...
  *

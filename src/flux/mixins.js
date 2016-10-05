@@ -1,6 +1,7 @@
 'use strict';
 
 var React = require('react');
+var invariant = require('invariant');
 
 var compare = require('../utils/compare');
 
@@ -11,36 +12,16 @@ var compare = require('../utils/compare');
  * will be available through the flux() method within the component.
  * @returns {Object} mixin
  */
-var DynaFluxMixin = function() {
-  return {
-    componentWillMount : function() {
-      if (!this.props.flux && (!this.context || !this.context.flux)) {
-        throw new Error('Could not find flux in component\'s context');
-      }
-    },
+var DynaFluxMixin = {
+  contextTypes : {
+    flux: React.PropTypes.object.isRequired
+  },
 
-    contextTypes : {
-      flux: React.PropTypes.object
-    },
-
-    childContextTypes : {
-      flux: React.PropTypes.object.isRequired
-    },
-
-    getChildContext : function() {
-      return {
-        flux: this.flux()
-      };
-    },
-
-    flux : function() {
-      return this.props.flux || (this.context && this.context.flux);
-    }
-  };
+  flux : function() {
+    return this.context.flux;
+  }
 };
-DynaFluxMixin.componentWillMount = function() {
-  throw new Error('DynaFluxMixin must be created through dyna.DynaFluxMixin(), instead of being used directly.');
-};
+
 
 /**
  * Store change listener specification
@@ -62,11 +43,14 @@ DynaFluxMixin.componentWillMount = function() {
  * @type {Object}
  */
 var StoreChangeListenersMixin = {
+  contextTypes : {
+    flux: React.PropTypes.object.isRequired
+  },
+
   componentDidMount : function() {
-    var self = this;
-    if (!compare.isFunction(this.flux)) {
-      throw new Error('Flux is not available in this component. Please use dyna.DynaFluxMixin() mixin to make the parent Flux instance available here.');
-    } else if (!compare.isFunction(this.getStoreListeners)) {
+    var flux = this.context.flux;
+
+    if (!compare.isFunction(this.getStoreListeners)) {
       throw new Error('Component must have a getStoreListeners() method that returns a list of store to listen to and their corresponding handler.');
     }
 
@@ -79,7 +63,7 @@ var StoreChangeListenersMixin = {
         throw new Error('Store listener must be a Function');
       }
 
-      self.flux().store(l.store).addChangeListener(l.listener);
+      flux.store(l.store).addChangeListener(l.listener);
     });
 
     // keeps a reference to the listeners for use in componentDidUnmount
@@ -87,11 +71,11 @@ var StoreChangeListenersMixin = {
   },
 
   componentWillUnmount : function() {
-    var self = this;
+    var flux = this.context.flux;
 
     // remove listeners
     (this._listeners || []).forEach(function(l) {
-      self.flux().store(l.store).removeChangeListener(l.listener);
+      flux.store(l.store).removeChangeListener(l.listener);
     });
   }
 };
