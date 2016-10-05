@@ -5,7 +5,6 @@ var ReactDOM = require('react-dom');
 
 var assign     = require('object-assign');
 var compare    = require('../utils/compare');
-var arrayUtils = require('../utils/array_utils');
 var components = require('../flux/components');
 
 /**
@@ -15,7 +14,7 @@ var components = require('../flux/components');
  */
 function domUnmountFn(node) {
   ReactDOM.unmountComponentAtNode(node);
-};
+}
 
 /**
  * Connects a React components to the flux and mount it to a DOM node
@@ -30,7 +29,7 @@ function domMountFn(flux, node, component, props) {
   var connectedComponent = this.connectComponentToFlux(flux, component);
 
   return ReactDOM.render(React.createElement(connectedComponent, props), node).wrappedInstance;
-};
+}
 
 /**
  * Allow each coordinator in the Flux to mount their own specific components
@@ -66,7 +65,7 @@ function mountDynaComponents(flux, root) {
 
     var props = node.hasAttribute('data-props') ? JSON.parse(node.getAttribute['data-props']) : {};
 
-    mountFn.call(self, flux, node, component, props);
+    domMountFn.call(self, flux, node, component, props);
   });
 }
 
@@ -81,7 +80,7 @@ function unmountDynaComponents(root) {
   var elems = _queryAllAndSelfWithAttribute('data-dyna-component', _root);
 
   elems.forEach(function(node) {
-    unmountFn.call(self, node);
+    domUnmountFn.call(self, node);
   });
 }
 
