@@ -1,5 +1,9 @@
 'use strict';
 
+var React   = require('react');
+
+var Immutable = require('immutable');
+
 var assign  = require('object-assign');
 var compare = require('../utils/compare');
 
@@ -161,6 +165,7 @@ var ActionMonitorStore = {
  *     this.setState({ action_state : action_status.inProgress() ? 'processing' : 'clicked' });
  *   }
  * });
+ * @deprecated all mixins in Dyna are being deprecated. Use willMonitorAction() higher-order component instead.
  */
 var ActionMonitorMixin = {
   componentWillMount : function() {
@@ -208,6 +213,68 @@ var ActionMonitorMixin = {
     // executes the listener callbacks
     callbacks.forEach(function(cb) { cb(); });
   }
+};
+
+/**
+ * A higher-order component that provides function to monitor Action status. A 'monitorAction' function
+ * will be added to the component props.
+ * @param component {ReactClass} component to be wrapped
+ * @returns {ReactClass} wrapped class
+ */
+var willMonitorAction = function(component) {
+  var monitoring = Immutable.List();
+
+  return React.createClass({
+    contextTypes : {
+      flux: React.PropTypes.object.isRequired
+    },
+
+    componentWillMount : function() {
+      this.context.flux.store(ACTION_MONITOR_STORE_NAME).addChangeListener(this._processActionChange);
+    },
+
+    componentWillUnmount : function() {
+      this.context.flux.store(ACTION_MONITOR_STORE_NAME).removeChangeListener(this._processActionChange);
+    },
+
+    render : function() {
+      return React.createElement(component, assign({}, this.props, { monitorAction: this._monitorAction }));
+    },
+
+    _monitorAction : function(action, callback) {
+      // adds the callback function to the monitoring list
+      monitoring = monitoring.push({ action_id: action.id(), state: null, callback: callback });
+    },
+
+    _processActionChange : function() {
+      var self = this;
+
+      var store  = this.context.flux.store(ACTION_MONITOR_STORE_NAME);
+      var to_call = [];
+
+      monitoring = monitoring.withMutations(function(list) {
+        list.forEach(function(cb, index) {
+          var status = store.getActionStatus(cb.action_id);
+
+          // only updates if the state changed
+          if (status && status.state != cb.state) {
+            // updates the state in the entry
+            list.set(index, assign({}, cb, { state: status.state }));
+            // adds the callback to a list and it will be called executed later
+            if (cb.callback) to_call.push(cb.callback.bind(self, status));
+          }
+        });
+
+        // removes all resolved/rejected entries from the list
+        list.filter(function(cb) {
+          return cb.state == 'resolved' || cb.state == 'rejected';
+        });
+      });
+
+      // executes callbacks
+      to_call.forEach(function(cb) { cb(); });
+    }
+  });
 };
 
 /**
@@ -272,5 +339,6 @@ registerStore(ACTION_MONITOR_STORE_NAME, ActionMonitorStore);
 
 module.exports = {
   ActionMonitor     : ActionMonitor,
-  ActionMonitorMixin: ActionMonitorMixin
+  ActionMonitorMixin: ActionMonitorMixin,
+  willMonitorAction : willMonitorAction
 };

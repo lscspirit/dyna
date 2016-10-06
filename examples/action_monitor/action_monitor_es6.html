@@ -1,0 +1,124 @@
+<html>
+<head>
+  <script src="https://fb.me/JSXTransformer-0.13.3.js"></script>
+  <script src="https://fb.me/react-15.0.2.js"></script>
+  <script src="https://fb.me/react-dom-15.0.2.js"></script>
+  <script src="http://code.jquery.com/jquery-2.1.4.min.js"></script>
+  <script src="../../dist/dyna.js"></script>
+  <script type="text/jsx">
+    'use strict';
+
+    (function(dyna) {
+      window.buzz_event_creator = dyna.createEventCreator('buzz', {
+        timestampChange : function(timestamp) { return timestamp; }
+      });
+
+      window.buzz_action_creator = dyna.createActionCreator('buzz', {
+        click: function() { return 'clicked'; }
+      });
+
+      dyna.registerStore('BuzzerStore', {
+        $initialize : function() {
+          this.timestamp = null;
+        },
+
+        $processEvent : function(event) {
+          if (event.name() == buzz_event_creator.EVENTS.timestampChange) {
+            this.timestampChange(event.payload());
+          }
+        },
+
+        timestampChange : function(timestamp) {
+          this.timestamp = timestamp;
+          this.emitChange();
+        },
+
+        getTimestamp : function() {
+          return this.timestamp;
+        }
+      });
+
+      dyna.registerCoordinator('Buzzer', function() {
+        this.$listen = function() {
+          return [
+            { action: buzz_action_creator.ACTIONS.click, handler: _buzzClicked.bind(this) }
+          ];
+        };
+
+        this.$start = function() {
+        };
+
+        //
+        // Private Method
+        //
+
+        function _buzzClicked(action) {
+          var self = this;
+          var ActionMonitor = new dyna.addons.ActionMonitor(this.flux.event_dispatcher);
+
+          ActionMonitor.start(action);
+          setTimeout(function() {
+            buzz_event_creator.instance(self.flux).timestampChange((new Date()).getTime());
+            ActionMonitor.resolve(action);
+          }, 3000);
+          buzz_event_creator.instance(this.flux).timestampChange((new Date()).getTime());
+        }
+      });
+
+      class Buzzer extends React.Component {
+        constructor(props) {
+          super(props);
+          this.state = { timestamp: props.fluxStores.store('BuzzerStore').getTimestamp() }
+        }
+
+        componentWillMount() {
+          this.props.fluxStores.onChange('BuzzerStore', this._timestampChanged.bind(this));
+        }
+
+        render() {
+          console.log("rendering");
+          return (
+            <div>
+              <div>Buzzer - { this.state.action_state || 'not clicked' }</div>
+              <div>Timestamp = { this.state.timestamp }</div>
+              <button onClick={ this._buzzClick.bind(this) }>Buzz</button>
+            </div>
+          );
+        }
+
+        _buzzClick() {
+          var click_action = buzz_action_creator.instance(this.props.flux).click();
+          this.props.monitorAction(click_action, this._actionUpdate.bind(this));
+        }
+
+        _timestampChanged() {
+          console.log("timestamp changed");
+          this.setState({
+            timestamp: this.props.flux.store('BuzzerStore').getTimestamp()
+          });
+        }
+
+        _actionUpdate(action_status) {
+          console.log("action state updated: " + action_status.state());
+          this.setState({
+            action_state : action_status.inProgress() ? 'processing' : 'clicked'
+          });
+        }
+      }
+
+      dyna.registerComponent('Buzzer', dyna.consumeFlux(dyna.addons.willMonitorAction(dyna.consumeFluxStores(Buzzer))));
+    }(dyna));
+
+    $(function() {
+      (function(dyna) {
+        var flux = dyna.flux(["Buzzer"], ["$ActionMonitorStore", "BuzzerStore"]);
+
+        dyna.start(flux, $('#buzzer-one')[0]);
+      }(dyna));
+    });
+  </script>
+</head>
+<body>
+<div id="buzzer-one" data-dyna-component="Buzzer"></div>
+</body>
+</html>
