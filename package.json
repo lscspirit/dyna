@@ -15,6 +15,7 @@
     "deferred": "^0.7.2",
     "event-emitter": "^0.3.3",
     "flux": "^2.0.3",
+    "immutable": "^3.8.1",
     "invariant": "^2.2.1",
     "object-assign": "^2.0.0",
     "warning": "^3.0.0"

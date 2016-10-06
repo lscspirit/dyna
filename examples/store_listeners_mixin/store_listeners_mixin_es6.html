@@ -1,0 +1,114 @@
+<html>
+<head>
+  <script src="https://fb.me/JSXTransformer-0.13.3.js"></script>
+  <script src="https://fb.me/react-15.0.2.js"></script>
+  <script src="https://fb.me/react-dom-15.0.2.js"></script>
+  <script src="http://code.jquery.com/jquery-2.1.4.min.js"></script>
+  <script src="../../dist/dyna.js"></script>
+  <script type="text/jsx">
+    'use strict';
+
+    (function(dyna) {
+      window.buzz_event_creator = dyna.createEventCreator('buzz', {
+        statusChange : function(status) { return status; }
+      });
+
+      window.buzz_action_creator = dyna.createActionCreator('buzz', {
+        click: function() { return 'clicked'; }
+      });
+
+      dyna.registerStore('BuzzerStore', {
+        $initialize : function() {
+          this.buzzer_status = 'waiting';
+        },
+
+        $processEvent : function(event) {
+          if (event.name() == buzz_event_creator.EVENTS.statusChange) {
+            this.changeStatus(event.payload());
+          }
+        },
+
+        changeStatus : function(status) {
+          this.buzzer_status = status;
+          this.emitChange();
+        },
+
+        getStatus : function() {
+          return this.buzzer_status;
+        }
+      });
+
+      dyna.registerCoordinator('Buzzer', function() {
+        this.$listen = function() {
+          return [
+            { action: buzz_action_creator.ACTIONS.click, handler: _buzzClicked.bind(this) }
+          ];
+        };
+
+        this.$start = function() {
+        };
+
+        //
+        // Private Method
+        //
+
+        function _buzzClicked(event) {
+          _setStatus.call(this, event.payload());
+        }
+
+        function _setStatus(status) {
+          buzz_event_creator.instance(this.flux).statusChange(status);
+        }
+      });
+
+      class Buzzer extends React.Component {
+        constructor(props) {
+          super(props);
+          this.state = {status: this.props.fluxStores.store('BuzzerStore').getStatus()};
+        }
+
+        componentDidMount() {
+          this.props.fluxStores.onChange('BuzzerStore', this._statusChanged.bind(this));
+        }
+
+        render() {
+          return (
+              <div>
+                <div>Buzzer - { this.state.status }</div>
+                <button onClick={ this._buzzClick.bind(this) }>Buzz</button>
+              </div>
+          );
+        }
+
+        _buzzClick() {
+          var click_action = buzz_action_creator.instance(this.props.flux).click();
+          click_action.dispatch(this.props.flux.action_dispatcher);
+        }
+
+        _statusChanged() {
+          this.setState({
+            status: this.props.flux.store('BuzzerStore').getStatus()
+          });
+        }
+      }
+      Buzzer.propTypes = {
+        flux: React.PropTypes.object.isRequired,
+        fluxStores: React.PropTypes.object.isRequired
+      };
+
+      dyna.registerComponent('Buzzer', dyna.consumeFlux(dyna.consumeFluxStores(Buzzer)));
+    }(dyna));
+
+    $(function() {
+      (function(dyna) {
+        var flux = dyna.flux(["Buzzer"], ["BuzzerStore"]);
+
+        dyna.start(flux, $('#buzzer-one')[0]);
+      }(dyna));
+    });
+  </script>
+</head>
+<body>
+<div id="buzzer-one" data-dyna-component="Buzzer"></div>
+</body>
+</html>
