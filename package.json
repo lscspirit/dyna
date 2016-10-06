@@ -1,6 +1,6 @@
 {
   "name": "dyna",
-  "version": "0.2.3",
+  "version": "0.3.0",
   "description": "A framework that incorporates Facebook's ReactJS component and Flux architecture",
   "repository": {
     "type": "git",
