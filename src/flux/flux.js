@@ -80,7 +80,7 @@ var Flux = function(coordinators, stores) {
     var instance_returns = [];
     required_coordinators.forEach(function(c) {
       var c_instance = coordinator_instances[c];
-      instance_returns.push(c_instance.$start());
+      instance_returns.push(c_instance.$start ? c_instance.$start() : undefined);
 
       // automatically listen for actions from action_dispatcher IF
       // handlers are provided by $listen()
@@ -421,8 +421,8 @@ var Flux = function(coordinators, stores) {
     required_coordinators.push(c);
 
     var c_instance = Coordinators.instantiateCoordinator(c, self);
-    if (!compare.isFunction(c_instance.$start)) {
-      throw new Error('Coordinator "' + c +  '" must have a $start() method.');
+    if (c_instance.$start && !compare.isFunction(c_instance.$start)) {
+      throw new Error('Coordinator "' + c +  '" $start must be a function.');
     }
     // inject the Flux instance id to the coordinator instance so that we know which flux the instance is running within
     _injectFluxId(c_instance, _id);
