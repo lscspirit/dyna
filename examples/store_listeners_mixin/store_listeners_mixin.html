@@ -9,11 +9,11 @@
     'use strict';
 
     (function(dyna) {
-      window.buzz_event_creator = dyna.createEventCreator('buzz', {
+      window.BuzzEventFactory = dyna.createEventFactory('buzz', {
         statusChange : function(status) { return status; }
       });
 
-      window.buzz_action_creator = dyna.createActionCreator('buzz', {
+      window.BuzzActionFactory = dyna.createActionFactory('buzz', {
         click: function() { return 'clicked'; }
       });
 
@@ -23,7 +23,7 @@
         },
 
         $processEvent : function(event) {
-          if (event.name() == buzz_event_creator.EVENTS.statusChange) {
+          if (event.name() == BuzzEventFactory.EVENTS.statusChange) {
             this.changeStatus(event.payload());
           }
         },
@@ -41,7 +41,7 @@
       dyna.registerCoordinator('Buzzer', function() {
         this.$listen = function() {
           return [
-            { action: buzz_action_creator.ACTIONS.click, handler: _buzzClicked.bind(this) }
+            { action: BuzzActionFactory.ACTIONS.click, handler: _buzzClicked.bind(this) }
           ];
         };
 
@@ -57,7 +57,7 @@
         }
 
         function _setStatus(status) {
-          buzz_event_creator.instance(this.flux).statusChange(status);
+          BuzzEventFactory(this.flux).statusChange(status);
         }
       });
 
@@ -86,7 +86,7 @@
         },
 
         _buzzClick : function() {
-          var click_action = buzz_action_creator.instance(this.flux()).click();
+          var click_action = BuzzActionFactory(this.flux()).click();
           click_action.dispatch(this.flux().action_dispatcher);
         },
 

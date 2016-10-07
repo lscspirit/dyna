@@ -1,7 +1,7 @@
 'use strict';
 
+var check   = require('check-types');
 var assign  = require('object-assign');
-var compare = require('../utils/compare');
 
 /**
  * Event object to be sent through the EventDispatcher
@@ -35,20 +35,22 @@ var Event = function(name, payload) {
    * @throws {Error} if event_dispatcher is undefined or invalid
    */
   this.dispatch = function(event_dispatcher) {
-    if (compare.isUndefined(event_dispatcher)) throw new Error('event_dispatcher is undefined. Please provide a valid EventDispatcher instance.');
-    if (!compare.isFunction(event_dispatcher.dispatch)) throw new Error('Invalid EventDispatcher. EventDispatcher must have a dispatch() method.');
+    check.assert.object(event_dispatcher, 'event_dispatcher is undefined. Please provide a valid EventDispatcher instance.');
+    check.assert.function(event_dispatcher.dispatch, 'Invalid EventDispatcher. EventDispatcher must have a dispatch() method.');
+
     event_dispatcher.dispatch(this);
   };
 };
 
 /**
- * Create a event creator
+ * Create a new event factory
  *
  * @param {string} namespace - a namespace string to distinguish this creator from others
  * @param {Object.<string,function>} events - a map of event to payload function that converts arguments to payload object
+ * @return {EventFactory} an EventFactory class customized for the events provided
  *
  * @example
- * var chat_event_creator = dyna.createEventCreator('chat', {
+ * var ChatEventFactory = dyna.createEventFactory('chat', {
  *   messageReceived: function(new_message) { return { message: new_message }; }
  * });
 *
@@ -57,116 +59,47 @@ var Event = function(name, payload) {
  *   // ...
  *
  *   function _newMessageReceived(message) {
- *     chat_event_creator.instance(this.flux).messageReceived(message);
+ *     ChatEventFactory(this.flux).messageReceived(message);
  *   }
  * }
  *
  * // In Store
  * var ChatMessageStore = {
  *   $processEvent : function(event) {
- *     if (event.name() == chat_event_creator.EVENTS.MESSAGE_RECEIVED) {
+ *     if (event.name() == ChatEventFactory.EVENTS.messageReceived) {
  *       this.receivedMessage(event.payload());
  *     }
  *   }
  * }
  */
-function createEventCreator(namespace, events) {
-  if (!compare.isString(namespace) || namespace.length == 0) throw new Error('namespace must not be an empty string');
-  if (!compare.isObject(events)) throw new Error('events must be a plain javascript object');
+function createEventFactory(namespace, events) {
+  check.assert.nonEmptyString(namespace, 'namespace must be a non-empty string');
+  check.assert.object(events, 'events must be an object');
 
-  var self = this;
+  var EventFactory = function(flux) {
+    if (!(this instanceof EventFactory)) return new EventFactory(flux);
+    this._flux = flux;
+  };
+  EventFactory.EVENTS = {};
 
-  // event functions
-  var _events = {};
-  // event name constants
-  var _event_names = {};
-
-  // creates the event dispatch function
   for (var key in events) {
-    var payloadFn = events[key];
-
-    var ns_name = namespace + "." + key;
-    _event_names[key] = ns_name;
-
-    _events[key] = function(evt_name, fn) {
-      return function() {
-        var payload = compare.isFunction(fn) ? fn.apply(null, arguments) : null;
+    (function(evt_key, evt_name, fn) {
+      // adds the event name to EventFactory.EVENTS
+      EventFactory.EVENTS[evt_key] = evt_name;
+      // adds the dispatch function to the EventFactory prototype
+      EventFactory.prototype[evt_key] = function() {
+        var payload = check.function(fn) ? fn.apply(null, arguments) : null;
         return (new Event(evt_name, payload)).dispatch(this._flux.event_dispatcher);
       };
-    }(ns_name, payloadFn);
+    })(key, namespace + '.' + key, events[key]);
   }
 
-  return {
-    EVENTS: _event_names,
-    instance: function(flux) {
-      return assign({ _flux: flux }, _events);
-    }
-  };
+  return EventFactory;
 }
-
-/**
- * @deprecated since 0.1.4; use event creator instead
- *
- * Create a factory object that can build Event according to the <tt>event_specs</tt>
- * @param {Object.<string, string>}   event_names - event name constants
- * @param {Object.<string, function>} event_specs - event specifications
- * @returns {EventFactory} the factory object
- *
- * @example
- * var names  = {
- *   STATUS_CHANGE: 'buzzer.status-change',
- *   SNOOZED      : 'buzzer.snoozed'
- * };
- * var event_factory = dyna.createEventFactory(names, {
- *   statusChange : function(status) {
- *     return this.createEvent(this.EVENTS.STATUS_CHANGE, status);
- *   },
- *   snoozed : function() {
- *     return this.createEvent(this.EVENTS.SNOOZED);
- *   }
- * });
- *
- * // event_factory.EVENTS.STATUS_CHANGE;   => 'buzzer.status-change'
- *
- * // Coordinator
- * var Buzzer = function() {
- *   // ...
- *
- *   function _buzzStatusChange(status) {
- *     event_factory.statusChange(status).dispatch(this.flux.event_dispatcher);
- *   }
- * }
- */
-function createEventFactory(event_names, event_specs) {
-  /**
-   * Factory class for creating Events.
-   * @constructor
-   */
-  var EventFactory = function() {
-    this.EVENTS = assign({}, event_names);
-
-    /**
-     * Create a new Event object
-     * @param {string} name    - name of the event
-     * @param {*}      payload - any data to be sent along with this Event
-     * @returns {Event} - the event object @see {@link Event}
-     */
-    this.createEvent = function(name, payload) {
-      return new Event(name, payload);
-    };
-  };
-
-  EventFactory.prototype = Object.create(event_specs);
-  EventFactory.prototype.constructor = EventFactory;
-
-  return new EventFactory();
-}
-
 //
 // Exports
 //
 
 module.exports = {
-  createEventFactory: createEventFactory,
-  createEventCreator: createEventCreator
+  createEventFactory: createEventFactory
 };

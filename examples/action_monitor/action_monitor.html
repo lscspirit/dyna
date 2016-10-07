@@ -9,11 +9,11 @@
     'use strict';
 
     (function(dyna) {
-      window.buzz_event_creator = dyna.createEventCreator('buzz', {
+      window.BuzzEventFactory = dyna.createEventFactory('buzz', {
         timestampChange : function(timestamp) { return timestamp; }
       });
 
-      window.buzz_action_creator = dyna.createActionCreator('buzz', {
+      window.BuzzActionFactory = dyna.createActionFactory('buzz', {
         click: function() { return 'clicked'; }
       });
 
@@ -23,7 +23,7 @@
         },
 
         $processEvent : function(event) {
-          if (event.name() == buzz_event_creator.EVENTS.timestampChange) {
+          if (event.name() == BuzzEventFactory.EVENTS.timestampChange) {
             this.timestampChange(event.payload());
           }
         },
@@ -41,7 +41,7 @@
       dyna.registerCoordinator('Buzzer', function() {
         this.$listen = function() {
           return [
-            { action: buzz_action_creator.ACTIONS.click, handler: _buzzClicked.bind(this) }
+            { action: BuzzActionFactory.ACTIONS.click, handler: _buzzClicked.bind(this) }
           ];
         };
 
@@ -54,14 +54,14 @@
 
         function _buzzClicked(action) {
           var self = this;
-          var ActionMonitor = new dyna.addons.ActionMonitor(this.flux.event_dispatcher);
+          var ActionMonitor = new dyna.addons.ActionMonitor(this.flux);
 
           ActionMonitor.start(action);
           setTimeout(function() {
-            buzz_event_creator.instance(self.flux).timestampChange((new Date()).getTime());
+            BuzzEventFactory(self.flux).timestampChange((new Date()).getTime());
             ActionMonitor.resolve(action);
           }, 3000);
-          buzz_event_creator.instance(this.flux).timestampChange((new Date()).getTime());
+          BuzzEventFactory(self.flux).timestampChange((new Date()).getTime());
         }
       });
 
@@ -92,7 +92,7 @@
         },
 
         _buzzClick : function() {
-          var click_action = buzz_action_creator.instance(this.flux()).click();
+          var click_action = BuzzActionFactory(this.flux()).click();
           this.monitorAction(click_action, this._actionUpdate);
         },
 

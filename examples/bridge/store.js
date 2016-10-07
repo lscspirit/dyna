@@ -7,7 +7,7 @@
     },
 
     $processEvent : function(event) {
-      if (event.name() == buzz_event_creator.EVENTS.statusChange) {
+      if (event.name() == BuzzEventFactory.EVENTS.statusChange) {
         this.changeStatus(event.payload());
       }
     },

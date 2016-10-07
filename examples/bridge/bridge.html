@@ -11,7 +11,7 @@
     'use strict';
 
     (function(dyna) {
-      window.buzz_action_creator = dyna.createActionCreator('buzz', {
+      window.BuzzActionFactory = dyna.createActionFactory('buzz', {
         click: function() { return 'clicked'; }
       });
 
@@ -38,7 +38,7 @@
         },
 
         _buzzClick : function() {
-          buzz_action_creator.instance(this.flux()).click();
+          BuzzActionFactory(this.flux()).click();
         },
 
         _statusChanged : function() {

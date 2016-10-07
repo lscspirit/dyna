@@ -10,13 +10,10 @@ var compare = require('../utils/compare');
 var createEventFactory = require('../flux/event').createEventFactory;
 var registerStore      = require('../flux/stores').registerStore;
 
-var ACTION_MONITOR_EVENT_NAME = 'action-monitor.status-change';
 var ACTION_MONITOR_STORE_NAME = '$ActionMonitorStore';
 
-var EventFactory = createEventFactory({ CHANGE: ACTION_MONITOR_EVENT_NAME }, {
-  actionStateChange : function(payload) {
-    return this.createEvent(this.EVENTS.CHANGE, payload);
-  }
+var MonitorEventFactory = createEventFactory('action-monitor', {
+  actionStateChange : function(payload) { return payload; }
 });
 
 /**
@@ -91,7 +88,7 @@ var ActionMonitorStore = {
 
   $processEvent : function(event) {
     switch(event.name()) {
-      case ACTION_MONITOR_EVENT_NAME:
+      case MonitorEventFactory.EVENTS.actionStateChange:
         this._processStatusChange(event.payload());
         break;
       default:
@@ -279,28 +276,28 @@ var willMonitorAction = function(component) {
 
 /**
  * Object for updating the state of Action
- * @param {EventDispatcher} event_dispatcher - event dispatcher instance
+ * @param {Flux} flux - flux instance
  * @constructor
  * @example
  * // In Flux coordinator
- * var ActionMonitor = new dyna.addons.ActionMonitor(this.flux.event_dispatcher);
+ * var ActionMonitor = new dyna.addons.ActionMonitor(this.flux);
  *
  * ActionMonitor.start(action);
  * setTimeout(function() {
- *   EventFactory.someEvent().dispatch(self.flux.event_dispatcher);
+ *   (new EventFactory(self.flux)).someEvent();
  *   ActionMonitor.resolve(action);
  * }, 3000);
  */
-var ActionMonitor = function(event_dispatcher) {
+var ActionMonitor = function(flux) {
   /**
    * Start monitoring an Action
    * @param {Action} action - action to monitor
    */
   this.start = function(action) {
-    EventFactory.actionStateChange({
+    MonitorEventFactory(flux).actionStateChange({
       action_id: action.id(),
       state    : 'track'
-    }).dispatch(event_dispatcher);
+    });
   };
 
   /**
@@ -309,11 +306,11 @@ var ActionMonitor = function(event_dispatcher) {
    * @param {*}      data   - any data to be pass along with the state change
    */
   this.resolve = function(action, data) {
-    EventFactory.actionStateChange({
+    MonitorEventFactory(flux).actionStateChange({
       action_id: action.id(),
       state    : 'resolve',
       data     : data
-    }).dispatch(event_dispatcher);
+    });
   };
 
   /**
@@ -322,11 +319,11 @@ var ActionMonitor = function(event_dispatcher) {
    * @param {*}      error  - any error/data to be pass along with the state change
    */
   this.reject = function(action, error) {
-    EventFactory.actionStateChange({
+    MonitorEventFactory(flux).actionStateChange({
       action_id: action.id(),
       state    : 'reject',
       data     : error
-    }).dispatch(event_dispatcher);
+    });
   };
 };
 

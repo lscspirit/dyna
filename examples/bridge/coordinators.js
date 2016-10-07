@@ -1,14 +1,14 @@
 'use strict';
 
 (function(dyna) {
-  window.buzz_event_creator = dyna.createEventCreator('buzz', {
+  window.BuzzEventFactory = dyna.createEventFactory('buzz', {
     statusChange : function(status) { return status; }
   });
 
   var BuzzerWithBridge = function() {
     this.$listen = function() {
       return [
-        { action: buzz_action_creator.ACTIONS.click, handler: _buzzClicked.bind(this) }
+        { action: BuzzActionFactory.ACTIONS.click, handler: _buzzClicked.bind(this) }
       ];
     };
 
@@ -35,7 +35,7 @@
     }
 
     function _setStatus(status) {
-      buzz_event_creator.instance(this.flux).statusChange(status);
+      BuzzEventFactory(this.flux).statusChange(status);
     }
   };
 
@@ -47,7 +47,7 @@
 
     this.$listen = function() {
       return [
-        { action: buzz_action_creator.ACTIONS.click, handler: _buzzClicked.bind(this) }
+        { action: BuzzActionFactory.ACTIONS.click, handler: _buzzClicked.bind(this) }
       ];
     };
 
@@ -71,7 +71,7 @@
     }
 
     function _setStatus(status) {
-      buzz_event_creator.instance(this.flux).statusChange(status);
+      BuzzEventFactory(this.flux).statusChange(status);
     }
   };
 

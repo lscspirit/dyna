@@ -12,6 +12,7 @@
     "src/"
   ],
   "dependencies": {
+    "check-types": "^7.0.1",
     "deferred": "^0.7.2",
     "event-emitter": "^0.3.3",
     "flux": "^2.0.3",

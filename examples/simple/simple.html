@@ -11,11 +11,11 @@
     'use strict';
 
     (function(dyna) {
-      window.buzz_event_creator = dyna.createEventCreator('buzz', {
+      window.BuzzEventFactory = dyna.createEventFactory('buzz', {
         statusChange : function(status) { return status; }
       });
 
-      window.buzz_action_creator = dyna.createActionCreator('buzz', {
+      window.BuzzActionFactory = dyna.createActionFactory('buzz', {
         click: function(status) { return status; }
       });
 
@@ -42,7 +42,7 @@
         },
 
         _buzzClick : function() {
-          buzz_action_creator.instance(this.flux()).click('clicked');
+          BuzzActionFactory(this.flux()).click('clicked');
         },
 
         _statusChanged : function() {
