@@ -20,8 +20,8 @@ var _coordinator_defs = {};
  *   $mount - (Optional) method that will mount coordinator specific components
  *   $unmount - (Optional) method that will unmount coordinator specific components
  *
- * @param {string}   name - name of the coordinator
- * @param {function} def  - a constructor function in the <tt>Dependency Injection</tt> format
+ * @param {string}          name - name of the coordinator
+ * @param {Class|Function}  coordinator  - the coordinator class
  * @throws {Error} if coordinator with the same name has already been defined
  *
  * @example
@@ -45,19 +45,22 @@ var _coordinator_defs = {};
  *   };
  * };
  *
- * dyna.registerCoordinator('Alarm', ['speaker', Alarm]);
+ * // defines the dependencies of the coordinator
+ * Alarm.dependencies = ['speaker'];
+ *
+ * dyna.registerCoordinator('Alarm', Alarm);
  *
  * @example To configure a coordinator
  * dyna.start(["Alarm"], function(Alarm) {
  *   Alarm.setInterval(60);
  * });
  */
-function registerCoordinator(name, def) {
+function registerCoordinator(name, coordinator) {
   if (!compare.isUndefined(_coordinator_defs[name])) {
     throw new Error('Conflicting coordinator name: "' + name+ '". Please use another name.');
   }
 
-  _coordinator_defs[name] = def;
+  _coordinator_defs[name] = coordinator;
 }
 
 /**
@@ -73,12 +76,10 @@ function instantiateCoordinator(name, flux) {
   if (compare.isUndefined(def)) {
     throw new Error('Coordinator "' + name + '" is not found. Please use registerCoordinator() to define one first.');
   } else {
-    var fn = arrayUtils.arrayWrap(def);
-    var c = fn[fn.length - 1];
-    var deps = fn.slice(0, -1);
+    var deps = arrayUtils.arrayWrap(def.dependencies);
 
     deps.push(function(){
-      return argsCreate(c, arguments);
+      return argsCreate(def, arguments);
     });
 
     var instance = injector.invoke(this, deps);
