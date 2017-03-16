@@ -31,7 +31,6 @@ function config(deps, fn) {
  * elements once the DOM is ready
  * @param {Flux}             flux   - Flux instance
  * @param {Document|Element} [root] - component root under which dyna components will be mounted.
- * @returns {Promise} a promise that will be resolved when the start process is completed
  *
  * @example <caption>Start a single Flux</caption>
  * var flux = dyna.flux(["Buzzer"], ["BuzzerStore"]);
@@ -57,7 +56,15 @@ function start(flux, root) {
     });
   });
 
-  return defer.promise;
+  this._start_promise = defer.promise;
+}
+
+/**
+ * Register a function to be executed when dyna is ready (started and mounted)
+ * @param {function} fn - function to be executed
+ */
+function ready(fn) {
+  this._start_promise.done(fn);
 }
 
 /**
@@ -83,7 +90,8 @@ function stop(flux, root) {
 var Lifecycle = {
   config: config,
   start : start,
-  stop  : stop
+  stop  : stop,
+  ready : ready
 };
 
 assign(Lifecycle, ujs);
