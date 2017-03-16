@@ -44,19 +44,19 @@ function config(deps, fn) {
  * dyna.start(flux_two, document.getElementById('#buzzer-two'));
  */
 function start(flux, root) {
-  var self  = this;
-  var defer = deferred();
+  var self = this;
+
+  // creates a defer if there isn't one already (i.e. ready() has not been called)
+  if (!this._star_defer) this._start_defer = deferred();
 
   flux.start().done(function() {
     domReady(function() {
       self.mountComponents(flux);
       self.mountDynaComponents(flux, root);
 
-      defer.resolve();
+      self._start_defer.resolve();
     });
   });
-
-  this._start_promise = defer.promise;
 }
 
 /**
@@ -64,7 +64,10 @@ function start(flux, root) {
  * @param {function} fn - function to be executed
  */
 function ready(fn) {
-  this._start_promise.done(fn);
+  // creates a defer object if not already done so
+  if (!this._star_defer) this._start_defer = deferred();
+  // register the function with the promise
+  this._start_defer.promise.done(fn);
 }
 
 /**
