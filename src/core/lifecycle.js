@@ -65,7 +65,7 @@ function start(flux, root) {
  */
 function ready(fn) {
   // creates a defer object if not already done so
-  if (!this._star_defer) this._start_defer = deferred();
+  if (!this._start_defer) this._start_defer = deferred();
   // register the function with the promise
   this._start_defer.promise.done(fn);
 }
