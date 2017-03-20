@@ -47,7 +47,7 @@ function start(flux, root) {
   var self = this;
 
   // creates a defer if there isn't one already (i.e. ready() has not been called)
-  if (!this._star_defer) this._start_defer = deferred();
+  if (!this._start_defer) this._start_defer = deferred();
 
   flux.start().done(function() {
     domReady(function() {
