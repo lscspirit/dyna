@@ -22,13 +22,16 @@ function domUnmountFn(node) {
  * @param {HTMLElement} node      - a DOM Node
  * @param {ReactClass}  component - a React component class
  * @param {Object}      props     - props to be passed to the component
- *
+ * @param {boolean}     [direct_mount] - whether to directly mount the component without connecting to flux
  * @return {ReactElement} the rendered react element
  */
-function domMountFn(flux, node, component, props) {
-  var connectedComponent = this.connectComponentToFlux(flux, component);
+function domMountFn(flux, node, component, props, direct_mount) {
+  var target = direct_mount ? component : this.connectComponentToFlux(flux, component);
+  var elem   = React.createElement(target, props);
 
-  return ReactDOM.render(React.createElement(connectedComponent, props), node).wrappedInstance;
+  ReactDOM.render(elem, node);
+
+  return elem;
 }
 
 /**

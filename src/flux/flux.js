@@ -183,7 +183,9 @@ var Flux = function(coordinators, stores) {
       });
 
       // mount top level node directly to the DOM using the mountFn
-      domMount(top_level_node.node(), top_level_node.component(), _runMountPointNestedCallback(top_level_node));
+      var mounted_opts = _runMountPointNestedCallback(top_level_node);
+      var mounted_elem = domMount(top_level_node.node(), top_level_node.component(), mounted_opts);
+      top_level_node.mounted(mounted_elem, mounted_opts);
     });
 
     //
@@ -209,6 +211,7 @@ var Flux = function(coordinators, stores) {
      * @param {ReactClass}  component - a React component class to be mounted
      * @param {Object}      [props]   - props to be used when mounting the component
      * @param {NestedMountPointCallback} [nestedCb] - a callback that gives the coordinator a chance to handle components nested with the current component
+     * @return {MountedNode} a reference to the mount
      *
      * @example
      * // let say the DOM looks like this
@@ -252,21 +255,9 @@ var Flux = function(coordinators, stores) {
      * };
      */
     function mountPointFn(node, component, props, nestedCb) {
-      _mount_tree.addMountPoint(node, component, props, nestedCb);
+      var mp = _mount_tree.addMountPoint(node, component, props, nestedCb);
+      return mp.getRef(domMount);
     };
-
-    function _runMountPointNestedCallback(parent_mount_node) {
-      var parent_props = parent_mount_node.props();
-
-      if (parent_mount_node.nestedCb()) {
-        var child_list = parent_mount_node.children().map(function(c) {
-          return { node: c.node(), component: c.component(), props: c.props() };
-        });
-        parent_props = parent_mount_node.nestedCb()(parent_props, child_list) || parent_props;
-      }
-
-      return parent_props;
-    }
   };
 
   /**
@@ -455,6 +446,7 @@ function MountTree() {
    * @param {ReactClass}  component - a React component class to be mounted
    * @param {Object}      [props]   - props to be used when mounting the component
    * @param {NestedMountPointCallback} [nestedCb] - a callback that gives the coordinator a chance to handle components nested with the current component
+   * @return {MountPoint} the mount point object
    */
   this.addMountPoint = function(node, component, props, nestedCb) {
     invariant(node != null && node != undefined, 'Mount point node cannot be null or undefined');
@@ -480,6 +472,8 @@ function MountTree() {
     // if the target mount point is not a child or a parent of other mount points,
     // then simply add it to the top-level list
     mount_points.push(mp);
+
+    return mp;
   };
 
   /**
@@ -495,6 +489,9 @@ function MountPoint(node, component, props, nestedCb) {
   var _comp = component;
   var _props    = props;
   var _nestedCb = nestedCb;
+
+  var _mounted_elem = null;
+  var _mounted_opts = null;
 
   var _child_mps = [];
 
@@ -551,6 +548,11 @@ function MountPoint(node, component, props, nestedCb) {
     _props = new_props;
   };
 
+  this.mounted = function(elem, opts) {
+    _mounted_elem = elem;
+    _mounted_opts = opts;
+  };
+
   /**
    * Traverses down the current node and loops through all descendant MountPoints
    * that are also parent node themselves (i.e. has child).
@@ -574,6 +576,18 @@ function MountPoint(node, component, props, nestedCb) {
       );
     });
   };
+
+  this.getRef = function(domMount) {
+    return {
+      canUpdate: function() {
+        return !!_mounted_elem;
+      },
+      updateProps: function(props) {
+        invariant(_mounted_elem, 'only top-level mount can be updated');
+        domMount(_node, _mounted_elem.type, assign({}, _mounted_opts, props), true);
+      }
+    }
+  }
 }
 
 //
@@ -597,6 +611,19 @@ function _generateFluxId() {
 function _injectFluxId(obj, id) {
   if (obj.hasOwnProperty('_flux_id')) throw new Error('Cannot inject Flux Id. Object already has a _flux_id property.');
   obj._flux_id = id;
+}
+
+function _runMountPointNestedCallback(parent_mount_node, props) {
+  var parent_props = props || parent_mount_node.props();
+
+  if (parent_mount_node.nestedCb()) {
+    var child_list = parent_mount_node.children().map(function(c) {
+      return { node: c.node(), component: c.component(), props: c.props() };
+    });
+    parent_props = parent_mount_node.nestedCb()(parent_props, child_list) || parent_props;
+  }
+
+  return parent_props;
 }
 
 //
