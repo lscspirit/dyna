@@ -459,13 +459,13 @@ function MountTree() {
       if (mount_points[i].node().contains(node)) {
         // adds the target mount point to the current mount point
         mount_points[i].addDescendant(mp);
-        return;
+        return mp;
       } else if (node.contains(mount_points[i].node())) {
         // adds the current mount point as a descendant of the target mount point
         mp.addDescendant(mount_points[i]);
         // replace the current mount point with the target mount point
         mount_points[i] = mp;
-        return;
+        return mp;
       }
     }
 
